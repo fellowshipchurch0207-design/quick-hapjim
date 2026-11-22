@@ -165,7 +165,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">키와 합짐 내용은 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v10</div>
+  <div class="ver">버전 2026-11-23 v11</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -480,7 +480,7 @@ $('iPick').addEventListener('change',()=>look('pick'));
 $('iDrop').addEventListener('change',()=>look('drop'));
 $('iLoaded').addEventListener('change',()=>{$('iPick').disabled=$('iLoaded').checked});
 $('bAdd').onclick=()=>{if(!map){toast('설정에서 카카오 키를 먼저 넣어 주세요');openSet();return}
-  $('fAdd').reset();$('iPick').disabled=false;$('fPick').textContent=$('fDrop').textContent='';$('fAll').className='found';$('fAll').textContent='🎤 누르고 말하면 아래 칸이 자동으로 채워져요';found={};$('dAdd').showModal()};
+  $('fAdd').reset();$('iPick').disabled=false;$('fPick').textContent=$('fDrop').textContent='';$('fAll').className='found';$('fAll').textContent='🎤 누르고 말하면 아래 칸이 자동으로 채워져요';found={};$('dAdd').showModal();const mb=document.querySelector('.mic[data-for="iAll"]');if(mb&&mb.style.display!=='none'&&!rec)mb.click()};
 
 /* ---------- 말한 내용 나누기 ---------- */
 const KN={'한':1,'두':2,'세':3,'네':4,'다섯':5,'여섯':6,'일곱':7,'여덟':8,'아홉':9,'열':10,'열한':11,'열두':12};
