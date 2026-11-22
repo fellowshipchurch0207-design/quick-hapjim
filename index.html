@@ -57,6 +57,7 @@ textarea{min-height:60px;resize:vertical}
 .mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
 .mic.on{background:var(--drop);color:#fff}
 .mic.big{width:64px;font-size:26px}
+.shot{display:flex;align-items:center;justify-content:center;min-height:44px;border:1px dashed var(--line);border-radius:10px;color:var(--ink);font-size:15px;cursor:pointer}
 .mkw{display:flex;align-items:center;gap:2px;transform:translateX(calc(50% - 15px))}
 .mki{display:flex;align-items:center;gap:1px;background:#fff;border-radius:8px;padding:2px 3px;box-shadow:0 1px 3px #0005}
 .mki svg{width:16px;height:16px}.mki b{font-size:11px;color:#000;margin-left:1px}.mki .fragile{font-size:10px;padding:0 4px}
@@ -141,6 +142,7 @@ header h1{font-size:17px}
   <label>말로 한 번에 넣기
     <div class="row"><textarea id="iAll" placeholder="예) 대전역에서 픽업해서 둔산동 시청으로 배송, 짐은 파란 박스 두 개, 3시까지, 금액은 2만 5천원"></textarea><button type="button" class="mic big" data-for="iAll">🎤</button></div>
     <div class="found" id="fAll">🎤 누르고 말하면 아래 칸이 자동으로 채워져요</div></label>
+  <label class="shot">📷 스크린샷으로 넣기<input type="file" accept="image/*" id="iShot" hidden></label>
   <label>픽업지 (인성콜에 뜨는 그대로)
     <div class="row"><input id="iPick" autocomplete="off"><button type="button" class="mic" data-for="iPick">🎤</button></div>
     <div class="found" id="fPick"></div></label>
@@ -165,7 +167,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">키와 합짐 내용은 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v12</div>
+  <div class="ver">버전 2026-11-23 v13</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -204,7 +206,7 @@ function initMap(){
   const c=me||{lat:36.3504,lng:127.3845};
   map=new kakao.maps.Map($('map'),{center:new kakao.maps.LatLng(c.lat,c.lng),level:7});
   geocoder=new kakao.maps.services.Geocoder();places=new kakao.maps.services.Places();
-  watchMe();recalc();
+  watchMe();recalc();takeShared();
 }
 let gpsOk=false,watchId=null;
 function setMe(p,center){
@@ -510,7 +512,7 @@ function parseAll(raw){
   t=t.replace(/\s+/g,' ').trim();
   const PV='(?:픽업|출발|받아|받고|받으러|가져가|가지고|실어|싣고|상차|수령|회수|물건\\s?받|짐\\s?받|태워)';
   const DV='(?:배송|배달|도착|가져다|갖다|보내|전달|하차|내려|납품|드려|가야|가줘|가 줘|넣어)';
-  const STOP='(?=\\s*(?:이고|이구|고\\s|,|\\.|$|배송지|도착지|하차지|받는\\s?곳|목적지|픽업지|출발지|상차지|보내는\\s?곳))';
+  const STOP='(?=\\s*(?:이고|이구|고\\s|,|/|\\.|$|배송지|도착지|하차지|받는\\s?곳|목적지|픽업지|출발지|상차지|보내는\\s?곳))';
   const lab=(L)=>{const m=t.match(new RegExp('(?:'+L+')\\s*(?:은|는|이|가|:)?\\s*(.+?)'+STOP));return m?m[1].trim():''};
   out.pick=lab('픽업지|출발지|상차지|보내는\\s?곳|픽업\\s?장소|출발\\s?장소');
   out.drop=lab('배송지|도착지|하차지|받는\\s?곳|목적지|배송\\s?장소|도착\\s?장소');
@@ -589,8 +591,39 @@ setInterval(()=>{if(route.length)recalc()},5*60000);
 
 loadKakao();
 
+
+/* ---------- 스크린샷 글자 읽기 ---------- */
+let ocrW=null;
+function loadScript(src){return new Promise((ok,no)=>{const e=document.createElement('script');e.src=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
+async function ocrImage(blob){
+  const f=$('fAll');f.className='found';
+  try{
+    if(!window.Tesseract){f.textContent='글자 읽기 준비 중… (처음 한 번은 오래 걸려요)';await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js')}
+    if(!ocrW){f.textContent='한글 인식 데이터 받는 중… (처음 한 번만)';ocrW=await Tesseract.createWorker('kor+eng')}
+    f.textContent='스크린샷 글자 읽는 중…';
+    const {data}=await ocrW.recognize(blob);
+    return (data.text||'').split('\n').map(x=>x.trim()).filter(Boolean).join(' / ');
+  }catch(e){f.className='found bad';f.textContent='글자를 못 읽었어요. 인터넷 연결을 확인해 주세요.';return''}
+}
+async function fromImage(blob){
+  if(rec)rec.abort();
+  const t=await ocrImage(blob);if(!t)return;
+  $('iAll').value=t;await applyAll();
+}
+$('iShot').addEventListener('change',e=>{const f=e.target.files[0];if(f)fromImage(f);e.target.value=''});
+function openAddQuiet(){$('fAdd').reset();$('iPick').disabled=false;$('fPick').textContent=$('fDrop').textContent='';found={};$('dAdd').showModal()}
+async function takeShared(){
+  if(!/shared=/.test(location.search)||!('caches' in window))return;
+  history.replaceState(null,'',location.pathname);
+  const c=await caches.open('qh-share'),img=await c.match('img'),txt=await c.match('txt');
+  if(!img&&!txt)return;
+  openAddQuiet();
+  if(txt){$('iAll').value=await txt.text();await c.delete('txt')}
+  if(img){const b=await img.blob();await c.delete('img');await fromImage(b)}else await applyAll();
+}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v12';
+const VER='v13';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
