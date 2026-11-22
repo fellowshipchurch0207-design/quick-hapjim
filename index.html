@@ -50,6 +50,9 @@ input,textarea{width:100%;font-size:16px;padding:11px;border-radius:10px;border:
 textarea{min-height:60px;resize:vertical}
 .mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
 .mic.on{background:var(--drop);color:#fff}
+.mic.big{width:64px;font-size:26px}
+.due{display:inline-block;font-size:13px;font-weight:700;border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-left:6px}
+.late{background:var(--drop);color:#fff;border-color:var(--drop)}
 .found{font-size:13px;color:var(--ok);min-height:1em}
 .found.bad{color:var(--drop)}
 .btns{display:flex;gap:8px;justify-content:flex-end}
@@ -67,6 +70,7 @@ textarea{min-height:60px;resize:vertical}
 <div class="app">
   <header>
     <h1>퀵 합짐</h1>
+    <button class="ghost" id="bLoc" aria-label="내 위치">📍</button>
     <button class="ghost" id="bRecalc">다시 계산</button>
     <button class="ghost" id="bSet">설정</button>
   </header>
@@ -83,6 +87,9 @@ textarea{min-height:60px;resize:vertical}
 
 <dialog id="dAdd"><form class="dlg" method="dialog" id="fAdd">
   <h2>합짐 추가</h2>
+  <label>말로 한 번에 넣기
+    <div class="row"><textarea id="iAll" placeholder="예) 부천역에서 픽업해서 인천시청으로 배송, 짐은 파란 박스 두 개, 3시까지 해달래"></textarea><button type="button" class="mic big" data-for="iAll">🎤</button></div>
+    <div class="found" id="fAll">🎤 누르고 말하면 아래 칸이 자동으로 채워져요</div></label>
   <label>픽업지 (인성콜에 뜨는 그대로)
     <div class="row"><input id="iPick" autocomplete="off"><button type="button" class="mic" data-for="iPick">🎤</button></div>
     <div class="found" id="fPick"></div></label>
@@ -91,6 +98,7 @@ textarea{min-height:60px;resize:vertical}
     <div class="found" id="fDrop"></div></label>
   <label>짐 특징 (예: 파란 박스 2개, 파손주의)
     <div class="row"><textarea id="iCargo"></textarea><button type="button" class="mic" data-for="iCargo">🎤</button></div></label>
+  <label>배송 마감 시각 (없으면 비워 두기)<input type="time" id="iDue"></label>
   <label class="chk"><input type="checkbox" id="iUrg"> 급송 (먼저 처리)</label>
   <label class="chk"><input type="checkbox" id="iLoaded"> 이미 실었음 (배송만 남음)</label>
   <div class="btns"><button type="button" class="ghost" id="bCancel">취소</button><button type="submit" class="pri" id="bSave">위치 확인 후 추가</button></div>
@@ -100,6 +108,7 @@ textarea{min-height:60px;resize:vertical}
   <h2>설정</h2>
   <label>카카오 JavaScript 키 (지도·주소 검색)<input id="sJs" autocomplete="off"></label>
   <label>카카오 REST API 키 (실제 도로 도착시간)<input id="sRest" autocomplete="off"></label>
+  <label>GPS가 안 될 때 쓸 출발지 (예: 집이나 차고지 주소)<input id="sHome" autocomplete="off"></label>
   <label>한 곳 상하차 시간(분)<input id="sDwell" type="number" min="0" max="60"></label>
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
@@ -107,11 +116,19 @@ textarea{min-height:60px;resize:vertical}
   <div class="btns"><button type="button" class="ghost" id="bClear">완료된 짐 지우기</button><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
+<dialog id="dHelp"><form class="dlg" method="dialog">
+  <h2>위치 권한이 꺼져 있어요</h2>
+  <div><b>아이폰(사파리)</b><br>설정 앱 › 개인정보 보호 및 보안 › 위치 서비스 › <b>Safari 웹 사이트</b> › "앱을 사용하는 동안" 선택, <b>정확한 위치</b> 켜기<br>그다음 사파리 주소창 왼쪽 메뉴 › 웹 사이트 설정 › 위치 › <b>허용</b></div>
+  <div><b>갤럭시(크롬)</b><br>주소창 왼쪽 아이콘 › 권한 › 위치 › <b>허용</b></div>
+  <div class="note">권한을 켠 뒤 페이지를 새로고침하고 📍를 누르세요. 그동안은 설정의 "GPS가 안 될 때 쓸 출발지"에서 계산해요.</div>
+  <div class="btns"><button class="pri">확인</button></div>
+</form></dialog>
+
 <script>
 {
 const $=id=>document.getElementById(id);
 const LS={get(k,d){try{const v=localStorage.getItem('qh_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('qh_'+k,JSON.stringify(v))}catch(e){}}};
-let cfg=Object.assign({js:'',rest:'',dwell:5,speed:28},LS.get('cfg',{}));
+let cfg=Object.assign({js:'',rest:'',dwell:5,speed:28,home:''},LS.get('cfg',{}));
 let jobs=LS.get('jobs',[]); // {id,pick:{name,addr,lat,lng},drop:{...},cargo,urgent,state:'wait'|'loaded'|'done'}
 let me=LS.get('me',null), map=null, geocoder=null, places=null, overlays=[], line=null, meOv=null, route=[], routeSrc='';
 const toast=(t,ms=2500)=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',ms)};
@@ -130,20 +147,39 @@ function loadKakao(){
   document.head.appendChild(s);
 }
 function initMap(){
-  const c=me||{lat:37.4862,lng:126.8215};
+  const c=me||{lat:36.3504,lng:127.3845};
   map=new kakao.maps.Map($('map'),{center:new kakao.maps.LatLng(c.lat,c.lng),level:7});
   geocoder=new kakao.maps.services.Geocoder();places=new kakao.maps.services.Places();
   watchMe();recalc();
 }
-function watchMe(){
-  if(!navigator.geolocation){toast('위치 기능을 쓸 수 없어요');return}
-  navigator.geolocation.watchPosition(p=>{
-    const first=!me;me={lat:p.coords.latitude,lng:p.coords.longitude};LS.set('me',me);
-    const ll=new kakao.maps.LatLng(me.lat,me.lng);
-    if(!meOv){meOv=new kakao.maps.CustomOverlay({position:ll,content:'<div class="me"></div>',zIndex:3});meOv.setMap(map)}else meOv.setPosition(ll);
-    if(first)recalc();
-  },e=>toast('현재 위치를 못 가져왔어요. 위치 권한을 허용해 주세요.',4000),{enableHighAccuracy:true,maximumAge:15000});
+let gpsOk=false,watchId=null;
+function setMe(p,center){
+  me={lat:p.lat,lng:p.lng};LS.set('me',me);
+  const ll=new kakao.maps.LatLng(me.lat,me.lng);
+  if(!meOv){meOv=new kakao.maps.CustomOverlay({position:ll,content:'<div class="me"></div>',zIndex:3});meOv.setMap(map)}else meOv.setPosition(ll);
+  if(center){map.setCenter(ll);map.setLevel(6)}
 }
+function gpsErr(e){
+  gpsOk=false;
+  if(e&&e.code===1)showHelp();
+  else toast('위치를 못 잡았어요. 잠시 뒤 📍를 다시 눌러 주세요.',4000);
+  useHome();
+}
+async function useHome(){
+  if(gpsOk||!cfg.home)return;
+  const r=await geocode(cfg.home);
+  if(r&&!gpsOk){setMe(r,true);toast('GPS 대신 설정의 출발지('+r.name+')에서 계산해요',3500);recalc()}
+}
+function locate(manual){
+  if(!navigator.geolocation){toast('이 브라우저는 위치 기능이 없어요');useHome();return}
+  navigator.geolocation.getCurrentPosition(p=>{
+    gpsOk=true;setMe({lat:p.coords.latitude,lng:p.coords.longitude},true);
+    if(manual)toast('현재 위치로 출발지를 잡았어요');recalc();
+    if(watchId==null)watchId=navigator.geolocation.watchPosition(q=>{gpsOk=true;setMe({lat:q.coords.latitude,lng:q.coords.longitude},false)},()=>{},{enableHighAccuracy:true,maximumAge:15000});
+  },gpsErr,{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
+function watchMe(){me=null;if(meOv){meOv.setMap(null);meOv=null}locate(false)}
+function showHelp(){$('dHelp').showModal()}
 
 /* ---------- 주소 찾기 ---------- */
 function geocode(q){
@@ -162,6 +198,8 @@ function geocode(q){
 /* ---------- 순서 계산 (픽업은 항상 배송보다 먼저) ---------- */
 function hav(a,b){const R=6371,r=Math.PI/180,dLa=(b.lat-a.lat)*r,dLo=(b.lng-a.lng)*r;const x=Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
 const tmin=(a,b)=>hav(a,b)*1.35/cfg.speed*60;
+function dueDate(j){if(!j.due)return null;const [h,m]=j.due.split(':').map(Number),d=new Date(j.id);d.setHours(h,m,0,0);if(d<new Date(j.id)-3600000)d.setDate(d.getDate()+1);return d}
+function dueMin(j){const d=dueDate(j);return d?(d-Date.now())/60000:null}
 function buildStops(){
   const st=[];
   jobs.forEach(j=>{
@@ -177,7 +215,8 @@ function solve(st){
   const dw=+cfg.dwell||0, start=me;
   const T=(i,j)=>tmin(st[i].pt,st[j].pt);
   const T0=i=>start?tmin(start,st[i].pt):0;
-  const pen=(i,time)=>st[i].t==='D'&&st[i].job.urgent?time*1.5:0;
+  const pen=(i,time)=>{if(st[i].t!=='D')return 0;const j=st[i].job;let p=j.urgent?time*1.5:0;
+    const dm=dueMin(j);if(dm!=null){p+=time*0.3;if(time>dm)p+=200+(time-dm)*20}return p};
   if(n>16){ // 너무 많으면 가까운 곳부터
     const out=[],left=new Set(st.keys());let cur=start,used=new Set();
     while(left.size){let best=-1,bd=1e9;for(const i of left){if(st[i].pred>=0&&!used.has(st[i].pred))continue;const d=cur?tmin(cur,st[i].pt):0;if(d<bd){bd=d;best=i}}out.push(best);used.add(best);left.delete(best);cur=st[best].pt}
@@ -240,7 +279,7 @@ function draw(path,km){
 }
 function renderList(km){
   const loaded=jobs.filter(j=>j.state==='loaded').length;
-  $('sum').innerHTML=route.length?`<span>남은 곳 <b>${route.length}</b></span><span>실은 짐 <b>${loaded}</b></span><span>약 <b>${km.toFixed(1)}km</b></span><span>마지막 도착 <b>${hm(route.at(-1).eta)}</b></span><span>${routeSrc==='road'?'실제 도로 기준':'직선거리 추정'}</span>`:'';
+  $('sum').innerHTML=route.length?`<span>남은 곳 <b>${route.length}</b></span><span>실은 짐 <b>${loaded}</b></span><span>약 <b>${km.toFixed(1)}km</b></span><span>마지막 도착 <b>${hm(route.at(-1).eta)}</b></span><span>${routeSrc==='road'?'실제 도로 기준':'직선거리 추정'}</span><span>출발: <b>${gpsOk?'현재 위치':'설정 출발지'}</b></span>`:'';
   if(!route.length){$('list').innerHTML='<div class="empty">남은 배송이 없어요.<br>아래 <b>＋ 합짐 추가</b>로 콜을 넣어 주세요.</div>';return}
   $('list').innerHTML=route.map((s,k)=>{
     const j=s.job,isP=s.t==='P';
@@ -248,7 +287,7 @@ function renderList(km){
     const nav=`https://map.kakao.com/link/to/${encodeURIComponent(s.pt.name)},${s.pt.lat},${s.pt.lng}`;
     return `<div class="stop ${s.t} ${k?'':'next'}">
       <div class="num">${k+1}</div>
-      <div><div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}</div>
+      <div><div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.due?`<span class="due ${s.eta>dueDate(j)?'late':''}">${j.due}까지${s.eta>dueDate(j)?' · 늦을 수 있음':''}</span>`:''}</div>
         <div class="eta">${hm(s.eta)}<small>도착 예정</small></div>
         <div class="place">${esc(s.pt.name)}</div><div class="addr">${esc(s.pt.addr)}</div></div>
       ${cargo}
@@ -278,7 +317,44 @@ $('iPick').addEventListener('change',()=>look('pick'));
 $('iDrop').addEventListener('change',()=>look('drop'));
 $('iLoaded').addEventListener('change',()=>{$('iPick').disabled=$('iLoaded').checked});
 $('bAdd').onclick=()=>{if(!map){toast('설정에서 카카오 키를 먼저 넣어 주세요');openSet();return}
-  $('fAdd').reset();$('iPick').disabled=false;$('fPick').textContent=$('fDrop').textContent='';found={};$('dAdd').showModal()};
+  $('fAdd').reset();$('iPick').disabled=false;$('fPick').textContent=$('fDrop').textContent='';$('fAll').className='found';$('fAll').textContent='🎤 누르고 말하면 아래 칸이 자동으로 채워져요';found={};$('dAdd').showModal()};
+
+/* ---------- 말한 내용 나누기 ---------- */
+const KN={'한':1,'두':2,'세':3,'네':4,'다섯':5,'여섯':6,'일곱':7,'여덟':8,'아홉':9,'열':10,'열한':11,'열두':12};
+function parseAll(raw){
+  let t=' '+raw.replace(/\s+/g,' ').trim()+' ',out={};
+  // 마감 시각
+  const tm=t.match(/(오전|오후|아침|저녁|밤)?\s*(\d{1,2}|열두|열한|열|한|두|세|네|다섯|여섯|일곱|여덟|아홉)\s*시\s*(반|(\d{1,2})\s*분)?\s*(까지|전에|안에|이전)/);
+  if(tm){let h=KN[tm[2]]||+tm[2],m=tm[3]==='반'?30:(+tm[4]||0);const ap=tm[1];
+    if((ap==='오후'||ap==='저녁'||ap==='밤')&&h<12)h+=12;else if(!ap&&h<=7)h+=12;
+    else if(!ap){const now=new Date();if(h<12&&h*60+m<now.getHours()*60+now.getMinutes()-60)h+=12}
+    out.due=String(h%24).padStart(2,'0')+':'+String(m).padStart(2,'0');t=t.replace(tm[0],' ')}
+  if(/급송|급해|급하게|빨리|최대한 빨/.test(t))out.urgent=true;
+  // 짐
+  const cg=t.match(/(?:짐은|짐이|물건은|물건이|짐 특징은|내용물은)\s*(.+?)(?:이고|이구|이야|이에요|입니다|있고|,|\.|그리고|$)/);
+  if(cg){out.cargo=cg[1].replace(/급하게|급송|빨리/g,'').trim();t=t.replace(cg[0],' ')}
+  // 픽업지
+  const pk=t.match(/^\s*(.+?)\s*(?:에서|에서는)\s*(?:픽업|받아|받고|가져|실어|싣고|물건 받|짐 받)/);
+  if(pk){out.pick=pk[1].trim();t=t.slice(t.indexOf(pk[0])+pk[0].length)}
+  // 배송지
+  const dr=t.match(/(?:하고|해서|고|서)?\s*(.+?)\s*(?:으로|로|에|까지)\s*(?:배송|가져다|갖다|보내|전달|배달|내려)/);
+  if(dr)out.drop=dr[1].replace(/^(해서|하고|그리고|그다음|다음)\s*/,'').trim();
+  return out;
+}
+async function applyAll(){
+  const v=$('iAll').value.trim();if(!v)return;
+  const r=parseAll(v),got=[];
+  if(r.pick){$('iPick').value=r.pick;got.push('픽업지')}
+  if(r.drop){$('iDrop').value=r.drop;got.push('배송지')}
+  if(r.cargo){$('iCargo').value=r.cargo;got.push('짐')}
+  if(r.due){$('iDue').value=r.due;got.push(r.due+' 마감')}
+  if(r.urgent){$('iUrg').checked=true;got.push('급송')}
+  const f=$('fAll');
+  if(got.length){f.className='found';f.textContent='✔ 채웠어요: '+got.join(', ')+' — 아래 칸 확인하세요'}
+  else{f.className='found bad';f.textContent='못 나눴어요. "○○에서 픽업, ○○로 배송, 짐은 ○○, ○시까지"처럼 말해 보세요'}
+  found={};if(r.pick)await look('pick');if(r.drop)await look('drop');
+}
+$('iAll').addEventListener('change',applyAll);
 $('bCancel').onclick=()=>$('dAdd').close();
 $('fAdd').addEventListener('submit',async e=>{
   e.preventDefault();const loadedOnly=$('iLoaded').checked;
@@ -286,7 +362,7 @@ $('fAdd').addEventListener('submit',async e=>{
   const p=loadedOnly?null:(found.pick||await look('pick')),d=found.drop||await look('drop');
   $('bSave').textContent='위치 확인 후 추가';
   if(!d||(!loadedOnly&&!p)){toast('주소를 확인해 주세요');return}
-  jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,state:loadedOnly?'loaded':'wait'});
+  jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,due:$('iDue').value||'',state:loadedOnly?'loaded':'wait'});
   save();$('dAdd').close();toast('추가했어요. 순서와 도착시간을 다시 계산했어요.');recalc();
 });
 
@@ -295,19 +371,20 @@ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 document.querySelectorAll('.mic').forEach(b=>{
   if(!SR){b.style.display='none';return}
   b.onclick=()=>{const r=new SR();r.lang='ko-KR';r.interimResults=false;b.classList.add('on');
-    r.onresult=ev=>{const t=ev.results[0][0].transcript,inp=$(b.dataset.for);inp.value=(inp.value?inp.value+' ':'')+t;inp.dispatchEvent(new Event('change'))};
+    r.onresult=ev=>{const t=ev.results[0][0].transcript,inp=$(b.dataset.for);inp.value=(inp.value&&inp.id!=='iAll'?inp.value+' ':'')+t;inp.dispatchEvent(new Event('change'))};
     r.onend=()=>b.classList.remove('on');r.onerror=()=>b.classList.remove('on');r.start()};
 });
 
 /* ---------- 설정 ---------- */
-function openSet(){$('sJs').value=cfg.js;$('sRest').value=cfg.rest;$('sDwell').value=cfg.dwell;$('sSpeed').value=cfg.speed;$('dSet').showModal()}
+function openSet(){$('sHome').value=cfg.home||'';$('sJs').value=cfg.js;$('sRest').value=cfg.rest;$('sDwell').value=cfg.dwell;$('sSpeed').value=cfg.speed;$('dSet').showModal()}
 $('bSet').onclick=openSet;
 $('fSet').addEventListener('submit',e=>{e.preventDefault();
-  const hadJs=cfg.js;cfg={js:$('sJs').value.trim(),rest:$('sRest').value.trim(),dwell:+$('sDwell').value||0,speed:+$('sSpeed').value||28};
+  const hadJs=cfg.js;cfg={js:$('sJs').value.trim(),rest:$('sRest').value.trim(),dwell:+$('sDwell').value||0,speed:+$('sSpeed').value||28,home:$('sHome').value.trim()};
   LS.set('cfg',cfg);$('dSet').close();
   if(cfg.js!==hadJs)location.reload();else recalc();
 });
 $('bClear').onclick=()=>{jobs=jobs.filter(j=>j.state!=='done');save();toast('완료된 짐을 지웠어요');recalc()};
+$('bLoc').onclick=()=>{toast('현재 위치를 찾는 중…');locate(true)};
 $('bRecalc').onclick=()=>{toast('지금 위치·시각 기준으로 다시 계산해요');recalc()};
 setInterval(()=>{if(route.length)recalc()},5*60000);
 
