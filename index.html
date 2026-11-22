@@ -57,6 +57,8 @@ textarea{min-height:60px;resize:vertical}
 .mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
 .mic.on{background:var(--drop);color:#fff}
 .mic.big{width:64px;font-size:26px}
+.sync{display:grid;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px}.sync input{margin-bottom:6px}
+.syncdot{width:10px;height:10px;border-radius:50%;background:var(--sub);display:inline-block}.syncdot.on{background:var(--ok)}
 .shot{display:flex;align-items:center;justify-content:center;min-height:44px;border:1px dashed var(--line);border-radius:10px;color:var(--ink);font-size:15px;cursor:pointer}
 .mkw{display:flex;align-items:center;gap:2px;transform:translateX(calc(50% - 15px))}
 .mki{display:flex;align-items:center;gap:1px;background:#fff;border-radius:8px;padding:2px 3px;box-shadow:0 1px 3px #0005}
@@ -118,7 +120,7 @@ header h1{font-size:17px}
 <body>
 <div class="app">
   <header>
-    <h1>퀵 합짐</h1>
+    <h1>퀵 합짐 <span class="syncdot" id="syncDot" title="동기화"></span></h1>
     <button class="work" id="bWork">▶ 근무 시작</button>
     <button class="ghost ic" id="bLoc" aria-label="내 위치">📍</button>
     <button class="ghost ic" id="bRecalc" aria-label="다시 계산">↻</button>
@@ -160,6 +162,10 @@ header h1{font-size:17px}
 
 <dialog id="dSet"><form class="dlg" method="dialog" id="fSet">
   <h2>설정</h2>
+  <div class="sync"><b>두 폰 같이 쓰기</b><div id="syncState" class="note">로그인하면 폴드와 아이폰이 같은 목록을 봐요.</div>
+    <div id="syncForm"><input id="sEmail" type="email" placeholder="이메일" autocomplete="username"><input id="sPw" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+    <div class="btns"><button type="button" class="ghost" id="bJoin">처음이면 가입</button><button type="button" class="pri" id="bLogin">로그인</button></div></div>
+    <button type="button" class="ghost" id="bLogout" hidden>로그아웃</button></div>
   <label>카카오 JavaScript 키 (지도·주소 검색)<input id="sJs" autocomplete="off"></label>
   <label>카카오 REST API 키 (실제 도로 도착시간)<input id="sRest" autocomplete="off"></label>
   <label>GPS가 안 될 때 쓸 출발지 (예: 집이나 차고지 주소)<input id="sHome" autocomplete="off"></label>
@@ -167,7 +173,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">키와 합짐 내용은 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v13</div>
+  <div class="ver">버전 2026-11-23 v14</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -187,7 +193,7 @@ let cfg=Object.assign({js:'',rest:'',dwell:5,speed:28,home:''},LS.get('cfg',{}))
 let jobs=LS.get('jobs',[]); // {id,pick:{name,addr,lat,lng},drop:{...},cargo,urgent,state:'wait'|'loaded'|'done'}
 let me=LS.get('me',null), map=null, geocoder=null, places=null, overlays=[], line=null, meOv=null, route=[], routeSrc='';
 const toast=(t,ms=2500)=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',ms)};
-const save=()=>LS.set('jobs',jobs);
+const save=()=>{LS.set('jobs',jobs);syncPush('jobs')};
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hm=d=>d.toTimeString().slice(0,5);
 const won=n=>(+n||0).toLocaleString('ko-KR')+'원';
@@ -419,7 +425,7 @@ renderDone();
 
 /* ---------- 근무 기록 + 달력 ---------- */
 let shifts=LS.get('shifts',[]).filter(x=>!x.end||x.end-x.start>=60000),hoursFix=LS.get('hoursFix',{}),calM=new Date(),selDay=dkey(Date.now());calM.setDate(1);
-const saveShifts=()=>{LS.set('shifts',shifts);LS.set('hoursFix',hoursFix)};
+const saveShifts=()=>{LS.set('shifts',shifts);LS.set('hoursFix',hoursFix);syncPush('shifts')};
 const openShift=()=>shifts.find(x=>!x.end);
 const hmDur=m=>{m=Math.round(m);return Math.floor(m/60)+'시간 '+(m%60)+'분'};
 function workBtn(){const o=openShift(),b=$('bWork');
@@ -581,7 +587,7 @@ function openSet(){$('sHome').value=cfg.home||'';$('sJs').value=cfg.js;$('sRest'
 $('bSet').onclick=openSet;
 $('fSet').addEventListener('submit',e=>{e.preventDefault();
   const hadJs=cfg.js;cfg={js:$('sJs').value.trim(),rest:$('sRest').value.trim(),dwell:+$('sDwell').value||0,speed:+$('sSpeed').value||28,home:$('sHome').value.trim()};
-  LS.set('cfg',cfg);$('dSet').close();
+  LS.set('cfg',cfg);syncPush('cfg');$('dSet').close();
   if(cfg.js!==hadJs)location.reload();else recalc();
 });
 
@@ -622,8 +628,65 @@ async function takeShared(){
   if(img){const b=await img.blob();await c.delete('img');await fromImage(b)}else await applyAll();
 }
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+/* ---------- 두 폰 동기화 (Firebase) ---------- */
+const FB=null; // FIREBASE_CONFIG
+let fbDb=null,fbUser=null,applying=false;
+const toObj=(arr,key)=>{const o={};arr.forEach(x=>o[String(x[key])]=x);return o};
+function syncPush(kind){
+  if(!fbUser||applying)return;const base=fbDb.ref('users/'+fbUser.uid);
+  if(kind==='jobs')base.child('jobs').set(toObj(jobs,'id'));
+  if(kind==='shifts'){base.child('shifts').set(toObj(shifts,'start'));base.child('hoursFix').set(hoursFix)}
+  if(kind==='cfg')base.child('cfg').set(cfg);
+}
+function syncUI(){
+  const on=!!fbUser;$('syncDot').classList.toggle('on',on);
+  $('syncForm').hidden=on;$('bLogout').hidden=!on;
+  $('syncState').textContent=!FB?'서버 연결 준비 중이에요.':on?'✔ '+fbUser.email+' 로 연결됨 — 두 폰이 같은 목록을 봐요.':'로그인하면 폴드와 아이폰이 같은 목록을 봐요. 두 폰에서 같은 이메일로 로그인하세요.';
+}
+function rerenderAll(){renderDone();workBtn();if(!$('pCal').hidden)renderCal();if(map)recalc();else renderList(0)}
+async function syncStart(){
+  const base=fbDb.ref('users/'+fbUser.uid),snap=await base.get(),r=snap.val()||{};
+  // 처음 연결: 이 폰 기록과 서버 기록 합치기
+  const rj=r.jobs||{},rank={wait:0,loaded:1,done:2};
+  jobs.forEach(j=>{const o=rj[j.id];if(!o||rank[j.state]>rank[o.state])rj[j.id]=j});
+  const rs=r.shifts||{};shifts.forEach(x=>{if(!rs[x.start])rs[x.start]=x});
+  const rc=r.cfg||{},hadJs=cfg.js;
+  for(const k of ['js','rest','home','dwell','speed'])if(cfg[k]===''||cfg[k]==null)cfg[k]=rc[k]??cfg[k];
+  hoursFix=Object.assign({},r.hoursFix||{},hoursFix);
+  applying=true;jobs=Object.values(rj).sort((a,b)=>a.id-b.id);shifts=Object.values(rs).sort((a,b)=>a.start-b.start);
+  LS.set('jobs',jobs);LS.set('shifts',shifts);LS.set('hoursFix',hoursFix);LS.set('cfg',cfg);applying=false;
+  await base.update({jobs:toObj(jobs,'id'),shifts:toObj(shifts,'start'),hoursFix,cfg});
+  if(!hadJs&&cfg.js){location.reload();return}
+  rerenderAll();
+  // 실시간으로 다른 폰 변경 받기
+  base.child('jobs').on('value',v=>{const n=Object.values(v.val()||{}).sort((a,b)=>a.id-b.id);if(JSON.stringify(n)===JSON.stringify(jobs))return;
+    const before=jobs.length;applying=true;jobs=n;LS.set('jobs',jobs);applying=false;if(n.length>before)toast('다른 폰에서 합짐이 들어왔어요');rerenderAll()});
+  base.child('shifts').on('value',v=>{const n=Object.values(v.val()||{}).sort((a,b)=>a.start-b.start);if(JSON.stringify(n)===JSON.stringify(shifts))return;
+    applying=true;shifts=n;LS.set('shifts',shifts);applying=false;workBtn();if(!$('pCal').hidden)renderCal()});
+  base.child('hoursFix').on('value',v=>{const n=v.val()||{};if(JSON.stringify(n)===JSON.stringify(hoursFix))return;hoursFix=n;LS.set('hoursFix',n);if(!$('pCal').hidden)renderCal()});
+  base.child('cfg').on('value',v=>{const n=v.val();if(!n||JSON.stringify(n)===JSON.stringify(cfg))return;const jsChanged=n.js&&n.js!==cfg.js;cfg=Object.assign(cfg,n);LS.set('cfg',cfg);if(jsChanged)location.reload()});
+}
+async function fbInit(){
+  syncUI();if(!FB)return;
+  try{
+    for(const m of ['app','auth','database'])await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-'+m+'-compat.js');
+    firebase.initializeApp(FB);fbDb=firebase.database();
+    firebase.auth().onAuthStateChanged(u=>{fbUser=u;syncUI();if(u)syncStart().catch(e=>toast('동기화 오류: '+e.message,5000))});
+  }catch(e){$('syncState').textContent='서버에 연결하지 못했어요. 인터넷을 확인해 주세요.'}
+}
+const AUTHMSG={'auth/invalid-credential':'이메일이나 비밀번호가 맞지 않아요','auth/wrong-password':'비밀번호가 맞지 않아요','auth/user-not-found':'가입된 이메일이 없어요. "처음이면 가입"을 누르세요','auth/email-already-in-use':'이미 가입된 이메일이에요. 로그인을 누르세요','auth/weak-password':'비밀번호는 6자 이상이어야 해요','auth/invalid-email':'이메일 형식이 맞지 않아요'};
+async function doAuth(join){
+  if(!FB||!window.firebase){toast('서버 연결 준비 중이에요');return}
+  const e=$('sEmail').value.trim(),p=$('sPw').value;
+  try{join?await firebase.auth().createUserWithEmailAndPassword(e,p):await firebase.auth().signInWithEmailAndPassword(e,p);toast('연결됐어요');$('sPw').value=''}
+  catch(err){toast(AUTHMSG[err.code]||('로그인 실패: '+err.code),4500)}
+}
+$('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
+$('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
+fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v13';
+const VER='v14';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
