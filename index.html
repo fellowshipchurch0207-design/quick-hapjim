@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#111418">
+<title>퀵 합짐</title>
+<style>
+:root{color-scheme:light dark;--bg:light-dark(#f4f5f7,#111418);--card:light-dark(#fff,#1b1f25);--ink:light-dark(#14171c,#eef1f4);--sub:light-dark(#5d6570,#9aa3ad);--line:light-dark(#e2e5ea,#2a3038);--pick:#1f6feb;--drop:#e5482d;--ok:#1a9b55;--urg:#f0a400}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;overflow-x:clip}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;border-radius:10px;min-height:44px;padding:0 14px;font-weight:600}
+.app{display:grid;grid-template-rows:auto 1fr;height:100dvh}
+header{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--line)}
+header h1{font-size:18px;margin:0;flex:1}
+.ghost{background:transparent;border:1px solid var(--line)}
+.main{display:grid;grid-template-rows:42vh 1fr;overflow:hidden}
+@media(min-width:760px){.main{grid-template-rows:1fr;grid-template-columns:1fr 400px}}
+#map{width:100%;height:100%;background:var(--line)}
+.side{overflow-y:auto;padding:10px 10px 90px}
+.sum{display:flex;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--sub);margin:2px 4px 10px}
+.sum b{color:var(--ink)}
+.stop{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;display:grid;grid-template-columns:44px 1fr;gap:4px 10px}
+.stop.next{border:2px solid var(--ink)}
+.num{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px}
+.P .num{background:var(--pick)}.D .num{background:var(--drop)}
+.kind{font-size:13px;font-weight:700}
+.P .kind{color:var(--pick)}.D .kind{color:var(--drop)}
+.eta{font-size:26px;font-weight:800;line-height:1.1;white-space:nowrap}
+.eta small{font-size:13px;font-weight:600;color:var(--sub);margin-left:6px}
+.place{font-weight:600}
+.addr{font-size:13px;color:var(--sub)}
+.cargo{grid-column:1/-1;background:light-dark(#fff3f0,#2b1b18);border-radius:10px;padding:8px 10px;font-size:17px;font-weight:700}
+.P .cargo{background:light-dark(#eef4ff,#172235)}
+.urgent{display:inline-block;background:var(--urg);color:#000;font-size:12px;font-weight:800;border-radius:6px;padding:1px 6px;margin-left:6px}
+.acts{grid-column:1/-1;display:flex;gap:8px;margin-top:6px}
+.acts a,.acts button{flex:1;display:grid;place-items:center;text-decoration:none;border-radius:10px;min-height:44px;font-weight:700}
+.done{background:var(--ok);color:#fff}
+.nav{background:#fee500;color:#191919}
+.empty{color:var(--sub);text-align:center;padding:30px 10px}
+.fab{position:fixed;right:16px;bottom:16px;background:var(--ink);color:var(--bg);font-size:17px;min-height:56px;padding:0 22px;border-radius:28px;box-shadow:0 4px 14px #0005;z-index:5}
+dialog{border:0;border-radius:16px;padding:0;width:min(520px,94vw);background:var(--card);color:var(--ink)}
+dialog::backdrop{background:#0008}
+.dlg{padding:16px;display:grid;gap:12px}
+.dlg h2{margin:0;font-size:19px}
+label{display:grid;gap:4px;font-size:14px;font-weight:600;color:var(--sub)}
+.row{display:flex;gap:6px}
+input,textarea{width:100%;font-size:16px;padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+textarea{min-height:60px;resize:vertical}
+.mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
+.mic.on{background:var(--drop);color:#fff}
+.found{font-size:13px;color:var(--ok);min-height:1em}
+.found.bad{color:var(--drop)}
+.btns{display:flex;gap:8px;justify-content:flex-end}
+.pri{background:var(--ink);color:var(--bg)}
+.chk{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:16px}
+.chk input{width:22px;height:22px}
+.note{font-size:13px;color:var(--sub);background:var(--bg);padding:10px;border-radius:10px;word-break:break-all}
+.toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:20;font-size:15px;display:none}
+.mk{width:30px;height:30px;border-radius:50%;color:#fff;font-weight:800;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 1px 4px #0006;font-size:14px}
+.me{width:18px;height:18px;border-radius:50%;background:#1f6feb;border:3px solid #fff;box-shadow:0 0 0 6px #1f6feb44}
+.loaded{grid-column:1/-1;font-size:13px;color:var(--sub)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>퀵 합짐</h1>
+    <button class="ghost" id="bRecalc">다시 계산</button>
+    <button class="ghost" id="bSet">설정</button>
+  </header>
+  <div class="main">
+    <div id="map"></div>
+    <div class="side">
+      <div class="sum" id="sum"></div>
+      <div id="list"></div>
+    </div>
+  </div>
+</div>
+<button class="fab" id="bAdd">＋ 합짐 추가</button>
+<div class="toast" id="toast"></div>
+
+<dialog id="dAdd"><form class="dlg" method="dialog" id="fAdd">
+  <h2>합짐 추가</h2>
+  <label>픽업지 (인성콜에 뜨는 그대로)
+    <div class="row"><input id="iPick" autocomplete="off"><button type="button" class="mic" data-for="iPick">🎤</button></div>
+    <div class="found" id="fPick"></div></label>
+  <label>배송지
+    <div class="row"><input id="iDrop" autocomplete="off"><button type="button" class="mic" data-for="iDrop">🎤</button></div>
+    <div class="found" id="fDrop"></div></label>
+  <label>짐 특징 (예: 파란 박스 2개, 파손주의)
+    <div class="row"><textarea id="iCargo"></textarea><button type="button" class="mic" data-for="iCargo">🎤</button></div></label>
+  <label class="chk"><input type="checkbox" id="iUrg"> 급송 (먼저 처리)</label>
+  <label class="chk"><input type="checkbox" id="iLoaded"> 이미 실었음 (배송만 남음)</label>
+  <div class="btns"><button type="button" class="ghost" id="bCancel">취소</button><button type="submit" class="pri" id="bSave">위치 확인 후 추가</button></div>
+</form></dialog>
+
+<dialog id="dSet"><form class="dlg" method="dialog" id="fSet">
+  <h2>설정</h2>
+  <label>카카오 JavaScript 키 (지도·주소 검색)<input id="sJs" autocomplete="off"></label>
+  <label>카카오 REST API 키 (실제 도로 도착시간)<input id="sRest" autocomplete="off"></label>
+  <label>한 곳 상하차 시간(분)<input id="sDwell" type="number" min="0" max="60"></label>
+  <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
+  <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
+  <div class="note">키와 합짐 내용은 이 폰에만 저장돼요.</div>
+  <div class="btns"><button type="button" class="ghost" id="bClear">완료된 짐 지우기</button><button type="submit" class="pri">저장</button></div>
+</form></dialog>
+
+<script>
+{
+const $=id=>document.getElementById(id);
+const LS={get(k,d){try{const v=localStorage.getItem('qh_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('qh_'+k,JSON.stringify(v))}catch(e){}}};
+let cfg=Object.assign({js:'',rest:'',dwell:5,speed:28},LS.get('cfg',{}));
+let jobs=LS.get('jobs',[]); // {id,pick:{name,addr,lat,lng},drop:{...},cargo,urgent,state:'wait'|'loaded'|'done'}
+let me=LS.get('me',null), map=null, geocoder=null, places=null, overlays=[], line=null, meOv=null, route=[], routeSrc='';
+const toast=(t,ms=2500)=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',ms)};
+const save=()=>LS.set('jobs',jobs);
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hm=d=>d.toTimeString().slice(0,5);
+$('origin').textContent=location.origin;
+
+/* ---------- 카카오 지도 로드 ---------- */
+function loadKakao(){
+  if(!cfg.js){$('list').innerHTML='<div class="empty">오른쪽 위 <b>설정</b>에서 카카오 키를 먼저 넣어 주세요.</div>';return}
+  const s=document.createElement('script');
+  s.src='https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&libraries=services&appkey='+encodeURIComponent(cfg.js);
+  s.onload=()=>kakao.maps.load(initMap);
+  s.onerror=()=>toast('지도를 못 불러왔어요. JavaScript 키와 도메인 등록을 확인하세요.',5000);
+  document.head.appendChild(s);
+}
+function initMap(){
+  const c=me||{lat:37.4862,lng:126.8215};
+  map=new kakao.maps.Map($('map'),{center:new kakao.maps.LatLng(c.lat,c.lng),level:7});
+  geocoder=new kakao.maps.services.Geocoder();places=new kakao.maps.services.Places();
+  watchMe();recalc();
+}
+function watchMe(){
+  if(!navigator.geolocation){toast('위치 기능을 쓸 수 없어요');return}
+  navigator.geolocation.watchPosition(p=>{
+    const first=!me;me={lat:p.coords.latitude,lng:p.coords.longitude};LS.set('me',me);
+    const ll=new kakao.maps.LatLng(me.lat,me.lng);
+    if(!meOv){meOv=new kakao.maps.CustomOverlay({position:ll,content:'<div class="me"></div>',zIndex:3});meOv.setMap(map)}else meOv.setPosition(ll);
+    if(first)recalc();
+  },e=>toast('현재 위치를 못 가져왔어요. 위치 권한을 허용해 주세요.',4000),{enableHighAccuracy:true,maximumAge:15000});
+}
+
+/* ---------- 주소 찾기 ---------- */
+function geocode(q){
+  return new Promise(res=>{
+    if(!geocoder)return res(null);
+    q=q.trim();
+    const clean=q.replace(/\(.*?\)/g,' ').replace(/\s+\d+층.*$/,'').replace(/\s+/g,' ').trim();
+    const byAddr=(s,next)=>geocoder.addressSearch(s,(r,st)=>{
+      if(st===kakao.maps.services.Status.OK&&r[0]){const a=r[0];res({name:(a.road_address&&a.road_address.building_name)||a.address_name,addr:a.address_name,lat:+a.y,lng:+a.x})}else next()});
+    const byKey=()=>{const o={};if(me){o.location=new kakao.maps.LatLng(me.lat,me.lng);o.sort=kakao.maps.services.SortBy.DISTANCE}
+      places.keywordSearch(clean||q,(r,st)=>{if(st===kakao.maps.services.Status.OK&&r[0]){const p=r[0];res({name:p.place_name,addr:p.road_address_name||p.address_name,lat:+p.y,lng:+p.x})}else res(null)},o)};
+    byAddr(q,()=>clean!==q?byAddr(clean,byKey):byKey());
+  });
+}
+
+/* ---------- 순서 계산 (픽업은 항상 배송보다 먼저) ---------- */
+function hav(a,b){const R=6371,r=Math.PI/180,dLa=(b.lat-a.lat)*r,dLo=(b.lng-a.lng)*r;const x=Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+const tmin=(a,b)=>hav(a,b)*1.35/cfg.speed*60;
+function buildStops(){
+  const st=[];
+  jobs.forEach(j=>{
+    if(j.state==='done')return;
+    let pi=-1;
+    if(j.state==='wait'){pi=st.length;st.push({t:'P',job:j,pt:j.pick,pred:-1})}
+    st.push({t:'D',job:j,pt:j.drop,pred:pi});
+  });
+  return st;
+}
+function solve(st){
+  const n=st.length;if(!n)return[];
+  const dw=+cfg.dwell||0, start=me;
+  const T=(i,j)=>tmin(st[i].pt,st[j].pt);
+  const T0=i=>start?tmin(start,st[i].pt):0;
+  const pen=(i,time)=>st[i].t==='D'&&st[i].job.urgent?time*1.5:0;
+  if(n>16){ // 너무 많으면 가까운 곳부터
+    const out=[],left=new Set(st.keys());let cur=start,used=new Set();
+    while(left.size){let best=-1,bd=1e9;for(const i of left){if(st[i].pred>=0&&!used.has(st[i].pred))continue;const d=cur?tmin(cur,st[i].pt):0;if(d<bd){bd=d;best=i}}out.push(best);used.add(best);left.delete(best);cur=st[best].pt}
+    return out;
+  }
+  const N=1<<n,INF=1e18,val=new Float64Array(N*n).fill(INF),tim=new Float64Array(N*n),par=new Int16Array(N*n).fill(-1);
+  for(let i=0;i<n;i++)if(st[i].pred<0){const t=T0(i);val[(1<<i)*n+i]=t+pen(i,t);tim[(1<<i)*n+i]=t}
+  for(let m=1;m<N;m++)for(let i=0;i<n;i++){const k=m*n+i;if(val[k]>=INF)continue;
+    for(let j=0;j<n;j++){if(m>>j&1)continue;const p=st[j].pred;if(p>=0&&!(m>>p&1))continue;
+      const t=tim[k]+dw+T(i,j),v=val[k]+dw+T(i,j)+pen(j,t),nk=(m|1<<j)*n+j;
+      if(v<val[nk]){val[nk]=v;tim[nk]=t;par[nk]=i}}}
+  let bi=0,bv=INF,full=N-1;for(let i=0;i<n;i++)if(val[full*n+i]<bv){bv=val[full*n+i];bi=i}
+  const ord=[];let m=full,i=bi;while(i>=0){ord.push(i);const p=par[m*n+i];m&=~(1<<i);i=p}
+  return ord.reverse();
+}
+
+/* ---------- 실제 도로 시간 (카카오모빌리티) ---------- */
+async function roadTimes(pts){
+  if(!cfg.rest||!me||!pts.length)return null;
+  const body={origin:{x:me.lng,y:me.lat},destination:{x:pts.at(-1).lng,y:pts.at(-1).lat},waypoints:pts.slice(0,-1).map(p=>({x:p.lng,y:p.lat})),priority:'RECOMMEND',summary:false};
+  try{
+    const r=await fetch('https://apis-navi.kakaomobility.com/v1/waypoints/directions',{method:'POST',headers:{'Authorization':'KakaoAK '+cfg.rest,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();const rt=d.routes&&d.routes[0];
+    if(!rt||rt.result_code!==0)return null;
+    const path=[];rt.sections.forEach(s=>s.roads.forEach(rd=>{for(let k=0;k<rd.vertexes.length;k+=2)path.push([rd.vertexes[k+1],rd.vertexes[k]])}));
+    return{secs:rt.sections.map(s=>s.duration/60),km:rt.summary.distance/1000,path};
+  }catch(e){return null}
+}
+
+/* ---------- 계산 + 그리기 ---------- */
+let busy=false;
+async function recalc(){
+  if(!map||busy)return;busy=true;
+  const st=buildStops(),ord=solve(st);
+  route=ord.map(i=>st[i]);
+  const pts=route.map(s=>s.pt);
+  const rd=await roadTimes(pts);
+  const dw=+cfg.dwell||0;let t=Date.now(),prev=me,km=0;
+  route.forEach((s,k)=>{
+    const leg=rd?rd.secs[k]:(prev?tmin(prev,s.pt):0);
+    if(!rd&&prev)km+=hav(prev,s.pt)*1.35;
+    t+=(k?dw:0)*60000+leg*60000;s.eta=new Date(t);prev=s.pt;
+  });
+  routeSrc=rd?'road':'est';
+  draw(rd?rd.path:null,rd?rd.km:km);
+  busy=false;
+}
+function draw(path,km){
+  overlays.forEach(o=>o.setMap(null));overlays=[];if(line){line.setMap(null);line=null}
+  const b=new kakao.maps.LatLngBounds();if(me)b.extend(new kakao.maps.LatLng(me.lat,me.lng));
+  route.forEach((s,k)=>{
+    const ll=new kakao.maps.LatLng(s.pt.lat,s.pt.lng);b.extend(ll);
+    const o=new kakao.maps.CustomOverlay({position:ll,content:`<div class="mk" style="background:${s.t==='P'?'#1f6feb':'#e5482d'}">${k+1}</div>`,zIndex:2});
+    o.setMap(map);overlays.push(o);
+  });
+  const lp=path?path.map(p=>new kakao.maps.LatLng(p[0],p[1])):[...(me?[me]:[]),...route.map(s=>s.pt)].map(p=>new kakao.maps.LatLng(p.lat,p.lng));
+  if(lp.length>1){line=new kakao.maps.Polyline({path:lp,strokeWeight:5,strokeColor:'#e5482d',strokeOpacity:.8,strokeStyle:path?'solid':'shortdash'});line.setMap(map)}
+  if(route.length)map.setBounds(b,40,40,40,40);
+  renderList(km);
+}
+function renderList(km){
+  const loaded=jobs.filter(j=>j.state==='loaded').length;
+  $('sum').innerHTML=route.length?`<span>남은 곳 <b>${route.length}</b></span><span>실은 짐 <b>${loaded}</b></span><span>약 <b>${km.toFixed(1)}km</b></span><span>마지막 도착 <b>${hm(route.at(-1).eta)}</b></span><span>${routeSrc==='road'?'실제 도로 기준':'직선거리 추정'}</span>`:'';
+  if(!route.length){$('list').innerHTML='<div class="empty">남은 배송이 없어요.<br>아래 <b>＋ 합짐 추가</b>로 콜을 넣어 주세요.</div>';return}
+  $('list').innerHTML=route.map((s,k)=>{
+    const j=s.job,isP=s.t==='P';
+    const cargo=j.cargo?`<div class="cargo">${isP?'실을 짐':'여기서 내릴 짐'}: ${esc(j.cargo)}</div>`:'';
+    const nav=`https://map.kakao.com/link/to/${encodeURIComponent(s.pt.name)},${s.pt.lat},${s.pt.lng}`;
+    return `<div class="stop ${s.t} ${k?'':'next'}">
+      <div class="num">${k+1}</div>
+      <div><div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}</div>
+        <div class="eta">${hm(s.eta)}<small>도착 예정</small></div>
+        <div class="place">${esc(s.pt.name)}</div><div class="addr">${esc(s.pt.addr)}</div></div>
+      ${cargo}
+      ${!isP?`<div class="loaded">픽업지: ${esc(j.pick.name)}</div>`:''}
+      <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a>
+        <button class="done" data-job="${j.id}" data-t="${s.t}">${isP?'픽업 완료':'배송 완료'}</button>
+        <button class="ghost" data-del="${j.id}" style="flex:0 0 64px">삭제</button></div>
+    </div>`}).join('');
+}
+$('list').addEventListener('click',e=>{
+  const d=e.target.closest('[data-job]'),x=e.target.closest('[data-del]');
+  if(d){const j=jobs.find(j=>j.id==d.dataset.job);if(!j)return;j.state=d.dataset.t==='P'?'loaded':'done';save();toast(d.dataset.t==='P'?'픽업 완료 — 짐이 실렸어요':'배송 완료');recalc()}
+  if(x){if(x.dataset.sure){jobs=jobs.filter(j=>j.id!=x.dataset.del);save();recalc()}else{x.dataset.sure=1;x.textContent='확인';setTimeout(()=>{delete x.dataset.sure;x.textContent='삭제'},3000)}}
+});
+
+/* ---------- 합짐 추가 ---------- */
+let found={};
+async function look(which){
+  const inp=$(which==='pick'?'iPick':'iDrop'),f=$(which==='pick'?'fPick':'fDrop');
+  if(!inp.value.trim()){f.textContent='';found[which]=null;return null}
+  f.className='found';f.textContent='찾는 중…';
+  const r=await geocode(inp.value);found[which]=r;
+  if(r){f.textContent='✔ '+r.name+(r.addr&&r.addr!==r.name?' · '+r.addr:'')}else{f.className='found bad';f.textContent='위치를 못 찾았어요. 건물명이나 동 이름을 넣어 보세요.'}
+  return r;
+}
+$('iPick').addEventListener('change',()=>look('pick'));
+$('iDrop').addEventListener('change',()=>look('drop'));
+$('iLoaded').addEventListener('change',()=>{$('iPick').disabled=$('iLoaded').checked});
+$('bAdd').onclick=()=>{if(!map){toast('설정에서 카카오 키를 먼저 넣어 주세요');openSet();return}
+  $('fAdd').reset();$('iPick').disabled=false;$('fPick').textContent=$('fDrop').textContent='';found={};$('dAdd').showModal()};
+$('bCancel').onclick=()=>$('dAdd').close();
+$('fAdd').addEventListener('submit',async e=>{
+  e.preventDefault();const loadedOnly=$('iLoaded').checked;
+  $('bSave').textContent='확인 중…';
+  const p=loadedOnly?null:(found.pick||await look('pick')),d=found.drop||await look('drop');
+  $('bSave').textContent='위치 확인 후 추가';
+  if(!d||(!loadedOnly&&!p)){toast('주소를 확인해 주세요');return}
+  jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,state:loadedOnly?'loaded':'wait'});
+  save();$('dAdd').close();toast('추가했어요. 순서와 도착시간을 다시 계산했어요.');recalc();
+});
+
+/* ---------- 음성 입력 ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+document.querySelectorAll('.mic').forEach(b=>{
+  if(!SR){b.style.display='none';return}
+  b.onclick=()=>{const r=new SR();r.lang='ko-KR';r.interimResults=false;b.classList.add('on');
+    r.onresult=ev=>{const t=ev.results[0][0].transcript,inp=$(b.dataset.for);inp.value=(inp.value?inp.value+' ':'')+t;inp.dispatchEvent(new Event('change'))};
+    r.onend=()=>b.classList.remove('on');r.onerror=()=>b.classList.remove('on');r.start()};
+});
+
+/* ---------- 설정 ---------- */
+function openSet(){$('sJs').value=cfg.js;$('sRest').value=cfg.rest;$('sDwell').value=cfg.dwell;$('sSpeed').value=cfg.speed;$('dSet').showModal()}
+$('bSet').onclick=openSet;
+$('fSet').addEventListener('submit',e=>{e.preventDefault();
+  const hadJs=cfg.js;cfg={js:$('sJs').value.trim(),rest:$('sRest').value.trim(),dwell:+$('sDwell').value||0,speed:+$('sSpeed').value||28};
+  LS.set('cfg',cfg);$('dSet').close();
+  if(cfg.js!==hadJs)location.reload();else recalc();
+});
+$('bClear').onclick=()=>{jobs=jobs.filter(j=>j.state!=='done');save();toast('완료된 짐을 지웠어요');recalc()};
+$('bRecalc').onclick=()=>{toast('지금 위치·시각 기준으로 다시 계산해요');recalc()};
+setInterval(()=>{if(route.length)recalc()},5*60000);
+
+loadKakao();
+}
+</script>
+</body>
+</html>
