@@ -57,6 +57,14 @@ textarea{min-height:60px;resize:vertical}
 .mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
 .mic.on{background:var(--drop);color:#fff}
 .mic.big{width:64px;font-size:26px}
+.nets{display:grid;gap:4px;margin:8px 0}.nets div{display:flex;justify-content:space-between;font-size:15px}.nets b{white-space:nowrap}
+.netv{color:var(--ok)}.netv b{font-size:20px}
+.mstat .netv b{color:var(--ok)}.mstat input{padding:6px;font-size:15px;margin-top:2px}
+.expf{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:8px;margin-bottom:8px}
+.expt{display:flex;gap:6px}.expt button{flex:1;min-height:40px;background:var(--bg);border:1px solid var(--line)}.expt .on{background:var(--ink);color:var(--bg)}
+.expf .row input{padding:9px}.expf #eAmt{flex:1.2}.expf #eMemo{flex:1}
+.exp{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 10px;margin-bottom:6px;font-size:14px}
+.exp button{min-height:32px;font-size:12px;padding:0 8px;margin-left:6px}
 .sync{display:grid;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px}.sync input{margin-bottom:6px}
 .syncdot{width:10px;height:10px;border-radius:50%;background:var(--sub);display:inline-block}.syncdot.on{background:var(--ok)}
 .shot{display:flex;align-items:center;justify-content:center;min-height:44px;border:1px dashed var(--line);border-radius:10px;color:var(--ink);font-size:15px;cursor:pointer}
@@ -173,7 +181,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v16</div>
+  <div class="ver">버전 2026-11-23 v17</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -392,6 +400,14 @@ $('list').addEventListener('click',e=>{
 let period='today';
 const dkey=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const dlabel=k=>{const [y,m,d]=k.split('-');const w='일월화수목금토'[new Date(+y,m-1,+d).getDay()];return `${+m}월 ${+d}일 (${w})`};
+let expenses=LS.get('expenses',[]),monthCost=LS.get('monthCost',{});
+const saveExp=()=>{LS.set('expenses',expenses);LS.set('monthCost',monthCost);syncPush('exp')};
+const EXT=['식비','톨비','기타'];
+const dayExp=k=>expenses.filter(x=>x.day===k);
+const sumAmt=a=>a.reduce((t,x)=>t+(+x.amt||0),0);
+function expForm(){return `<div class="expf"><div class="expt">${EXT.map((t,i)=>`<button type="button" class="${i===0?'on':''}" data-et="${t}">${t}</button>`).join('')}</div>
+  <div class="row"><input type="number" inputmode="numeric" id="eAmt" placeholder="금액 (원)"><input id="eMemo" placeholder="메모 (선택)"><button type="button" class="pri" id="eAdd">추가</button></div></div>`}
+function expList(arr){return arr.map(x=>`<div class="exp"><span><b>${x.type}</b> ${esc(x.memo||'')}</span><span>-${won(x.amt)} <button type="button" class="ghost" data-erm="${x.id}">삭제</button></span></div>`).join('')}
 function renderDone(){
   const all=jobs.filter(j=>j.state==='done').sort((a,b)=>(b.doneAt||b.id)-(a.doneAt||a.id));
   $('cRun').textContent=jobs.filter(j=>j.state!=='done').length;$('cDone').textContent=all.length;
@@ -400,17 +416,33 @@ function renderDone(){
   const inP=j=>{const t=j.doneAt||j.id;return period==='today'?dkey(t)===today:period==='week'?t>=wk.getTime():period==='month'?dkey(t).startsWith(monthKey):true};
   const list=all.filter(inP),sum=list.reduce((a,j)=>a+(+j.fee||0),0),noFee=list.filter(j=>!j.fee).length;
   const pname={today:'오늘',week:'이번 주',month:'이번 달',all:'전체'}[period];
-  $('total').innerHTML=`<div class="row2"><span>${pname} 합계</span></div><div class="big">${won(sum)}</div>
+  const inPd=k=>period==='today'?k===today:period==='week'?new Date(k+'T00:00')>=wk:period==='month'?k.startsWith(monthKey):true;
+  const ex=expenses.filter(x=>inPd(x.day)),exSum=sumAmt(ex);
+  const mc=period==='month'?(+(monthCost[monthKey]||{}).charge||0):period==='all'?Object.values(monthCost).reduce((t,m)=>t+(+m.charge||0),0):0;
+  const net=sum-exSum-mc;
+  $('total').innerHTML=`<div class="row2"><span>${pname} 매출</span></div><div class="big">${won(sum)}</div>
+    <div class="nets"><div><span>지출 (식비·톨비·기타)</span><b>-${won(exSum)}</b></div>${period==='month'||period==='all'?`<div><span>충전비</span><b>-${won(mc)}</b></div>`:''}<div class="netv"><span>순수익</span><b>${won(net)}</b></div></div>
+    ${period==='today'||period==='week'?'<div class="row2"><span>충전비는 달 단위라 이번 달·전체에서 빠져요</span></div>':''}
     <div class="row2"><span>완료 <b>${list.length}</b>건</span>${list.length?`<span>건당 평균 <b>${won(Math.round(sum/Math.max(1,list.length-noFee)))}</b></span>`:''}${noFee?`<span style="color:var(--drop)">금액 없는 건 <b>${noFee}</b> — 아래에서 입력</span>`:''}</div>
     <div class="period">${['today','week','month','all'].map(k=>`<button type="button" data-p="${k}" class="${k===period?'on':''}">${{today:'오늘',week:'이번 주',month:'이번 달',all:'전체'}[k]}</button>`).join('')}</div>`;
-  if(!list.length){$('dlist').innerHTML=`<div class="empty">${pname} 완료한 배송이 없어요.</div>`;return}
+  const expHtml=`<div class="day"><span>${period==='today'?'오늘 지출 기록':pname+' 지출'}</span><span>-${won(exSum)}</span></div>${period==='today'?expForm():''}${expList(ex.slice().reverse())}`;
+  if(!list.length){$('dlist').innerHTML=expHtml+`<div class="empty">${pname} 완료한 배송이 없어요.</div>`;return}
   const groups={};list.forEach(j=>(groups[dkey(j.doneAt||j.id)]??=[]).push(j));
   $('dlist').innerHTML=Object.entries(groups).map(([k,g])=>`<div class="day"><span>${dlabel(k)}</span><span>${won(g.reduce((a,j)=>a+(+j.fee||0),0))} · ${g.length}건</span></div>`+
     g.map(j=>`<div class="dj"><div><div class="rt">${esc(j.pick.name)} → <b>${esc(j.drop.name)}</b></div><div class="tm">${hm(new Date(j.doneAt||j.id))} 완료${j.cargo?' · '+esc(j.cargo):''}</div></div>
       <input type="number" inputmode="numeric" value="${j.fee||''}" placeholder="금액" data-fee="${j.id}">
       <div class="x"><button type="button" class="ghost" data-undo="${j.id}">진행 중으로 되돌리기</button><button type="button" class="ghost" data-rm="${j.id}">삭제</button></div></div>`).join('')).join('');
+  $('dlist').innerHTML=expHtml+$('dlist').innerHTML;
 }
-$('pDone').addEventListener('click',e=>{
+let eType='식비';
+function expClick(e,day){
+  const t=e.target.closest('[data-et]'),a=e.target.closest('#eAdd'),r=e.target.closest('[data-erm]');
+  if(t){eType=t.dataset.et;t.parentNode.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===t));return true}
+  if(a){const v=+$('eAmt').value;if(!v){toast('금액을 넣어 주세요');return true}
+    expenses.push({id:Date.now(),day,type:eType,amt:v,memo:$('eMemo').value.trim()});saveExp();toast(eType+' '+won(v)+' 기록했어요');return 'r'}
+  if(r){if(r.dataset.sure){expenses=expenses.filter(x=>x.id!=r.dataset.erm);saveExp();return 'r'}r.dataset.sure=1;r.textContent='한 번 더';return true}
+  return false}
+$('pDone').addEventListener('click',e=>{const x=expClick(e,dkey(Date.now()));if(x==='r'){renderDone();return}if(x)return;
   const p=e.target.closest('[data-p]'),u=e.target.closest('[data-undo]'),r=e.target.closest('[data-rm]');
   if(p){period=p.dataset.p;renderDone()}
   if(u){const j=jobs.find(j=>j.id==u.dataset.undo);if(j){j.state='loaded';delete j.doneAt;save();renderDone();recalc();toast('진행 중으로 되돌렸어요')}}
@@ -449,10 +481,12 @@ function renderCal(){
     mSum+=sum;mMin+=mn;mCnt+=js.length;if(sum||mn>=6)mDays++;
     cells+=`<button type="button" class="cell ${k===today?'today':''} ${k===selDay?'sel':''}" data-day="${k}"><span class="d">${d}</span>${sum?`<span class="m">${man(sum)}</span>`:''}${mn>=6?`<span class="h">${(mn/60).toFixed(1)}h</span>`:''}</button>`;
   }
-  const hr=mMin/60;
+  const hr=mMin/60,mk=y+'-'+String(m+1).padStart(2,'0'),mEx=sumAmt(expenses.filter(x=>x.day.startsWith(mk))),mCh=+(monthCost[mk]||{}).charge||0;
   $('pCal').innerHTML=`<div class="calh"><button type="button" class="ghost ic" data-mv="-1">‹</button><b>${y}년 ${m+1}월</b><button type="button" class="ghost ic" data-mv="1">›</button></div>
     <div class="mstat"><div><span>이달 매출</span><b>${won(mSum)}</b></div><div><span>이달 근무</span><b>${hmDur(mMin)}</b></div>
-      <div><span>시간당 매출</span><b>${hr>=0.25?won(Math.round(mSum/hr)):'-'}</b></div><div><span>일한 날 · 배송</span><b>${mDays}일 · ${mCnt}건</b></div></div>
+      <div><span>시간당 매출</span><b>${hr>=0.25?won(Math.round(mSum/hr)):'-'}</b></div><div><span>일한 날 · 배송</span><b>${mDays}일 · ${mCnt}건</b></div>
+      <div><span>지출 (식비·톨비·기타)</span><b>-${won(mEx)}</b></div><div><span>이달 충전비</span><input type="number" inputmode="numeric" id="mCharge" value="${mCh||''}" placeholder="한 달 충전비 입력"></div>
+      <div class="netv" style="grid-column:1/-1"><span>이달 순수익 (매출 − 지출 − 충전비)</span><b>${won(mSum-mEx-mCh)}</b></div></div>
     <div class="grid">${'일월화수목금토'.split('').map(w=>`<div class="wd">${w}</div>`).join('')}${cells}</div>
     <div class="detail" id="detail"></div>`;
   renderDay();
@@ -461,17 +495,19 @@ function renderDay(){
   const k=selDay,js=dayJobs(k),sum=js.reduce((a,j)=>a+(+j.fee||0),0),mn=dayMin(k),sh=shifts.filter(x=>dkey(x.start)===k);
   $('detail').innerHTML=`<h3>${dlabel(k)}</h3>
     <div class="mstat"><div><span>매출</span><b>${won(sum)}</b></div><div><span>근무</span><b>${mn>0?hmDur(mn):'-'}</b></div>
+      <div><span>지출</span><b>-${won(sumAmt(dayExp(k)))}</b></div><div class="netv"><span>순수익</span><b>${won(sum-sumAmt(dayExp(k)))}</b></div>
       <div><span>배송</span><b>${js.length}건</b></div><div><span>시간당</span><b>${mn>=15?won(Math.round(sum/(mn/60))):'-'}</b></div></div>
     ${sh.map(x=>`<div class="shift"><span>${hm(new Date(x.start))} ~ ${x.end?hm(new Date(x.end)):'근무 중'} · ${hmDur(((x.end||Date.now())-x.start)/60000)}</span><button type="button" class="ghost" style="min-height:32px;font-size:13px" data-delshift="${x.start}">삭제</button></div>`).join('')}
     <label>근무 시간 직접 입력 (시간, 예: 6.5) — 비우면 근무 시작/종료 기록으로 계산
       <input type="number" step="0.5" min="0" inputmode="decimal" id="hFix" value="${hoursFix[k]??''}"></label>
-    ${js.map(j=>`<div class="shift"><span>${hm(new Date(j.doneAt||j.id))} ${esc(j.drop.name)}</span><span>${j.fee?won(j.fee):'금액 없음'}</span></div>`).join('')}`;
+    ${js.map(j=>`<div class="shift"><span>${hm(new Date(j.doneAt||j.id))} ${esc(j.drop.name)}</span><span>${j.fee?won(j.fee):'금액 없음'}</span></div>`).join('')}
+    <b style="margin-top:6px">이날 지출</b>${expForm()}${expList(dayExp(k))}`;
 }
-$('pCal').addEventListener('click',e=>{const mv=e.target.closest('[data-mv]'),d=e.target.closest('[data-day]');
+$('pCal').addEventListener('click',e=>{const x=expClick(e,selDay);if(x==='r'){renderCal();return}if(x)return;const mv=e.target.closest('[data-mv]'),d=e.target.closest('[data-day]');
   if(mv){calM.setMonth(calM.getMonth()+(+mv.dataset.mv));renderCal()}
   if(d){selDay=d.dataset.day;renderCal()}
   const ds=e.target.closest('[data-delshift]');if(ds){if(ds.dataset.sure){shifts=shifts.filter(x=>x.start!=ds.dataset.delshift);saveShifts();workBtn();renderCal();toast('근무 기록을 지웠어요')}else{ds.dataset.sure=1;ds.textContent='한 번 더'}}});
-$('pCal').addEventListener('change',e=>{if(e.target.id!=='hFix')return;const v=e.target.value;
+$('pCal').addEventListener('change',e=>{if(e.target.id==='mCharge'){const mk=calM.getFullYear()+'-'+String(calM.getMonth()+1).padStart(2,'0');monthCost[mk]={charge:+e.target.value||0};saveExp();renderCal();toast('이달 충전비를 저장했어요');return}if(e.target.id!=='hFix')return;const v=e.target.value;
   if(v==='')delete hoursFix[selDay];else hoursFix[selDay]=+v;saveShifts();renderCal();toast('근무 시간을 저장했어요')});
 
 /* ---------- 합짐 추가 ---------- */
@@ -638,6 +674,7 @@ function syncPush(kind){
   if(kind==='jobs')base.child('jobs').set(toObj(jobs,'id'));
   if(kind==='shifts'){base.child('shifts').set(toObj(shifts,'start'));base.child('hoursFix').set(hoursFix)}
   if(kind==='cfg')base.child('cfg').set(cfg);
+  if(kind==='exp'){base.child('expenses').set(toObj(expenses,'id'));base.child('monthCost').set(monthCost)}
 }
 function syncUI(){
   const on=!!fbUser;$('syncDot').classList.toggle('on',on);
@@ -656,7 +693,9 @@ async function syncStart(){
   hoursFix=Object.assign({},r.hoursFix||{},hoursFix);
   applying=true;jobs=Object.values(rj).sort((a,b)=>a.id-b.id);shifts=Object.values(rs).sort((a,b)=>a.start-b.start);
   LS.set('jobs',jobs);LS.set('shifts',shifts);LS.set('hoursFix',hoursFix);LS.set('cfg',cfg);applying=false;
-  await base.update({jobs:toObj(jobs,'id'),shifts:toObj(shifts,'start'),hoursFix,cfg});
+  const re=r.expenses||{};expenses.forEach(x=>{if(!re[x.id])re[x.id]=x});expenses=Object.values(re).sort((a,b)=>a.id-b.id);
+  monthCost=Object.assign({},r.monthCost||{},monthCost);LS.set('expenses',expenses);LS.set('monthCost',monthCost);
+  await base.update({jobs:toObj(jobs,'id'),shifts:toObj(shifts,'start'),hoursFix,cfg,expenses:toObj(expenses,'id'),monthCost});
   if(!hadJs&&cfg.js){location.reload();return}
   rerenderAll();
   // 실시간으로 다른 폰 변경 받기
@@ -664,6 +703,8 @@ async function syncStart(){
     const before=jobs.length;applying=true;jobs=n;LS.set('jobs',jobs);applying=false;if(n.length>before)toast('다른 폰에서 합짐이 들어왔어요');rerenderAll()});
   base.child('shifts').on('value',v=>{const n=Object.values(v.val()||{}).sort((a,b)=>a.start-b.start);if(JSON.stringify(n)===JSON.stringify(shifts))return;
     applying=true;shifts=n;LS.set('shifts',shifts);applying=false;workBtn();if(!$('pCal').hidden)renderCal()});
+  base.child('expenses').on('value',v=>{const n=Object.values(v.val()||{}).sort((a,b)=>a.id-b.id);if(JSON.stringify(n)===JSON.stringify(expenses))return;expenses=n;LS.set('expenses',n);renderDone();if(!$('pCal').hidden)renderCal()});
+  base.child('monthCost').on('value',v=>{const n=v.val()||{};if(JSON.stringify(n)===JSON.stringify(monthCost))return;monthCost=n;LS.set('monthCost',n);renderDone();if(!$('pCal').hidden)renderCal()});
   base.child('hoursFix').on('value',v=>{const n=v.val()||{};if(JSON.stringify(n)===JSON.stringify(hoursFix))return;hoursFix=n;LS.set('hoursFix',n);if(!$('pCal').hidden)renderCal()});
   base.child('cfg').on('value',v=>{const n=v.val();if(!n||JSON.stringify(n)===JSON.stringify(cfg))return;const jsChanged=n.js&&n.js!==cfg.js;cfg=Object.assign(cfg,n);LS.set('cfg',cfg);if(jsChanged)location.reload()});
 }
@@ -686,7 +727,7 @@ $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v16';
+const VER='v17';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
