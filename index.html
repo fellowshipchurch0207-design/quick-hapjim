@@ -173,7 +173,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">키와 합짐 내용은 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v14</div>
+  <div class="ver">버전 2026-11-23 v15</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -630,7 +630,7 @@ async function takeShared(){
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 
 /* ---------- 두 폰 동기화 (Firebase) ---------- */
-const FB=null; // FIREBASE_CONFIG
+const FB={apiKey:"AIzaSyCErPDJ_JjURfywKP--d7PdKJMv3GyQZd4",authDomain:"quick-hapjim.firebaseapp.com",databaseURL:"https://quick-hapjim-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"quick-hapjim",storageBucket:"quick-hapjim.firebasestorage.app",messagingSenderId:"19748421278",appId:"1:19748421278:web:1e59ef3128f8cb9127458f"};
 let fbDb=null,fbUser=null,applying=false;
 const toObj=(arr,key)=>{const o={};arr.forEach(x=>o[String(x[key])]=x);return o};
 function syncPush(kind){
@@ -686,7 +686,7 @@ $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v14';
+const VER='v15';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
