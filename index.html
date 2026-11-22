@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111418">
 <title>퀵 합짐</title>
 <style>
@@ -11,8 +11,8 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;overflow-x:clip}
 button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;border-radius:10px;min-height:44px;padding:0 14px;font-weight:600}
-.app{display:grid;grid-template-rows:auto 1fr;height:100dvh}
-header{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--line)}
+.app{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100dvh}
+header{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:var(--card);border-bottom:1px solid var(--line)}
 header h1{font-size:18px;margin:0;flex:1}
 .ghost{background:transparent;border:1px solid var(--line)}
 .main{display:grid;grid-template-rows:42vh 1fr;overflow:hidden}
@@ -39,7 +39,7 @@ header h1{font-size:18px;margin:0;flex:1}
 .done{background:var(--ok);color:#fff}
 .nav{background:#fee500;color:#191919}
 .empty{color:var(--sub);text-align:center;padding:30px 10px}
-.fab{position:fixed;right:16px;bottom:16px;background:var(--ink);color:var(--bg);font-size:17px;min-height:56px;padding:0 22px;border-radius:28px;box-shadow:0 4px 14px #0005;z-index:5}
+.fab{position:fixed;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);font-size:17px;min-height:56px;padding:0 22px;border-radius:28px;box-shadow:0 4px 14px #0005;z-index:5}
 dialog{border:0;border-radius:16px;padding:0;width:min(520px,94vw);background:var(--card);color:var(--ink)}
 dialog::backdrop{background:#0008}
 .dlg{padding:16px;display:grid;gap:12px}
@@ -73,8 +73,8 @@ header h1{font-size:17px}
 .detail{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:12px;display:grid;gap:8px}
 .detail h3{margin:0;font-size:17px}
 .shift{display:flex;justify-content:space-between;font-size:14px;border-bottom:1px solid var(--line);padding:4px 0}
-.tabs{display:flex;gap:6px;margin-bottom:10px;position:sticky;top:-10px;background:var(--bg);padding-top:2px;z-index:2}
-.tab{flex:1;background:var(--card);border:1px solid var(--line)}
+.tabs{display:flex;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line)}
+.tab{flex:1;background:var(--bg);border:1px solid var(--line);min-height:48px;font-size:16px}
 .tab.on{background:var(--ink);color:var(--bg)}
 .fee{display:inline-block;font-size:13px;font-weight:800;color:var(--ok);margin-left:6px;white-space:nowrap}
 .total{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
@@ -114,12 +114,12 @@ header h1{font-size:17px}
   <div class="main">
     <div id="map"></div>
     <div class="side">
-      <div class="tabs"><button type="button" class="tab on" data-tab="run">진행 중 <b id="cRun">0</b></button><button type="button" class="tab" data-tab="done">완료 <b id="cDone">0</b></button><button type="button" class="tab" data-tab="cal">달력</button></div>
       <div id="pRun"><div class="sum" id="sum"></div><div id="list"></div></div>
       <div id="pDone" hidden><div class="total" id="total"></div><div id="dlist"></div></div>
       <div id="pCal" hidden></div>
     </div>
   </div>
+  <nav class="tabs"><button type="button" class="tab on" data-tab="run">진행 중 <b id="cRun">0</b></button><button type="button" class="tab" data-tab="done">완료 <b id="cDone">0</b></button><button type="button" class="tab" data-tab="cal">달력</button></nav>
 </div>
 <button class="fab" id="bAdd">＋ 합짐 추가</button>
 <div class="toast" id="toast"></div>
@@ -376,7 +376,7 @@ $('pDone').addEventListener('click',e=>{
 $('pDone').addEventListener('change',e=>{const f=e.target.closest('[data-fee]');if(!f)return;const j=jobs.find(j=>j.id==f.dataset.fee);if(j){j.fee=+f.value||0;save();renderDone();toast('금액을 저장했어요')}});
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));
-  $('pRun').hidden=b.dataset.tab!=='run';$('pDone').hidden=b.dataset.tab!=='done';$('pCal').hidden=b.dataset.tab!=='cal';const full=b.dataset.tab!=='run';document.querySelector('.main').classList.toggle('nomap',full);if(!full&&map)setTimeout(()=>{map.relayout();recalc()},50);if(b.dataset.tab==='done')renderDone();if(b.dataset.tab==='cal')renderCal()});
+  $('pRun').hidden=b.dataset.tab!=='run';$('pDone').hidden=b.dataset.tab!=='done';$('pCal').hidden=b.dataset.tab!=='cal';const full=b.dataset.tab!=='run';$('bAdd').style.display=full?'none':'';document.querySelector('.main').classList.toggle('nomap',full);if(!full&&map)setTimeout(()=>{map.relayout();recalc()},50);if(b.dataset.tab==='done')renderDone();if(b.dataset.tab==='cal')renderCal()});
 renderDone();
 
 
