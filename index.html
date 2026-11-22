@@ -186,7 +186,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v18</div>
+  <div class="ver">버전 2026-11-23 v19</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -572,7 +572,7 @@ function renderDay(){
     <label>근무 시간 직접 입력 (시간, 예: 6.5) — 비우면 근무 시작/종료 기록으로 계산
       <input type="number" step="0.5" min="0" inputmode="decimal" id="hFix" value="${hoursFix[k]??''}"></label>
     ${js.map(j=>`<div class="shift"><span>${hm(new Date(j.doneAt||j.id))} ${esc(j.drop.name)}</span><span>${j.fee?won(j.fee):'금액 없음'}</span></div>`).join('')}
-    <b style="margin-top:6px">이날 지출</b>${expForm()}${expList(dayExp(k))}`;
+    ${dayExp(k).length?'<b style="margin-top:6px">이날 지출</b>'+expList(dayExp(k)):''}`;
 }
 $('pCal').addEventListener('click',e=>{const x=expClick(e,selDay);if(x==='r'){renderCal();return}if(x)return;const mv=e.target.closest('[data-mv]'),d=e.target.closest('[data-day]');
   if(mv){calM.setMonth(calM.getMonth()+(+mv.dataset.mv));renderCal()}
@@ -801,7 +801,7 @@ $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v18';
+const VER='v19';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
