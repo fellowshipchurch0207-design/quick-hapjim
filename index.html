@@ -51,6 +51,8 @@ textarea{min-height:60px;resize:vertical}
 .mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
 .mic.on{background:var(--drop);color:#fff}
 .mic.big{width:64px;font-size:26px}
+.main.nomap{grid-template-rows:1fr;grid-template-columns:1fr}.main.nomap #map{display:none}
+.main.nomap .side{max-width:760px;width:100%;margin:0 auto}
 header h1{font-size:17px}
 .ic{min-width:44px;padding:0 10px;font-size:18px}
 .work{background:var(--ok);color:#fff;padding:0 12px;white-space:nowrap}
@@ -372,7 +374,7 @@ $('pDone').addEventListener('click',e=>{
 $('pDone').addEventListener('change',e=>{const f=e.target.closest('[data-fee]');if(!f)return;const j=jobs.find(j=>j.id==f.dataset.fee);if(j){j.fee=+f.value||0;save();renderDone();toast('금액을 저장했어요')}});
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));
-  $('pRun').hidden=b.dataset.tab!=='run';$('pDone').hidden=b.dataset.tab!=='done';$('pCal').hidden=b.dataset.tab!=='cal';if(b.dataset.tab==='done')renderDone();if(b.dataset.tab==='cal')renderCal()});
+  $('pRun').hidden=b.dataset.tab!=='run';$('pDone').hidden=b.dataset.tab!=='done';$('pCal').hidden=b.dataset.tab!=='cal';const full=b.dataset.tab!=='run';document.querySelector('.main').classList.toggle('nomap',full);if(!full&&map)setTimeout(()=>{map.relayout();recalc()},50);if(b.dataset.tab==='done')renderDone();if(b.dataset.tab==='cal')renderCal()});
 renderDone();
 
 
