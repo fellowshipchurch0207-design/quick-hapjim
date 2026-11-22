@@ -165,7 +165,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">키와 합짐 내용은 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v11</div>
+  <div class="ver">버전 2026-11-23 v12</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -588,6 +588,18 @@ $('bRecalc').onclick=()=>{toast('지금 위치·시각 기준으로 다시 계�
 setInterval(()=>{if(route.length)recalc()},5*60000);
 
 loadKakao();
+
+/* ---------- 새 버전 자동 확인 ---------- */
+const VER='v12';
+async function checkUpdate(){
+  try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
+    const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
+    if(sessionStorage.getItem('qh_upd')===m[1])return;sessionStorage.setItem('qh_upd',m[1]);
+    toast('새 버전('+m[1]+')으로 바꾸는 중…');setTimeout(()=>location.replace('./?v='+Date.now()),800);
+  }catch(e){}
+}
+checkUpdate();
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate()});
 }
 </script>
 </body>
