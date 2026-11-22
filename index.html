@@ -51,6 +51,8 @@ textarea{min-height:60px;resize:vertical}
 .mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
 .mic.on{background:var(--drop);color:#fff}
 .mic.big{width:64px;font-size:26px}
+.icons{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:4px}.ci{display:inline-flex;align-items:center;gap:1px}.ci svg{width:30px;height:30px}.ci b{font-size:15px;margin-left:3px}
+.fragile{background:#ffd34d;color:#000;font-size:12px;font-weight:800;border-radius:6px;padding:2px 6px}
 .live{border-color:var(--drop)!important;box-shadow:0 0 0 3px #e5482d33}
 #iAll{min-height:84px;font-size:17px}
 .main.nomap{grid-template-rows:1fr;grid-template-columns:1fr}.main.nomap #map{display:none}
@@ -287,6 +289,28 @@ async function roadTimes(pts){
   }catch(e){return null}
 }
 
+
+/* ---------- 짐 그림 ---------- */
+const IC={
+ env:'<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" fill="#f6e7c8" stroke="#9c7434" stroke-width="1.5"/><path d="M2.5 6.5l9.5 7 9.5-7" fill="none" stroke="#9c7434" stroke-width="1.5"/></svg>',
+ box:'<svg viewBox="0 0 24 24"><path d="M3 7.5l9-4 9 4v9l-9 4-9-4z" fill="#d9a066" stroke="#7d5126" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 7.5l9 4 9-4M12 11.5v9" fill="none" stroke="#7d5126" stroke-width="1.5"/><path d="M7.5 5.5l9 4" stroke="#f3d9b5" stroke-width="2"/></svg>',
+ flower:'<svg viewBox="0 0 24 24"><path d="M12 13v9" stroke="#2f8f4e" stroke-width="2"/><path d="M12 18c-3 0-5-2-5-4 2 0 4 1 5 4z" fill="#3aa35d"/><g fill="#ef6f8f"><circle cx="12" cy="5" r="3"/><circle cx="8" cy="8.5" r="3"/><circle cx="16" cy="8.5" r="3"/><circle cx="10" cy="12" r="3"/><circle cx="14" cy="12" r="3"/></g><circle cx="12" cy="9" r="2.2" fill="#ffd34d"/></svg>',
+ food:'<svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2" fill="#f2f2f2" stroke="#666" stroke-width="1.5"/><path d="M3 12h18" stroke="#e5482d" stroke-width="2"/><path d="M8 8V6a4 4 0 018 0v2" fill="none" stroke="#666" stroke-width="1.5"/></svg>',
+ bag:'<svg viewBox="0 0 24 24"><path d="M5 8h14l-1 13H6z" fill="#7aa7e0" stroke="#2f5d96" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 10V6a3 3 0 016 0v4" fill="none" stroke="#2f5d96" stroke-width="1.5"/></svg>',
+ dev:'<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="1.5" fill="#4a5568" stroke="#1f2937" stroke-width="1.5"/><rect x="6" y="7" width="12" height="7" fill="#9fd3ff"/><path d="M2 18h20l-1.5 2h-17z" fill="#9aa3ad"/></svg>',
+ pkg:'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2" fill="#c9b79c" stroke="#6b5a40" stroke-width="1.5"/><path d="M3 10h18M10 6v4h4V6" fill="none" stroke="#6b5a40" stroke-width="1.5"/></svg>'};
+const CNT={'한':1,'하나':1,'두':2,'둘':2,'세':3,'셋':3,'석':3,'네':4,'넷':4,'다섯':5,'여섯':6,'일곱':7,'여덟':8,'아홉':9,'열':10};
+function cargoKind(x){return /서류|봉투|문서|계약서|등기|우편|편지/.test(x)?'env':/꽃/.test(x)?'flower':/음식|도시락|케이크|떡|커피|음료|반찬|피자/.test(x)?'food':/쇼핑백|가방|봉지|비닐/.test(x)?'bag':/노트북|컴퓨터|모니터|핸드폰|휴대폰|태블릿|전자/.test(x)?'dev':/박스|상자|택배|포장/.test(x)?'box':null}
+function cargoIcons(text){
+  if(!text)return'';const parts=text.split(/랑|이랑|하고|그리고|및|,|\+/);let html='',any=false;
+  parts.forEach(pt=>{const k=cargoKind(pt);if(!k)return;any=true;
+    let n=1,m=pt.match(/(\d+)\s*(?:개|박스|상자|장|봉투|묶음|통|세트|짝|다발)?/)||pt.match(/(한|하나|두|둘|세|셋|석|네|넷|다섯|여섯|일곱|여덟|아홉|열)\s*(?:개|박스|상자|장|봉투|묶음|통|세트|짝|다발)|(하나|둘|셋|넷)(?=\s|$)/);
+    if(m)n=+m[1]||CNT[m[1]]||CNT[m[2]]||1;n=Math.max(1,Math.min(n,99));
+    html+='<span class="ci">'+IC[k].repeat(Math.min(n,5))+(n>5?`<b>×${n}</b>`:'')+'</span>'});
+  if(!any)html='<span class="ci">'+IC.pkg+'</span>';
+  if(/파손|깨지|유리|조심|취급주의/.test(text))html+='<span class="fragile">파손주의</span>';
+  return '<div class="icons">'+html+'</div>';
+}
 /* ---------- 계산 + 그리기 ---------- */
 let busy=false;
 async function recalc(){
@@ -329,7 +353,7 @@ function renderList(km){
     const nav=`https://map.kakao.com/link/to/${encodeURIComponent(s.pt.name)},${s.pt.lat},${s.pt.lng}`;
     return `<div class="stop ${s.t} ${k?'':'next'}">
       <div class="num">${k+1}</div>
-      <div><div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${!isP&&j.due?`<span class="due ${s.eta>dueDate(j)?'late':''}">${j.due}까지${s.eta>dueDate(j)?' · 늦을 수 있음':''}</span>`:''}</div>
+      <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${!isP&&j.due?`<span class="due ${s.eta>dueDate(j)?'late':''}">${j.due}까지${s.eta>dueDate(j)?' · 늦을 수 있음':''}</span>`:''}</div>
         <div class="eta">${hm(s.eta)}<small>도착 예정</small></div>
         <div class="place">${esc(s.pt.name)}</div><div class="addr">${esc(s.pt.addr)}</div></div>
       ${cargo}
@@ -381,7 +405,7 @@ renderDone();
 
 
 /* ---------- 근무 기록 + 달력 ---------- */
-let shifts=LS.get('shifts',[]),hoursFix=LS.get('hoursFix',{}),calM=new Date(),selDay=dkey(Date.now());calM.setDate(1);
+let shifts=LS.get('shifts',[]).filter(x=>!x.end||x.end-x.start>=60000),hoursFix=LS.get('hoursFix',{}),calM=new Date(),selDay=dkey(Date.now());calM.setDate(1);
 const saveShifts=()=>{LS.set('shifts',shifts);LS.set('hoursFix',hoursFix)};
 const openShift=()=>shifts.find(x=>!x.end);
 const hmDur=m=>{m=Math.round(m);return Math.floor(m/60)+'시간 '+(m%60)+'분'};
@@ -389,7 +413,7 @@ function workBtn(){const o=openShift(),b=$('bWork');
   if(o){b.classList.add('on');b.textContent='■ 종료 '+hmDur((Date.now()-o.start)/60000).replace('시간 ',':').replace('분','')}
   else{b.classList.remove('on');b.textContent='▶ 근무 시작'}}
 $('bWork').onclick=()=>{const o=openShift();
-  if(o){o.end=Date.now();toast('근무 종료 — 오늘 '+hmDur((o.end-o.start)/60000)+' 일했어요',3500)}
+  if(o){o.end=Date.now();if(o.end-o.start<60000){shifts=shifts.filter(x=>x!==o);toast('1분 미만이라 기록하지 않았어요')}else toast('근무 종료 — 오늘 '+hmDur((o.end-o.start)/60000)+' 일했어요',3500)}
   else{shifts.push({start:Date.now()});toast('근무 시작! 수고하세요')}
   saveShifts();workBtn();if(!$('pCal').hidden)renderCal()};
 setInterval(workBtn,30000);workBtn();
@@ -403,13 +427,13 @@ function renderCal(){
   for(let i=0;i<first;i++)cells+='<div class="cell out"></div>';
   for(let d=1;d<=days;d++){
     const k=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),js=dayJobs(k),sum=js.reduce((a,j)=>a+(+j.fee||0),0),mn=dayMin(k);
-    mSum+=sum;mMin+=mn;mCnt+=js.length;if(sum||mn>0)mDays++;
-    cells+=`<button type="button" class="cell ${k===today?'today':''} ${k===selDay?'sel':''}" data-day="${k}"><span class="d">${d}</span>${sum?`<span class="m">${man(sum)}</span>`:''}${mn>0?`<span class="h">${(mn/60).toFixed(1)}h</span>`:''}</button>`;
+    mSum+=sum;mMin+=mn;mCnt+=js.length;if(sum||mn>=6)mDays++;
+    cells+=`<button type="button" class="cell ${k===today?'today':''} ${k===selDay?'sel':''}" data-day="${k}"><span class="d">${d}</span>${sum?`<span class="m">${man(sum)}</span>`:''}${mn>=6?`<span class="h">${(mn/60).toFixed(1)}h</span>`:''}</button>`;
   }
   const hr=mMin/60;
   $('pCal').innerHTML=`<div class="calh"><button type="button" class="ghost ic" data-mv="-1">‹</button><b>${y}년 ${m+1}월</b><button type="button" class="ghost ic" data-mv="1">›</button></div>
     <div class="mstat"><div><span>이달 매출</span><b>${won(mSum)}</b></div><div><span>이달 근무</span><b>${hmDur(mMin)}</b></div>
-      <div><span>시간당 매출</span><b>${hr>0?won(Math.round(mSum/hr)):'-'}</b></div><div><span>일한 날 · 배송</span><b>${mDays}일 · ${mCnt}건</b></div></div>
+      <div><span>시간당 매출</span><b>${hr>=0.25?won(Math.round(mSum/hr)):'-'}</b></div><div><span>일한 날 · 배송</span><b>${mDays}일 · ${mCnt}건</b></div></div>
     <div class="grid">${'일월화수목금토'.split('').map(w=>`<div class="wd">${w}</div>`).join('')}${cells}</div>
     <div class="detail" id="detail"></div>`;
   renderDay();
@@ -418,15 +442,16 @@ function renderDay(){
   const k=selDay,js=dayJobs(k),sum=js.reduce((a,j)=>a+(+j.fee||0),0),mn=dayMin(k),sh=shifts.filter(x=>dkey(x.start)===k);
   $('detail').innerHTML=`<h3>${dlabel(k)}</h3>
     <div class="mstat"><div><span>매출</span><b>${won(sum)}</b></div><div><span>근무</span><b>${mn>0?hmDur(mn):'-'}</b></div>
-      <div><span>배송</span><b>${js.length}건</b></div><div><span>시간당</span><b>${mn>0?won(Math.round(sum/(mn/60))):'-'}</b></div></div>
-    ${sh.map(x=>`<div class="shift"><span>${hm(new Date(x.start))} ~ ${x.end?hm(new Date(x.end)):'근무 중'}</span><span>${hmDur(((x.end||Date.now())-x.start)/60000)}</span></div>`).join('')}
+      <div><span>배송</span><b>${js.length}건</b></div><div><span>시간당</span><b>${mn>=15?won(Math.round(sum/(mn/60))):'-'}</b></div></div>
+    ${sh.map(x=>`<div class="shift"><span>${hm(new Date(x.start))} ~ ${x.end?hm(new Date(x.end)):'근무 중'} · ${hmDur(((x.end||Date.now())-x.start)/60000)}</span><button type="button" class="ghost" style="min-height:32px;font-size:13px" data-delshift="${x.start}">삭제</button></div>`).join('')}
     <label>근무 시간 직접 입력 (시간, 예: 6.5) — 비우면 근무 시작/종료 기록으로 계산
       <input type="number" step="0.5" min="0" inputmode="decimal" id="hFix" value="${hoursFix[k]??''}"></label>
     ${js.map(j=>`<div class="shift"><span>${hm(new Date(j.doneAt||j.id))} ${esc(j.drop.name)}</span><span>${j.fee?won(j.fee):'금액 없음'}</span></div>`).join('')}`;
 }
 $('pCal').addEventListener('click',e=>{const mv=e.target.closest('[data-mv]'),d=e.target.closest('[data-day]');
   if(mv){calM.setMonth(calM.getMonth()+(+mv.dataset.mv));renderCal()}
-  if(d){selDay=d.dataset.day;renderCal()}});
+  if(d){selDay=d.dataset.day;renderCal()}
+  const ds=e.target.closest('[data-delshift]');if(ds){if(ds.dataset.sure){shifts=shifts.filter(x=>x.start!=ds.dataset.delshift);saveShifts();workBtn();renderCal();toast('근무 기록을 지웠어요')}else{ds.dataset.sure=1;ds.textContent='한 번 더'}}});
 $('pCal').addEventListener('change',e=>{if(e.target.id!=='hFix')return;const v=e.target.value;
   if(v==='')delete hoursFix[selDay];else hoursFix[selDay]=+v;saveShifts();renderCal();toast('근무 시간을 저장했어요')});
 
@@ -466,14 +491,29 @@ function parseAll(raw){
   if(fm){const v=korNum(fm[1]);if(v>=1000){out.fee=v;t=t.replace(fm[0],' ')}}
   if(/급송|급해|급하게|빨리|최대한 빨/.test(t))out.urgent=true;
   // 짐
-  const cg=t.match(/(?:짐은|짐이|물건은|물건이|짐 특징은|내용물은)\s*(.+?)(?:이고|이구|이야|이에요|입니다|있고|,|\.|그리고|$)/);
+  const cg=t.match(/(?:짐은|짐이|물건은|물건이|짐 특징은|내용물은|품목은)\s*(.+?)(?:이고|이구|이야|이에요|입니다|있고|,|\.|그리고|$)/);
   if(cg){out.cargo=cg[1].replace(/급하게|급송|빨리/g,'').trim();t=t.replace(cg[0],' ')}
-  // 픽업지
-  const pk=t.match(/^\s*(.+?)\s*(?:에서|에서는)\s*(?:픽업|받아|받고|가져|실어|싣고|물건 받|짐 받)/);
-  if(pk){out.pick=pk[1].trim();t=t.slice(t.indexOf(pk[0])+pk[0].length)}
-  // 배송지
-  const dr=t.match(/(?:하고|해서|고|서)?\s*(.+?)\s*(?:으로|로|에|까지)\s*(?:배송|가져다|갖다|보내|전달|배달|내려)/);
-  if(dr)out.drop=dr[1].replace(/^(해서|하고|그리고|그다음|다음)\s*/,'').trim();
+  else{const IT='(?:(?![가-힣]*(?:까지|에서|으로)\\s)(?!도착|배송|배달|하차|출발|픽업|급하게)[가-힣]+\\s)?(?:서류\\s?봉투|서류|봉투|박스|상자|택배|꽃다발|꽃|케이크|도시락|쇼핑백|가방|노트북|모니터)(?:\\s*(?:\\d+|한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|하나|둘|셋|넷)\\s*(?:개|박스|상자|장|봉투|묶음|통|세트|짝)?)?';
+    const ci=t.match(new RegExp('(?:^|\\s)('+IT+'(?:\\s*(?:이랑|랑|하고|과|와|,)\\s*'+IT+')*)'));
+    if(ci){out.cargo=ci[1].trim();t=t.replace(ci[0],' ')}}
+  t=t.replace(/\s+/g,' ').trim();
+  const PV='(?:픽업|출발|받아|받고|받으러|가져가|가지고|실어|싣고|상차|수령|회수|물건\\s?받|짐\\s?받|태워)';
+  const DV='(?:배송|배달|도착|가져다|갖다|보내|전달|하차|내려|납품|드려|가야|가줘|가 줘|넣어)';
+  const STOP='(?=\\s*(?:이고|이구|고\\s|,|\\.|$|배송지|도착지|하차지|받는\\s?곳|목적지|픽업지|출발지|상차지|보내는\\s?곳))';
+  const lab=(L)=>{const m=t.match(new RegExp('(?:'+L+')\\s*(?:은|는|이|가|:)?\\s*(.+?)'+STOP));return m?m[1].trim():''};
+  out.pick=lab('픽업지|출발지|상차지|보내는\\s?곳|픽업\\s?장소|출발\\s?장소');
+  out.drop=lab('배송지|도착지|하차지|받는\\s?곳|목적지|배송\\s?장소|도착\\s?장소');
+  const tail=r=>{r=r.replace(new RegExp('^\\s*'+PV+'[가-힣]*\\s*'),'').replace(/^(?:해서|하고|하여|해|서|고|후에?|다음에?|그리고|그다음)\s*/,'').trim();
+    let m=r.match(new RegExp('^(.+?)\\s*(?:으로|로|까지|에다가|에다|에)?\\s*'+DV));
+    if(!m)m=r.match(/^(.+?)\s*(?:으로|로|까지)\s*$/);
+    return (m?m[1]:r).replace(/\s*(?:으로|로|까지)$/,'').trim()};
+  if(!out.pick||!out.drop){
+    let m=t.match(/^(.+?)\s*(?:에서는|에서)\s+(.+)$/);
+    if(m){out.pick=out.pick||m[1].trim();out.drop=out.drop||tail(m[2])}
+    else if((m=t.match(new RegExp('^(.+?)\\s*'+PV+'[가-힣]*\\s+(.+)$')))){out.pick=out.pick||m[1].trim();out.drop=out.drop||tail(m[2])}
+    else if((m=t.match(new RegExp('^(.+?)\\s*(?:으로|로|까지|에)?\\s*'+DV)))){out.drop=out.drop||m[1].trim()}
+  }
+  if(!out.pick)delete out.pick;if(!out.drop)delete out.drop;
   return out;
 }
 async function applyAll(){
