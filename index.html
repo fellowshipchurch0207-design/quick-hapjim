@@ -51,6 +51,10 @@ textarea{min-height:60px;resize:vertical}
 .mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
 .mic.on{background:var(--drop);color:#fff}
 .mic.big{width:64px;font-size:26px}
+.mkw{display:flex;align-items:center;gap:2px;transform:translateX(calc(50% - 15px))}
+.mki{display:flex;align-items:center;gap:1px;background:#fff;border-radius:8px;padding:2px 3px;box-shadow:0 1px 3px #0005}
+.mki svg{width:16px;height:16px}.mki b{font-size:11px;color:#000;margin-left:1px}.mki .fragile{font-size:10px;padding:0 4px}
+.ver{font-size:12px;color:var(--sub);text-align:center}
 .icons{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:4px}.ci{display:inline-flex;align-items:center;gap:1px}.ci svg{width:30px;height:30px}.ci b{font-size:15px;margin-left:3px}
 .fragile{background:#ffd34d;color:#000;font-size:12px;font-weight:800;border-radius:6px;padding:2px 6px}
 .live{border-color:var(--drop)!important;box-shadow:0 0 0 3px #e5482d33}
@@ -155,6 +159,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">키와 합짐 내용은 이 폰에만 저장돼요.</div>
+  <div class="ver">버전 2026-11-23 v8</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -301,15 +306,15 @@ const IC={
  pkg:'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2" fill="#c9b79c" stroke="#6b5a40" stroke-width="1.5"/><path d="M3 10h18M10 6v4h4V6" fill="none" stroke="#6b5a40" stroke-width="1.5"/></svg>'};
 const CNT={'한':1,'하나':1,'두':2,'둘':2,'세':3,'셋':3,'석':3,'네':4,'넷':4,'다섯':5,'여섯':6,'일곱':7,'여덟':8,'아홉':9,'열':10};
 function cargoKind(x){return /서류|봉투|문서|계약서|등기|우편|편지/.test(x)?'env':/꽃/.test(x)?'flower':/음식|도시락|케이크|떡|커피|음료|반찬|피자/.test(x)?'food':/쇼핑백|가방|봉지|비닐/.test(x)?'bag':/노트북|컴퓨터|모니터|핸드폰|휴대폰|태블릿|전자/.test(x)?'dev':/박스|상자|택배|포장/.test(x)?'box':null}
-function cargoIcons(text){
-  if(!text)return'';const parts=text.split(/랑|이랑|하고|그리고|및|,|\+/);let html='',any=false;
+function cargoIcons(text,small){
+  if(!text)return small?'':'<div class="icons"><span class="ci">'+IC.pkg+'</span></div>';const lim=small?3:5;const parts=text.split(/랑|이랑|하고|그리고|및|,|\+/);let html='',any=false;
   parts.forEach(pt=>{const k=cargoKind(pt);if(!k)return;any=true;
     let n=1,m=pt.match(/(\d+)\s*(?:개|박스|상자|장|봉투|묶음|통|세트|짝|다발)?/)||pt.match(/(한|하나|두|둘|세|셋|석|네|넷|다섯|여섯|일곱|여덟|아홉|열)\s*(?:개|박스|상자|장|봉투|묶음|통|세트|짝|다발)|(하나|둘|셋|넷)(?=\s|$)/);
     if(m)n=+m[1]||CNT[m[1]]||CNT[m[2]]||1;n=Math.max(1,Math.min(n,99));
-    html+='<span class="ci">'+IC[k].repeat(Math.min(n,5))+(n>5?`<b>×${n}</b>`:'')+'</span>'});
+    html+='<span class="ci">'+IC[k].repeat(Math.min(n,lim))+(n>lim?`<b>×${n}</b>`:'')+'</span>'});
   if(!any)html='<span class="ci">'+IC.pkg+'</span>';
-  if(/파손|깨지|유리|조심|취급주의/.test(text))html+='<span class="fragile">파손주의</span>';
-  return '<div class="icons">'+html+'</div>';
+  if(/파손|깨지|유리|조심|취급주의/.test(text))html+=small?'<span class="fragile">!</span>':'<span class="fragile">파손주의</span>';
+  return small?'<div class="mki">'+html+'</div>':'<div class="icons">'+html+'</div>';
 }
 /* ---------- 계산 + 그리기 ---------- */
 let busy=false;
@@ -334,7 +339,7 @@ function draw(path,km){
   const b=new kakao.maps.LatLngBounds();if(me)b.extend(new kakao.maps.LatLng(me.lat,me.lng));
   route.forEach((s,k)=>{
     const ll=new kakao.maps.LatLng(s.pt.lat,s.pt.lng);b.extend(ll);
-    const o=new kakao.maps.CustomOverlay({position:ll,content:`<div class="mk" style="background:${s.t==='P'?'#1f6feb':'#e5482d'}">${k+1}</div>`,zIndex:2});
+    const o=new kakao.maps.CustomOverlay({position:ll,content:`<div class="mkw"><div class="mk" style="background:${s.t==='P'?'#1f6feb':'#e5482d'}">${k+1}</div>${cargoIcons(s.job.cargo,true)}</div>`,zIndex:2});
     o.setMap(map);overlays.push(o);
   });
   const lp=path?path.map(p=>new kakao.maps.LatLng(p[0],p[1])):[...(me?[me]:[]),...route.map(s=>s.pt)].map(p=>new kakao.maps.LatLng(p.lat,p.lng));
