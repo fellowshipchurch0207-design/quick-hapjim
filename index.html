@@ -51,6 +51,8 @@ textarea{min-height:60px;resize:vertical}
 .mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
 .mic.on{background:var(--drop);color:#fff}
 .mic.big{width:64px;font-size:26px}
+.live{border-color:var(--drop)!important;box-shadow:0 0 0 3px #e5482d33}
+#iAll{min-height:84px;font-size:17px}
 .main.nomap{grid-template-rows:1fr;grid-template-columns:1fr}.main.nomap #map{display:none}
 .main.nomap .side{max-width:760px;width:100%;margin:0 auto}
 header h1{font-size:17px}
@@ -502,12 +504,24 @@ $('fAdd').addEventListener('submit',async e=>{
 
 /* ---------- 음성 입력 ---------- */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null;
 document.querySelectorAll('.mic').forEach(b=>{
   if(!SR){b.style.display='none';return}
-  b.onclick=()=>{const r=new SR();r.lang='ko-KR';r.interimResults=false;b.classList.add('on');
-    r.onresult=ev=>{const t=ev.results[0][0].transcript,inp=$(b.dataset.for);inp.value=(inp.value&&inp.id!=='iAll'?inp.value+' ':'')+t;inp.dispatchEvent(new Event('change'))};
-    r.onend=()=>b.classList.remove('on');r.onerror=()=>b.classList.remove('on');r.start()};
+  b.onclick=()=>{
+    if(rec){rec.stop();return}            // 다시 누르면 멈춤
+    const inp=$(b.dataset.for),keep=inp.id==='iAll'?'':(inp.value?inp.value+' ':'');
+    const r=new SR();rec=r;r.lang='ko-KR';r.interimResults=true;r.continuous=true;
+    let fin='';b.classList.add('on');b.textContent='■';inp.classList.add('live');
+    if(inp.id==='iAll'){$('fAll').className='found';$('fAll').textContent='듣고 있어요… 다 말하면 ■ 누르기'}
+    r.onresult=ev=>{let tmp='';
+      for(let i=ev.resultIndex;i<ev.results.length;i++){const t=ev.results[i][0].transcript;if(ev.results[i].isFinal)fin+=t+' ';else tmp+=t}
+      inp.value=keep+fin+tmp;inp.scrollTop=inp.scrollHeight};
+    const done=()=>{rec=null;b.classList.remove('on');b.textContent='🎤';inp.classList.remove('live');
+      inp.value=inp.value.replace(/\s+/g,' ').trim();if(inp.value)inp.dispatchEvent(new Event('change'))};
+    r.onend=done;r.onerror=e=>{if(e.error==='not-allowed')toast('마이크 권한을 허용해 주세요',4000)};
+    r.start()};
 });
+$('dAdd').addEventListener('close',()=>{if(rec)rec.abort()});
 
 /* ---------- 설정 ---------- */
 function openSet(){$('sHome').value=cfg.home||'';$('sJs').value=cfg.js;$('sRest').value=cfg.rest;$('sDwell').value=cfg.dwell;$('sSpeed').value=cfg.speed;$('dSet').showModal()}
