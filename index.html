@@ -208,7 +208,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v40</div>
+  <div class="ver">버전 2026-11-23 v41</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -970,18 +970,8 @@ function showHdr(ms=2500){$('hdr').classList.add('show');document.body.classList
 function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500);$('hdr').classList.remove('show');document.body.classList.remove('bars')}
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
-// 목록을 맨 위에서 아래로 끌어내리거나, 위로 스크롤하면 메뉴가 내려와요
-{const sd=document.querySelector('.side');let y0=null,lastTop=0;
- sd.addEventListener('touchstart',e=>{y0=sd.scrollTop<=0?e.touches[0].clientY:null},{passive:true});
- sd.addEventListener('touchmove',e=>{if(y0!=null&&e.touches[0].clientY-y0>40){showHdr();y0=null}},{passive:true});
- sd.addEventListener('scroll',()=>{const t=sd.scrollTop;if(t<lastTop-25)showHdr();else if(t>lastTop+25)hideHdr();lastTop=t},{passive:true});
- // 화면 맨 위 가장자리에서 아래로 쓸어도 내려와요
- let ty=null;window.addEventListener('touchstart',e=>{const y=e.touches[0].clientY;ty=y<70?y:null},{passive:true});
- window.addEventListener('touchmove',e=>{if(ty!=null&&e.touches[0].clientY-ty>30){showHdr();ty=null}},{passive:true});
- let by=null;window.addEventListener('touchstart',e=>{const y=e.touches[0].clientY;by=y>innerHeight-80?y:null},{passive:true});
- window.addEventListener('touchmove',e=>{if(by!=null&&by-e.touches[0].clientY>30){showHdr();by=null}},{passive:true});}
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v40';
+const VER='v41';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
