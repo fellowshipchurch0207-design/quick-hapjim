@@ -219,12 +219,12 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v72</div>
+  <div class="ver">버전 2026-11-24 v73</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
 <dialog id="dOdo"><form class="dlg" method="dialog" id="fOdo">
-  <h2>오늘 마무리 — 주행거리</h2>
+  <h2 id="oTitle">오늘 마무리 — 주행거리</h2>
   <label>계기판 총 주행거리 (km)<input type="number" inputmode="numeric" id="oKm" placeholder="예: 45230"></label>
   <div class="note" id="oInfo"></div>
   <div id="oAlerts"></div>
@@ -657,9 +657,10 @@ const MI=[
  {k:'v12',n:'12V 보조배터리 점검',mo:12,t:'전기차도 12V 배터리가 방전되면 시동이 안 걸려요.'},
  {k:'red',n:'감속기 오일',km:120000,t:'설명서상 가혹 조건(잦은 정차·짧은 거리 반복)에서 120,000km마다 교환.'},
  {k:'cool',n:'냉각수',km:200000,mo:120,t:'최초 교체 200,000km 또는 10년.'}];
-function lastOdo(before){const ks=Object.keys(odo).filter(d=>!before||d<before).sort();return ks.length?{d:ks.at(-1),km:+odo[ks.at(-1)]}:null}
-function dayKm(k){if(!odo[k])return null;const p=lastOdo(k);return p?Math.max(0,+odo[k]-p.km):null}
-function curKm(){const l=lastOdo();return l?l.km:null}
+// odo[날짜]=마칠 때, odo['S'+날짜]=근무 시작할 때
+function lastOdo(before){const ks=Object.keys(odo).filter(d=>/^\d/.test(d)&&(!before||d<before)).sort();return ks.length?{d:ks.at(-1),km:+odo[ks.at(-1)]}:null}
+function dayKm(k){if(!odo[k])return null;const st=odo['S'+k]?+odo['S'+k]:(lastOdo(k)||{}).km;return st!=null?Math.max(0,+odo[k]-st):null}
+function curKm(){const v=Object.values(odo).map(Number).filter(x=>x>0);return v.length?Math.max(...v):null}
 function mStatus(it){
   const m=maint[it.k],km=curKm();if(!m)return{lvl:'unk',txt:'기록 없음'};
   let left=[],lvl='ok';
@@ -676,15 +677,20 @@ function renderCar(){
      <div class="tm">${it.t}</div><div class="tm">${m?'마지막: '+(m.km!=null?m.km.toLocaleString()+'km ':'')+(m.date||''):''} <b class="st">${st.txt}</b></div></div>
      <div class="mib"><button type="button" class="ghost" data-mdone="${it.k}">오늘 했음</button><button type="button" class="ghost" data-mset="${it.k}">지난 기록</button></div></div>`}).join('')}`;
 }
-function openOdo(day){
-  $('fOdo').dataset.day=day;$('oKm').value=odo[day]||'';const p=lastOdo(day);
-  $('oInfo').textContent=p?`지난 기록: ${dlabel(p.d)} ${p.km.toLocaleString()}km`:'처음 입력이에요. 계기판의 총 주행거리(ODO)를 넣어 주세요.';
+function openOdo(day,mode){const st=mode==='start';
+  $('fOdo').dataset.day=day;$('fOdo').dataset.mode=st?'start':'end';$('oTitle').textContent=st?'근무 시작 — 계기판 주행거리':'오늘 마무리 — 계기판 주행거리';
+  const p=lastOdo(st?null:day),s0=odo['S'+day];
+  $('oKm').value=st?(odo['S'+day]||''):(odo[day]||'');
+  $('oInfo').textContent=st?(p?`지난 기록: ${dlabel(p.d)} ${p.km.toLocaleString()}km — 지금 계기판 숫자를 넣어 주세요.`:'계기판의 총 주행거리(ODO)를 넣어 주세요.')
+    :s0?`오늘 시작: ${(+s0).toLocaleString()}km`:p?`지난 기록: ${dlabel(p.d)} ${p.km.toLocaleString()}km`:'처음 입력이에요. 계기판의 총 주행거리(ODO)를 넣어 주세요.';
   $('oAlerts').innerHTML=alertsHtml();$('dOdo').showModal()}
 $('oSkip').onclick=()=>$('dOdo').close();
 $('fMset').addEventListener('submit',e=>{e.preventDefault();const k=$('fMset').dataset.k,v=$('msKm').value;maint[k]={km:v===''?null:+v,date:$('msDate').value||null};saveCar();$('dMset').close();renderCar()});
 $('msDel').onclick=()=>{delete maint[$('fMset').dataset.k];saveCar();$('dMset').close();renderCar()};
 $('fOdo').addEventListener('submit',e=>{e.preventDefault();const v=+$('oKm').value,day=$('fOdo').dataset.day;if(!v){toast('주행거리를 넣어 주세요');return}
-  const p=lastOdo(day);if(p&&v<p.km){toast('지난 기록('+p.km.toLocaleString()+'km)보다 작아요. 다시 확인해 주세요',4000);return}
+  const st=$('fOdo').dataset.mode==='start',p=st?lastOdo():(odo['S'+day]?{km:+odo['S'+day]}:lastOdo(day));
+  if(p&&v<p.km){toast((st?'지난 기록(':'오늘 시작(')+p.km.toLocaleString()+'km)보다 작아요. 다시 확인해 주세요',4000);return}
+  if(st){odo['S'+day]=v;saveCar();$('dOdo').close();toast('시작 주행거리 저장 — 마칠 때 다시 물어볼게요',3000);return}
   odo[day]=v;saveCar();const d=dayKm(day);$('dOdo').close();
   const al=MI.filter(it=>['over','soon'].includes(mStatus(it).lvl)).map(it=>it.n);
   toast((d!=null?'오늘 '+d.toLocaleString()+'km 달렸어요. ':'저장했어요. ')+(al.length?'정비 확인: '+al.join(', '):''),6000);
@@ -751,7 +757,7 @@ function workBtn(){const o=openShift(),b=$('bWork');$('hDot')&&$('hDot').classLi
   else{b.classList.remove('on');b.textContent='▶ 근무 시작'}}
 $('bWork').onclick=()=>{const o=openShift();
   if(o){o.end=Date.now();if(o.end-o.start<60000){shifts=shifts.filter(x=>x!==o);toast('1분 미만이라 기록하지 않았어요')}else{toast('근무 종료 — 오늘 '+hmDur((o.end-o.start)/60000)+' 일했어요',3500);openOdo(dkey(o.start))}}
-  else{shifts.push({start:Date.now()});toast('근무 시작! 수고하세요')}
+  else{shifts.push({start:Date.now()});toast('근무 시작! 수고하세요');const tk=todayKey();if(!odo['S'+tk])setTimeout(()=>openOdo(tk,'start'),300)}
   saveShifts();workBtn();if(!$('pCal').hidden)renderCal()};
 setInterval(workBtn,30000);workBtn();
 function dayMin(k){if(hoursFix[k]!=null)return hoursFix[k]*60;
@@ -1107,7 +1113,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v72';
+const VER='v73';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
