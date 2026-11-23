@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v67</div>
+  <div class="ver">버전 2026-11-24 v68</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -583,8 +583,8 @@ function renderList(km){
         ${s.wait>0?`<div class="eta">${hm(s.target)}<small>도착 목표</small></div>`:`<div class="eta">${hm(s.eta)}<small>도착 예정</small></div>`}
         <div class="leg">🚗 ${from} <b>${s.leg}분</b></div>
         <div class="addr">${esc(full(p.place))}</div></div>
-      ${k===0?`<div class="warn ${s.wait<0?'bad':''}">⏰ <b>늦어도 ${hm(s.leaveBy)} 출발</b>${s.wait<0?' ('+(-s.wait)+'분 늦음)':''}</div>`:''}
-      ${nx&&SL[k+1]?`<div class="gapline">→ ${k+2}번까지 <span class="gap ${slackCls(SL[k+1].v)}">${SL[k+1].v<0?'⚠ '+(-SL[k+1].v)+'분 늦음':'여유 '+fmin(SL[k+1].v)}</span></div>`:''}
+      
+      
       ${nx?`<div class="warn">끝나고 ${hm(s.depart)} 출발 → ${k+2}번 ${hm(nx.eta)} 도착</div>`:''}
       <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a><button class="ghost" data-pedit="${p.id}" style="flex:0 0 64px">수정</button><button class="done" data-pdone="${p.id}">일정 끝</button><button class="ghost" data-pdel="${p.id}" style="flex:0 0 64px">삭제</button></div></div>`}
     const j=s.job,isP=s.t==='P';
@@ -594,16 +594,16 @@ function renderList(km){
       <div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
       <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${(()=>{const f=isP?'pdue':'due';return j[f]?`<span class="due ${s.eta>dueDate(j,f)?'late':''}">${j[f]}까지${s.eta>dueDate(j,f)?' · 늦을 수 있음':''}</span>`:''})()}</div>
         ${s.wait>0?`<div class="eta">${hmd(s.target)}<small>도착 목표 · 예약 픽업</small></div>`:`<div class="eta">${hmd(s.eta)}<small>도착 예정</small></div>`}
-        ${k===0&&s.leaveBy?`<div class="warn ${s.wait<0?'bad':''}">⏰ <b>늦어도 ${hmd(s.leaveBy)} 출발</b></div>`:''}
+        
         <div class="leg">🚗 ${from} <b>${s.leg}분</b>${k&&route[k-1].t!=='S'?` <span>+ 상하차 ${+cfg.dwell||0}분</span>`:''}</div>
         <div class="addr">${esc(full(s.pt))}</div></div>
       ${cargo}
-      ${nx&&SL[k+1]?`<div class="gapline">→ ${k+2}번까지 <span class="gap ${slackCls(SL[k+1].v)}">${SL[k+1].v<0?'⚠ '+(-SL[k+1].v)+'분 늦음':'여유 '+fmin(SL[k+1].v)}</span></div>`:''}
+      
       ${!isP?`<div class="loaded">픽업지: ${esc(full(j.pick))}</div>`:`<div class="loaded">배송지: ${esc(full(j.drop))}</div>`}
       <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a>
         <button class="done" data-job="${j.id}" data-t="${s.t}">${isP?'픽업 완료':'배송 완료'}</button>
         <button class="ghost" data-del="${j.id}" style="flex:0 0 64px">삭제</button></div>
-      ${nextWarn}
+      
     </div>`}).join('')+laterPlans();
 }
 document.addEventListener('click',e=>{if(e.target.id==='bAuto'){manual=null;saveManual();toast('자동 순서로 돌렸어요');recalc()}});
@@ -1101,7 +1101,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v67';
+const VER='v68';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
