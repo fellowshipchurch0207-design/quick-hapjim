@@ -216,7 +216,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v53</div>
+  <div class="ver">버전 2026-11-24 v54</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -353,11 +353,11 @@ function fitRoute(force){
   if(pts.length<2){fitting=true;if(pts.length===1){map.setLevel(5);map.setCenter(new kakao.maps.LatLng(pts[0].lat,pts[0].lng))}else if(planBounds)map.setBounds(planBounds,34,12,14,12);setTimeout(()=>fitting=false,400);return}
   fitting=true;try{map.relayout()}catch(e){}
   const la=pts.map(p=>p.lat),ln=pts.map(p=>p.lng);
-  map.setCenter(new kakao.maps.LatLng((Math.min(...la)+Math.max(...la))/2+(Math.max(...la)-Math.min(...la))*0.03,(Math.min(...ln)+Math.max(...ln))/2));
+  map.setCenter(new kakao.maps.LatLng((Math.min(...la)+Math.max(...la))/2+(Math.max(...la)-Math.min(...la))*0.015,(Math.min(...ln)+Math.max(...ln))/2));
   fitLevel(pts);setTimeout(()=>fitting=false,500)}
 // 지도 실제 픽셀 크기로 직접 계산: 가장 확대된 단계부터 모든 점이 화면 안에 들어오는 단계를 찾음
 function fitLevel(pts){const el=$('map'),W=el.clientWidth,H=el.clientHeight;if(!W||!H)return;
-  const fits=()=>{const pj=map.getProjection();return pts.every(p=>{const c=pj.containerPointFromCoords(new kakao.maps.LatLng(p.lat,p.lng));return c.x>W*0.06&&c.x<W*0.94&&c.y>H*0.12&&c.y<H*0.96})};
+  const fits=()=>{const pj=map.getProjection();return pts.every(p=>{const c=pj.containerPointFromCoords(new kakao.maps.LatLng(p.lat,p.lng));return c.x>W*0.02&&c.x<W*0.98&&c.y>H*0.05&&c.y<H*0.99})};
   for(let lv=1;lv<=14;lv++){map.setLevel(lv);if(fits())return}}
 function userTouch(){userMoved=Date.now();clearTimeout(fitT);fitT=setTimeout(()=>fitRoute(true),10000)}
 function watchUser(){
@@ -1054,7 +1054,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v53';
+const VER='v54';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
