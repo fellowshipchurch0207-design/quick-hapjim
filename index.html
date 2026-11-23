@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v84</div>
+  <div class="ver">버전 2026-11-24 v85</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -507,6 +507,11 @@ function slackHtml(){const b=slackInfo();
   if(!b)return '<span class="slack ok"><i></i>여유 넉넉</span>';
   const c=slackCls(b.v);
   return '<span class="slack '+c+'"><i></i>'+(b.v<0?(-b.v)+'분 늦음':'여유 '+fmin(b.v))+'</span>'+(c==='bad'?'<div class="hurry">🚨 바로 이동!</div>':'')}
+// 순서대로 갔을 때 목표(마감·약속 15분 전)를 넘기는 곳 수 (직선거리 추정)
+function missCount(r){const pb=(+cfg.pbuf||0)*60000,dw=(+cfg.dwell||0)*60000;let t=Date.now(),prev=me,n=0;
+  r.forEach(s=>{t+=(prev?tmin(prev,s.pt):0)*60000;prev=s.pt;let dl=null,rd=null;
+    if(s.t==='S'){rd=planAt(s.plan,'start').getTime()-pb;dl=rd}else{const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=dueDate(s.job,f).getTime()-pb;if(s.t==='P'&&schedP(s.job))rd=dl}
+    if(dl&&t>dl+60000)n++;if(rd&&t<rd)t=rd;t+=s.t==='S'?planAt(s.plan,'end')-planAt(s.plan,'start'):dw});return n}
 async function recalc(){
   if(!map)return;if(busy&&Date.now()-busy<15000)return;busy=Date.now();
   lastCalc={t:Date.now(),p:me?{lat:me.lat,lng:me.lng}:null};
@@ -522,6 +527,8 @@ async function recalc(){
       for(let i=pi+1;i<=r.length;i++){const c=cost([...r.slice(0,i),x,...r.slice(i)]);if(c<bc){bc=c;best=i}}
       r.splice(best,0,x)});
     route=r;
+    // 직접 정한 순서 때문에 15분 일찍 못 가는 곳이 생기면, 자동 순서가 더 나을 때 알아서 바꿈
+    const auto=solve(st).map(i=>st[i]);if(missCount(auto)<missCount(r)){route=auto;manual=null;saveManual();toast('15분 일찍 도착 못 하는 곳이 있어서 순서를 다시 짰어요',4500)}
   } else {const ord=solve(st);route=ord.map(i=>st[i])}
   if(manual&&!route.length){manual=null;saveManual()}
   const pts=route.map(s=>s.pt);
@@ -1160,7 +1167,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v84';
+const VER='v85';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
