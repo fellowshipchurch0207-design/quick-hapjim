@@ -212,7 +212,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v44</div>
+  <div class="ver">버전 2026-11-24 v45</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -334,7 +334,7 @@ const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMo
 function addDay(k,n){const [Y,M,D]=k.split('-').map(Number),d=new Date(Y,M-1,D+n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 // 오늘 날짜로 넣었는데 이미 지난 시간이면 내일 일정으로 본다
 function fixPlanDates(){let ch=false;plans.forEach(p=>{if(!p.done&&planAt(p,'end')<p.id){p.date=addDay(p.date,1);ch=true}});if(ch)savePlans();return ch}
-const inWindow=p=>planAt(p,'end')>Date.now()&&planAt(p,'start')-Date.now()<16*3600e3;
+const inWindow=p=>planAt(p,'end')>Date.now()&&(p.date===todayKey()||planAt(p,'start')-Date.now()<16*3600e3);
 function planAt(p,f){const [h,m]=(p[f]||'00:00').split(':').map(Number),[Y,M,D]=p.date.split('-').map(Number);return new Date(Y,M-1,D,h,m)}
 /* ---------- 순서 계산 (픽업은 항상 배송보다 먼저) ---------- */
 function hav(a,b){const R=6371,r=Math.PI/180,dLa=(b.lat-a.lat)*r,dLo=(b.lng-a.lng)*r;const x=Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
@@ -474,7 +474,7 @@ function pastHtml(){const tk=todayKey(),ev=[];
   return ev.map(e=>`<div class="stop past ${e.t}"><div class="numc"><div class="num">✔</div></div><div><div class="kind">${{P:'픽업 완료',D:'배송 완료',S:'일정 끝'}[e.t]} · ${hm(new Date(e.time))}${e.t==='D'&&e.j.fee?' · '+won(e.j.fee):''}</div><div class="paddr">${esc(e.t==='S'?(e.p.title||'일정')+' · '+nm(e.pt):full(e.pt))}</div></div>
     <button type="button" class="ghost undo" data-back="${e.t}:${e.t==='S'?e.p.id:e.j.id}">되돌리기</button></div>`).join('')}
 function laterPlans(){const tk=todayKey(),l=plans.filter(p=>!p.done&&planAt(p,'end')>Date.now()&&!inWindow(p)).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
-  return l.length?`<div class="later"><h4>📅 다가오는 개인 일정</h4>${l.map(p=>`<div class="exp"><span><b>${dlabel(p.date)} ${p.start}~${p.end}</b> ${esc(p.title||'')} · ${esc(p.place?nm(p.place):'')}</span><span><button class="ghost" data-pedit="${p.id}">수정</button><button class="ghost" data-pdel="${p.id}">삭제</button></span></div>`).join('')}<div class="tm" style="margin:4px">그날이 되면 배송 순서에 자동으로 들어가요.</div></div>`:''}
+  return l.length?`<div class="later"><h4>📅 다가오는 개인 일정</h4>${l.map(p=>`<div class="exp"><span><b>${dlabel(p.date)} ${p.start}~${p.end}</b> ${esc(p.title||'')} · ${esc(p.place?nm(p.place):'')}</span><span><button class="ghost" data-pedit="${p.id}">수정</button><button class="ghost" data-pdel="${p.id}">삭제</button></span></div>`).join('')}<div class="tm" style="margin:4px">그날이 되면 순서에 번호로 들어가요.</div></div>`:''}
 function renderList(km){
   $('cRun').textContent=jobs.filter(j=>j.state!=='done').length;
   const loaded=jobs.filter(j=>j.state==='loaded').length;
@@ -986,7 +986,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v44';
+const VER='v45';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
