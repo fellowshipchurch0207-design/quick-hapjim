@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v75</div>
+  <div class="ver">버전 2026-11-24 v76</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -582,7 +582,7 @@ function renderList(km){
     const nextWarn=nx&&nx.leaveBy?`<div class="warn ${nx.wait<0?'bad':''}">⏰ <b>늦어도 ${hmd(nx.leaveBy)} 출발</b>${nx.wait<0?' ('+(-nx.wait)+'분 늦음)':''}</div>`:'';
     if(s.t==='S'){const p=s.plan,nav=`https://map.kakao.com/link/to/${encodeURIComponent(p.place.name)},${p.place.lat},${p.place.lng}`;
       return `<div class="stop S ${k?'':'next'}" id="stop-${k}"><div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
-      <div><div class="kind">📅 개인 일정</div><div class="place">${esc(p.title||'일정')}</div><div class="ptime" data-pedit="${p.id}">${p.start} ~ ${p.end} <small style="color:var(--sub)">✎ 눌러서 수정</small></div>
+      <div><div class="kind">📅 개인 일정</div><div class="place">${esc(p.title||'일정')}</div><div class="ptime" data-pedit="${p.id}">${p.start} ~ ${p.end}</div>
         ${s.wait>0?`<div class="eta">${hm(s.target)}<small>도착 목표</small></div>`:`<div class="eta">${hm(s.eta)}<small>도착 예정</small></div>`}
         <div class="leg">🚗 ${from} <b>${s.leg}분</b>${(()=>{const t=lbOf(k,SL);return t?` <span class="lby">/ 늦어도 <b>${hmd(t)}</b> 출발</span>`:''})()}</div>
         <div class="addr">${esc(full(p.place))}</div></div>
@@ -1130,7 +1130,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v75';
+const VER='v76';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
