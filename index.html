@@ -65,6 +65,8 @@ textarea{min-height:60px;resize:vertical}
 .mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
 .mic.on{background:var(--drop);color:#fff}
 .mic.big{width:64px;font-size:26px}
+#dayMap{height:240px;border-radius:12px;overflow:hidden;background:var(--line)}
+.dn{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;color:#fff;font-size:11px;background:#e5482d}.dn.P{background:#1f6feb}.dn.S{background:#7c3aed}
 @keyframes fl{0%{box-shadow:0 0 0 4px #f0a400}100%{box-shadow:0 0 0 0 transparent}}.stop.flash{animation:fl 1.6s ease-out}
 .side{position:relative}
 .stop.past{opacity:.55;filter:grayscale(1);padding:6px 10px;margin-bottom:6px;grid-template-columns:30px 1fr auto;align-items:center;border-style:dashed}
@@ -214,7 +216,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v46</div>
+  <div class="ver">버전 2026-11-24 v47</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -299,7 +301,7 @@ function locate(manual){
   navigator.geolocation.getCurrentPosition(p=>{
     gpsOk=true;setMe({lat:p.coords.latitude,lng:p.coords.longitude},true);
     if(manual)toast('현재 위치로 출발지를 잡았어요');recalc();
-    if(watchId==null)watchId=navigator.geolocation.watchPosition(q=>{gpsOk=true;setMe({lat:q.coords.latitude,lng:q.coords.longitude},false)},()=>{},{enableHighAccuracy:true,maximumAge:15000});
+    if(watchId==null)watchId=navigator.geolocation.watchPosition(q=>{gpsOk=true;setMe({lat:q.coords.latitude,lng:q.coords.longitude},false);recordTrack()},()=>{},{enableHighAccuracy:true,maximumAge:15000});
   },gpsErr,{enableHighAccuracy:true,timeout:15000,maximumAge:0});
 }
 function watchMe(){me=null;if(meOv){meOv.setMap(null);meOv=null}locate(false)}
@@ -327,7 +329,15 @@ function cityOf(addr){if(!addr)return'';const t=addr.trim().split(/\s+/);if(!t.l
   return parts.join(' ')}
 function full(pt){if(!pt)return'';const a=(pt.addr||'').trim(),n=(pt.name||'').trim();if(!a)return nm(pt);if(!n||n===a||a.includes(n))return a;return a+'('+n+')'}
 function nm(pt){if(!pt)return'';const c=cityOf(pt.addr),n=(pt.name||'').trim();if(!c)return n;const f=c.split(' ')[0];if(n.startsWith(f)||n.startsWith(c))return n;return c+' '+n}
+/* ---------- 이동 경로 기록 (근무 중일 때만, 1분·50m 간격) ---------- */
+function recordTrack(){
+  if(!me||typeof openShift!=='function'||!openShift())return;
+  const k=todayKey(),a=track[k]||(track[k]=[]),now=Date.now(),l=a[a.length-1];
+  if(l&&now-l[2]<60000&&hav({lat:l[0],lng:l[1]},me)<0.05)return;
+  a.push([+me.lat.toFixed(5),+me.lng.toFixed(5),now]);LS.set('track',track);
+  if(now-trackPushAt>180000){trackPushAt=now;syncPush('track')}}
 /* ---------- 개인 일정 ---------- */
+let track=LS.get('track',{}),trackPushAt=0;
 let plans=LS.get('plans',[]),manual=LS.get('manual',null);
 const saveManual=()=>{LS.set('manual',manual);syncPush('manual')};
 const skey=s=>s.t+':'+(s.job?s.job.id:s.plan.id);
@@ -536,7 +546,7 @@ $('list').addEventListener('click',e=>{
   if(pd){const p=plans.find(p=>p.id==pd.dataset.pdone);if(p){p.done=true;p.doneAt=Date.now();savePlans();toast('일정 끝 — 다음 배송으로 다시 계산해요');recalc()}return}
   if(px){if(px.dataset.sure){plans=plans.filter(p=>p.id!=px.dataset.pdel);savePlans();recalc()}else{px.dataset.sure=1;px.textContent='확인';setTimeout(()=>{delete px.dataset.sure;px.textContent='삭제'},3000)}return}
   const d=e.target.closest('[data-job]'),x=e.target.closest('[data-del]');
-  if(d){const j=jobs.find(j=>j.id==d.dataset.job);if(!j)return;j.state=d.dataset.t==='P'?'loaded':'done';if(j.state==='done')j.doneAt=Date.now();else j.pickedAt=Date.now();save();renderDone();toast(d.dataset.t==='P'?'픽업 완료 — 짐이 실렸어요':'배송 완료');recalc()}
+  if(d){const j=jobs.find(j=>j.id==d.dataset.job);if(!j)return;j.state=d.dataset.t==='P'?'loaded':'done';if(j.state==='done')j.doneAt=Date.now();else j.pickedAt=Date.now();recordTrack();save();renderDone();toast(d.dataset.t==='P'?'픽업 완료 — 짐이 실렸어요':'배송 완료');recalc()}
   if(x){if(x.dataset.sure){jobs=jobs.filter(j=>j.id!=x.dataset.del);save();recalc()}else{x.dataset.sure=1;x.textContent='확인';setTimeout(()=>{delete x.dataset.sure;x.textContent='삭제'},3000)}}
 });
 
@@ -688,6 +698,21 @@ function renderCal(){
   renderCar();
   renderDay();
 }
+function dayEvents(k){const ev=[];
+  jobs.forEach(j=>{if(j.pickedAt&&dkey(j.pickedAt)===k)ev.push({t:'P',time:j.pickedAt,pt:j.pick,j});if(j.doneAt&&j.state==='done'&&dkey(j.doneAt)===k)ev.push({t:'D',time:j.doneAt,pt:j.drop,j})});
+  plans.forEach(p=>{if(p.done&&p.doneAt&&dkey(p.doneAt)===k)ev.push({t:'S',time:p.doneAt,pt:p.place,p})});
+  return ev.filter(e=>e.pt&&e.pt.lat).sort((a,b)=>a.time-b.time)}
+let dayMap=null;
+function drawDayMap(k){
+  const el=$('dayMap');if(!el||!window.kakao||!kakao.maps||!kakao.maps.Map)return;
+  const ev=dayEvents(k),tr=(track[k]||[]);if(!ev.length&&tr.length<2){el.innerHTML='<div class="empty" style="padding:20px">이날 기록된 동선이 없어요</div>';return}
+  dayMap=new kakao.maps.Map(el,{center:new kakao.maps.LatLng(36.35,127.38),level:8});
+  const b=new kakao.maps.LatLngBounds();
+  if(tr.length>1){const path=tr.map(p=>new kakao.maps.LatLng(p[0],p[1]));path.forEach(x=>b.extend(x));new kakao.maps.Polyline({map:dayMap,path,strokeWeight:4,strokeColor:'#1f6feb',strokeOpacity:.7})}
+  else if(ev.length>1){const path=ev.map(e=>new kakao.maps.LatLng(e.pt.lat,e.pt.lng));new kakao.maps.Polyline({map:dayMap,path,strokeWeight:4,strokeColor:'#1f6feb',strokeOpacity:.6,strokeStyle:'shortdash'})}
+  ev.forEach((e,i)=>{const ll=new kakao.maps.LatLng(e.pt.lat,e.pt.lng);b.extend(ll);
+    new kakao.maps.CustomOverlay({map:dayMap,position:ll,content:`<div class="mk" style="background:${e.t==='P'?'#1f6feb':e.t==='S'?'#7c3aed':'#e5482d'}">${i+1}</div>`,zIndex:2})});
+  setTimeout(()=>{dayMap.relayout();dayMap.setBounds(b,30,30,30,30)},60)}
 function renderDay(){
   const k=selDay,js=dayJobs(k),sum=js.reduce((a,j)=>a+(+j.fee||0),0),mn=dayMin(k),sh=shifts.filter(x=>dkey(x.start)===k);
   $('detail').innerHTML=`<h3>${dlabel(k)}</h3>
@@ -697,8 +722,10 @@ function renderDay(){
     ${sh.map(x=>`<div class="shift"><span>${hm(new Date(x.start))} ~ ${x.end?hm(new Date(x.end)):'근무 중'} · ${hmDur(((x.end||Date.now())-x.start)/60000)}</span><button type="button" class="ghost" style="min-height:32px;font-size:13px" data-delshift="${x.start}">삭제</button></div>`).join('')}
     <label>근무 시간 직접 입력 (시간, 예: 6.5) — 비우면 근무 시작/종료 기록으로 계산
       <input type="number" step="0.5" min="0" inputmode="decimal" id="hFix" value="${hoursFix[k]??''}"></label>
-    ${js.map(j=>`<div class="shift"><span>${hm(new Date(j.doneAt||j.id))} ${esc(nm(j.drop))}</span><span>${j.fee?won(j.fee):'금액 없음'}</span></div>`).join('')}
+    <b style="margin-top:6px">이날 동선</b><div id="dayMap"></div>
+    ${dayEvents(k).map((e,i)=>`<div class="shift"><span><b class="dn ${e.t}">${i+1}</b> ${hm(new Date(e.time))} ${({P:'픽업',D:'배송',S:'일정'})[e.t]} · ${esc(e.t==='S'?(e.p.title||'일정')+' '+nm(e.pt):nm(e.pt))}</span><span>${e.t==='D'&&e.j.fee?won(e.j.fee):''}</span></div>`).join('')}
     ${dayExp(k).length?'<b style="margin-top:6px">이날 지출</b>'+expList(dayExp(k)):''}`;
+  drawDayMap(k);
 }
 $('pCal').addEventListener('click',e=>{const x=expClick(e,selDay);if(x==='r'){renderCal();return}if(x)return;const mv=e.target.closest('[data-mv]'),d=e.target.closest('[data-day]');
   if(mv){calM.setMonth(calM.getMonth()+(+mv.dataset.mv));renderCal()}
@@ -929,6 +956,7 @@ function syncPush(kind){
   if(kind==='shifts'){base.child('shifts').set(toObj(shifts,'start'));base.child('hoursFix').set(hoursFix)}
   if(kind==='cfg')base.child('cfg').set(cfg);
   if(kind==='manual')base.child('manual').set(manual||null);
+  if(kind==='track'){const k=todayKey();base.child('track/'+k).set(track[k]||[])}
   if(kind==='plans')base.child('plans').set(toObj(plans,'id'));
   if(kind==='car'){base.child('odo').set(odo);base.child('maint').set(maint)}
   if(kind==='exp'){base.child('expenses').set(toObj(expenses,'id'));base.child('monthCost').set(monthCost)}
@@ -951,8 +979,8 @@ async function syncStart(){
   applying=true;jobs=Object.values(rj).sort((a,b)=>a.id-b.id);shifts=Object.values(rs).sort((a,b)=>a.start-b.start);
   LS.set('jobs',jobs);LS.set('shifts',shifts);LS.set('hoursFix',hoursFix);LS.set('cfg',cfg);applying=false;
   const re=r.expenses||{};expenses.forEach(x=>{if(!re[x.id])re[x.id]=x});expenses=Object.values(re).sort((a,b)=>a.id-b.id);
-  monthCost=Object.assign({},r.monthCost||{},monthCost);odo=Object.assign({},r.odo||{},odo);{const rp=r.plans||{};plans.forEach(x=>{if(!rp[x.id])rp[x.id]=x});plans=Object.values(rp).sort((a,b)=>a.id-b.id);LS.set('plans',plans)}maint=Object.assign({},r.maint||{},maint);LS.set('odo',odo);LS.set('maint',maint);LS.set('expenses',expenses);LS.set('monthCost',monthCost);
-  await base.update({jobs:toObj(jobs,'id'),shifts:toObj(shifts,'start'),hoursFix,cfg,expenses:toObj(expenses,'id'),monthCost,odo,maint,plans:toObj(plans,'id')});
+  monthCost=Object.assign({},r.monthCost||{},monthCost);odo=Object.assign({},r.odo||{},odo);{const rt=r.track||{};for(const k in track)if(!rt[k]||(track[k].length>rt[k].length))rt[k]=track[k];track=rt;LS.set('track',track)}{const rp=r.plans||{};plans.forEach(x=>{if(!rp[x.id])rp[x.id]=x});plans=Object.values(rp).sort((a,b)=>a.id-b.id);LS.set('plans',plans)}maint=Object.assign({},r.maint||{},maint);LS.set('odo',odo);LS.set('maint',maint);LS.set('expenses',expenses);LS.set('monthCost',monthCost);
+  await base.update({jobs:toObj(jobs,'id'),shifts:toObj(shifts,'start'),hoursFix,cfg,expenses:toObj(expenses,'id'),monthCost,odo,maint,plans:toObj(plans,'id'),track});
   if(!hadJs&&cfg.js){location.reload();return}
   rerenderAll();
   // 실시간으로 다른 폰 변경 받기
@@ -962,6 +990,7 @@ async function syncStart(){
     applying=true;shifts=n;LS.set('shifts',shifts);applying=false;workBtn();if(!$('pCal').hidden)renderCal()});
   base.child('expenses').on('value',v=>{const n=Object.values(v.val()||{}).sort((a,b)=>a.id-b.id);if(JSON.stringify(n)===JSON.stringify(expenses))return;expenses=n;LS.set('expenses',n);renderDone();if(!$('pCal').hidden)renderCal()});
   base.child('manual').on('value',v=>{const n=v.val()||null;if(JSON.stringify(n)===JSON.stringify(manual))return;manual=n;LS.set('manual',n);if(map)recalc()});
+  base.child('track').on('value',v=>{const n=v.val()||{};let ch=false;for(const k in n)if(!track[k]||n[k].length>track[k].length){track[k]=n[k];ch=true}if(ch){LS.set('track',track);if(!$('pCal').hidden)renderCal()}});
   base.child('plans').on('value',v=>{const n=Object.values(v.val()||{}).sort((a,b)=>a.id-b.id);if(JSON.stringify(n)===JSON.stringify(plans))return;plans=n;LS.set('plans',n);if(map)recalc()});
   base.child('odo').on('value',v=>{const n=v.val()||{};if(JSON.stringify(n)===JSON.stringify(odo))return;odo=n;LS.set('odo',n);if(!$('pCal').hidden)renderCal()});
   base.child('maint').on('value',v=>{const n=v.val()||{};if(JSON.stringify(n)===JSON.stringify(maint))return;maint=n;LS.set('maint',n);renderCar()});
@@ -994,7 +1023,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v46';
+const VER='v47';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
