@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v74</div>
+  <div class="ver">버전 2026-11-24 v75</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -851,7 +851,7 @@ async function look(which){
   const inp=$(which==='pick'?'iPick':'iDrop'),f=$(which==='pick'?'fPick':'fDrop');
   if(!inp.value.trim()){f.textContent='';found[which]=null;return null}
   f.className='found';f.textContent='찾는 중…';
-  const r=await geocode(inp.value);found[which]=r;
+  const q=inp.value;const r=await geocode(q);if(inp.value!==q)return found[which];found[which]=r;lookedTxt[which]=q.trim();
   if(r){f.textContent='✔ '+nm(r)+(r.addr&&r.addr!==r.name?' · '+r.addr:'')}else{f.className='found bad';f.textContent='위치를 못 찾았어요. 건물명이나 동 이름을 넣어 보세요.'}
   return r;
 }
@@ -948,18 +948,20 @@ async function applyAll(){
 $('iAll').addEventListener('change',applyAll);
 $('bCancel').onclick=()=>$('dAdd').close();
 // 이미 넣은 합짐 고치기 (전화로 시간·주소·금액이 바뀔 때)
-let editId=null;
+let editId=null;var lookedTxt={};
 function openJobEdit(id){const j=jobs.find(x=>x.id==id);if(!j)return;editId=j.id;
   $('fAdd').reset();$('aTitle').textContent='합짐 수정';$('bSave').textContent='저장';$('fAll').className='found';$('fAll').textContent='바꿀 칸만 고치고 저장을 누르세요';
   const ld=j.state==='loaded';found={pick:ld&&!j.pick.addr?null:j.pick,drop:j.drop};
   $('iPick').value=j.pick.addr?(j.pick.name||j.pick.addr):'';$('iDrop').value=j.drop.name||j.drop.addr;
   $('fPick').className=$('fDrop').className='found';$('fPick').textContent=j.pick.addr?'✔ '+full(j.pick):'';$('fDrop').textContent='✔ '+full(j.drop);
   $('iCargo').value=j.cargo||'';$('iFee').value=j.fee||'';$('iPdue').value=j.pdue||'';$('iDue').value=j.due||'';$('iUrg').checked=!!j.urgent;
+  lookedTxt={pick:$('iPick').value.trim(),drop:$('iDrop').value.trim()};
   $('iLoaded').checked=ld;$('iPick').disabled=ld;$('dAdd').showModal()}
 $('fAdd').addEventListener('submit',async e=>{
   e.preventDefault();const loadedOnly=$('iLoaded').checked;
   $('bSave').textContent='확인 중…';
-  const p=loadedOnly?null:(found.pick||await look('pick')),d=found.drop||await look('drop');
+  const fresh=w=>found[w]&&lookedTxt[w]===$(w==='pick'?'iPick':'iDrop').value.trim()?found[w]:null; // 주소를 고쳤으면 다시 찾기
+  const p=loadedOnly?null:(fresh('pick')||await look('pick')),d=fresh('drop')||await look('drop');
   $('bSave').textContent='위치 확인 후 추가';
   if(!d||(!loadedOnly&&!p)){toast('주소를 확인해 주세요');return}
   if(editId!=null){const j=jobs.find(x=>x.id==editId);editId=null;if(j){
@@ -1128,7 +1130,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v74';
+const VER='v75';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
