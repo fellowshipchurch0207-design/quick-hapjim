@@ -203,11 +203,12 @@ body.bars #bHandle{display:none}
   <label>카카오 JavaScript 키 (지도·주소 검색)<input id="sJs" autocomplete="off"></label>
   <label>카카오 REST API 키 (실제 도로 도착시간)<input id="sRest" autocomplete="off"></label>
   <label>GPS가 안 될 때 쓸 출발지 (예: 집이나 차고지 주소)<input id="sHome" autocomplete="off"></label>
+  <label>개인 일정엔 몇 분 일찍 도착할까요?(분)<input id="sPbuf" type="number" min="0" max="60"></label>
   <label>한 곳 상하차 시간(분)<input id="sDwell" type="number" min="0" max="60"></label>
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v38</div>
+  <div class="ver">버전 2026-11-23 v39</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -244,7 +245,7 @@ body.bars #bHandle{display:none}
 {
 const $=id=>document.getElementById(id);
 const LS={get(k,d){try{const v=localStorage.getItem('qh_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('qh_'+k,JSON.stringify(v))}catch(e){}}};
-let cfg=Object.assign({js:'',rest:'',dwell:5,speed:28,home:''},LS.get('cfg',{}));
+let cfg=Object.assign({js:'',rest:'',dwell:5,speed:28,home:'',pbuf:15},LS.get('cfg',{}));
 let jobs=LS.get('jobs',[]); // {id,pick:{name,addr,lat,lng},drop:{...},cargo,urgent,state:'wait'|'loaded'|'done'}
 let me=LS.get('me',null), map=null, geocoder=null, places=null, overlays=[], line=null, meOv=null, route=[], routeSrc='';
 const toast=(t,ms=2500)=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',ms)};
@@ -353,7 +354,8 @@ function solve(st){
   const dw=+cfg.dwell||0, start=me;
   const T=(i,j)=>tmin(st[i].pt,st[j].pt);
   const T0=i=>start?tmin(start,st[i].pt):0;
-  const sm=i=>(planAt(st[i].plan,'start')-Date.now())/60000,sdur=i=>(planAt(st[i].plan,'end')-planAt(st[i].plan,'start'))/60000;
+  const pb=+cfg.pbuf||0;
+  const sm=i=>(planAt(st[i].plan,'start')-Date.now())/60000-pb,sdur=i=>(planAt(st[i].plan,'end')-planAt(st[i].plan,'start'))/60000+pb;
   const wt=(i,t)=>st[i].t==='S'?Math.max(0,sm(i)-t)*0.03:0; // 약속 전 대기는 거의 손해로 치지 않음(약속은 시간 순서대로 노선 중간에)
   const after=(i,t)=>st[i].t==='S'?Math.max(t,sm(i))+sdur(i)-dw:t;
   const pen=(i,time)=>{if(st[i].t==='S'){const l=time-sm(i);return l>0?1000+l*100:0}const j=st[i].job;if(st[i].t!=='D'){const pm=dueMin(j,'pdue');if(pm==null)return 0;let p=time*0.02;if(time>pm)p+=200+(time-pm)*20;return p}let p=j.urgent?time*1.5:0;
@@ -435,7 +437,7 @@ async function recalc(){
     if(!rd&&prev)km+=hav(prev,s.pt)*1.35;
     s.leg=Math.max(1,Math.round(leg));s.legKm=prev?hav(prev,s.pt)*1.35:null;
     s.leaveBy=null;t+=leg*60000;s.eta=new Date(t);prev=s.pt;
-    if(s.t==='S'){const a=planAt(s.plan,'start').getTime(),b=planAt(s.plan,'end').getTime();s.wait=Math.round((a-t)/60000);s.leaveBy=new Date(a-leg*60000);s.depart=new Date(Math.max(t,a)+(b-a))}
+    if(s.t==='S'){const a=planAt(s.plan,'start').getTime()-(+cfg.pbuf||0)*60000,b=planAt(s.plan,'end').getTime();s.target=new Date(a);s.wait=Math.round((a-t)/60000);s.leaveBy=new Date(a-leg*60000);s.depart=new Date(Math.max(t,a)+(b-a))}
     else s.depart=new Date(t+dw*60000);
     t=s.depart.getTime();
   });
@@ -471,14 +473,14 @@ function renderList(km){
   const KN2={P:'픽업',D:'배송',S:'일정'};
   $('list').innerHTML=route.map((s,k)=>{
     const nx=route[k+1],from=k?`${k}번(${KN2[route[k-1].t]})에서`:'현재 위치에서';
-    const nextWarn=nx&&nx.t==='S'?`<div class="warn ${nx.wait<0?'bad':''}">📅 다음 일정(${esc(nx.plan.title)} ${nx.plan.start}) 때문에 여기서 <b>늦어도 ${hm(nx.leaveBy)}</b>에 출발하세요${nx.wait<0?' — 지금 순서로는 '+(-nx.wait)+'분 늦어요':''}</div>`:'';
+    const nextWarn=nx&&nx.t==='S'?`<div class="warn ${nx.wait<0?'bad':''}">📅 다음 일정(${esc(nx.plan.title)} ${nx.plan.start}, ${+cfg.pbuf||0}분 일찍 도착) 때문에 여기서 <b>늦어도 ${hm(nx.leaveBy)}</b>에 출발하세요${nx.wait<0?' — 지금 순서로는 '+(-nx.wait)+'분 늦어요':''}</div>`:'';
     if(s.t==='S'){const p=s.plan,nav=`https://map.kakao.com/link/to/${encodeURIComponent(p.place.name)},${p.place.lat},${p.place.lng}`;
       return `<div class="stop S ${k?'':'next'}"><div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
       <div><div class="kind">📅 개인 일정</div><div class="place">${esc(p.title||'일정')}</div><div class="ptime" data-pedit="${p.id}">${p.start} ~ ${p.end} <small style="color:var(--sub)">✎ 눌러서 수정</small></div>
-        ${s.wait>0?`<div class="eta">${hm(s.leaveBy)}<small>에 출발하면 ${p.start} 정시 도착</small></div>`:`<div class="eta">${hm(s.eta)}<small>도착 예정</small></div>`}
+        ${s.wait>0?`<div class="eta">${hm(s.leaveBy)}<small>에 출발하면 ${hm(s.target)} 도착 (${+cfg.pbuf||0}분 일찍)</small></div>`:`<div class="eta">${hm(s.eta)}<small>도착 예정</small></div>`}
         <div class="leg">🚗 ${from} <b>${s.leg}분</b></div>
         <div class="addr">${esc(full(p.place))}</div></div>
-      <div class="warn ${s.wait<0?'bad':''}">${s.wait>=0?`✅ ${s.wait}분 여유 있게 도착`:`⚠ ${-s.wait}분 늦을 수 있어요`} · 늦지 않으려면 ${k?k+'번에서':'지금 위치에서'} <b>${hm(s.leaveBy)}</b>까지 출발</div>
+      <div class="warn ${s.wait<0?'bad':''}">${s.wait>=0?`✅ ${hm(s.target)}까지 도착 가능 (${s.wait}분 여유)`:`⚠ 목표(${hm(s.target)})보다 ${-s.wait}분 늦어요${s.eta>planAt(p,'start')?' — 약속 시간에도 늦어요':' — 약속 시간 전엔 도착'}`} · 늦지 않으려면 ${k?k+'번에서':'지금 위치에서'} <b>${hm(s.leaveBy)}</b>까지 출발</div>
       ${nx?`<div class="warn">끝나고 <b>${hm(s.depart)}</b> 출발 → ${k+2}번 ${KN2[nx.t]} ${hm(nx.eta)} 도착 (🚗 ${nx.leg}분)</div>`:''}
       <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a><button class="ghost" data-pedit="${p.id}" style="flex:0 0 64px">수정</button><button class="done" data-pdone="${p.id}">일정 끝</button><button class="ghost" data-pdel="${p.id}" style="flex:0 0 64px">삭제</button></div></div>`}
     const j=s.job,isP=s.t==='P';
@@ -848,10 +850,10 @@ document.querySelectorAll('.mic').forEach(b=>{
 $('dAdd').addEventListener('close',()=>{if(rec)rec.abort()});
 
 /* ---------- 설정 ---------- */
-function openSet(){$('sHome').value=cfg.home||'';$('sJs').value=cfg.js;$('sRest').value=cfg.rest;$('sDwell').value=cfg.dwell;$('sSpeed').value=cfg.speed;$('dSet').showModal()}
+function openSet(){$('sPbuf').value=cfg.pbuf??15;$('sHome').value=cfg.home||'';$('sJs').value=cfg.js;$('sRest').value=cfg.rest;$('sDwell').value=cfg.dwell;$('sSpeed').value=cfg.speed;$('dSet').showModal()}
 $('bSet').onclick=openSet;
 $('fSet').addEventListener('submit',e=>{e.preventDefault();
-  const hadJs=cfg.js;cfg={js:$('sJs').value.trim(),rest:$('sRest').value.trim(),dwell:+$('sDwell').value||0,speed:+$('sSpeed').value||28,home:$('sHome').value.trim()};
+  const hadJs=cfg.js;cfg={js:$('sJs').value.trim(),rest:$('sRest').value.trim(),dwell:+$('sDwell').value||0,speed:+$('sSpeed').value||28,home:$('sHome').value.trim(),pbuf:$('sPbuf').value===''?15:+$('sPbuf').value};
   LS.set('cfg',cfg);syncPush('cfg');$('dSet').close();
   if(cfg.js!==hadJs)location.reload();else recalc();
 });
@@ -979,7 +981,7 @@ $('hdr').addEventListener('click',()=>showHdr());
  let by=null;window.addEventListener('touchstart',e=>{const y=e.touches[0].clientY;by=y>innerHeight-80?y:null},{passive:true});
  window.addEventListener('touchmove',e=>{if(by!=null&&by-e.touches[0].clientY>30){showHdr();by=null}},{passive:true});}
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v38';
+const VER='v39';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
