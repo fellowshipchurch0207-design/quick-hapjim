@@ -76,7 +76,7 @@ textarea{min-height:60px;resize:vertical}
 .stop.past .num{width:24px;height:24px;font-size:13px;background:var(--sub)!important}
 .stop.past .kind{font-size:12px;color:var(--sub)!important}.paddr{font-size:13px;color:var(--ink)}
 .stop.past .undo{min-height:30px;font-size:12px;padding:0 8px}
-.numc{display:flex;flex-direction:column;align-items:center}.stop{position:relative}.mv{position:absolute;top:6px;right:6px;display:flex;gap:4px}.mv button{min-height:26px;height:26px;width:28px;padding:0;font-size:11px;line-height:1;border-radius:7px;color:var(--sub)}.mv button:disabled{opacity:.25}
+.numc{display:flex;flex-direction:column;align-items:center}.stop{position:relative}.mv{position:absolute;top:4px;right:4px;display:flex;gap:6px;z-index:5}.mv button{min-height:36px;height:36px;width:40px;padding:0;font-size:13px;line-height:1;border-radius:7px;color:var(--sub)}.mv button:disabled{opacity:.25}
 .fab2{position:fixed;left:16px;bottom:calc(46px + env(safe-area-inset-bottom));transition:bottom .25s;background:#7c3aed;color:#fff;font-size:15px;min-height:50px;padding:0 16px;border-radius:25px;box-shadow:0 4px 14px #0005;z-index:5}
 .S .num{background:#7c3aed}.S .kind{color:#7c3aed}.stop.S{border-color:#7c3aed}
 .ptime{font-size:15px;font-weight:700}
@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v87</div>
+  <div class="ver">버전 2026-11-24 v88</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -515,8 +515,9 @@ function missCount(r){const pb=(+cfg.pbuf||0)*60000,dw=(+cfg.dwell||0)*60000;let
   r.forEach(s=>{t+=(prev?tmin(prev,s.pt):0)*60000;prev=s.pt;let dl=null,rd=null;
     if(s.t==='S'){rd=planAt(s.plan,'start').getTime()-pb;dl=rd}else{const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=dueDate(s.job,f).getTime()-pb;if(s.t==='P'&&schedP(s.job))rd=dl}
     if(dl&&t>dl+60000)n++;if(rd&&t<rd)t=rd;t+=s.t==='S'?planAt(s.plan,'end')-planAt(s.plan,'start'):dw});return n}
+let again=false;
 async function recalc(){
-  if(!map)return;if(busy&&Date.now()-busy<15000)return;busy=Date.now();
+  if(!map)return;if(busy&&Date.now()-busy<15000){again=true;return}busy=Date.now();
   lastCalc={t:Date.now(),p:me?{lat:me.lat,lng:me.lng}:null};
   const st=buildStops();
   if(manual&&manual.length){
@@ -530,8 +531,6 @@ async function recalc(){
       for(let i=pi+1;i<=r.length;i++){const c=cost([...r.slice(0,i),x,...r.slice(i)]);if(c<bc){bc=c;best=i}}
       r.splice(best,0,x)});
     route=r;
-    // 직접 정한 순서 때문에 15분 일찍 못 가는 곳이 생기면, 자동 순서가 더 나을 때 알아서 바꿈
-    const auto=solve(st).map(i=>st[i]);if(missCount(auto)<missCount(r)){route=auto;manual=null;saveManual();toast('15분 일찍 도착 못 하는 곳이 있어서 순서를 다시 짰어요',4500)}
   } else {const ord=solve(st);route=ord.map(i=>st[i])}
   if(manual&&!route.length){manual=null;saveManual()}
   const pts=route.map(s=>s.pt);
@@ -554,7 +553,7 @@ async function recalc(){
   }
   routeSrc=rd?'road':'est';
   draw(rd?rd.path:null,rd?rd.km:km);
-  busy=false;
+  busy=false;if(again){again=false;setTimeout(recalc,0)}
 }
 // 번호가 겹치면 둥글게 펼쳐서 모두 누를 수 있게 (확대해서 안 겹치면 원래 자리로)
 let mks=[],dcT=0;
@@ -882,7 +881,7 @@ $('fPlan').addEventListener('submit',async e=>{e.preventDefault();
   const np=pEdit||{id:Date.now(),done:false};
   Object.assign(np,{title:$('pTitle').value.trim()||'개인 일정',place:pFound,date:$('pDate').value||todayKey(),start:st,end:en});
   let moved=false;if(planAt(np,'end')<Date.now()){np.date=addDay(np.date,1);moved=true}
-  if(!pEdit)plans.push(np);const wasEdit=!!pEdit;pEdit=null;savePlans();$('dPlan').close();
+  if(!pEdit){plans.push(np);manual=null;saveManual()}const wasEdit=!!pEdit;pEdit=null;savePlans();$('dPlan').close();
   if(wasEdit&&!moved){toast('일정을 고쳤어요. 순서와 출발 시각을 다시 계산해요.');recalc();return}
   toast(moved?'오늘 그 시간은 지나서 내일('+dlabel(np.date)+') 일정으로 넣었어요':inWindow(np)?'일정을 넣었어요. 배송 순서를 다시 맞춰요.':dlabel(np.date)+' 일정으로 넣었어요. 지도에 보라색으로 표시돼요.',4500);recalc()});
 /* ---------- 합짐 추가 ---------- */
@@ -1008,6 +1007,7 @@ $('fAdd').addEventListener('submit',async e=>{
     if(p)j.pick=p;j.drop=d;j.cargo=$('iCargo').value.trim();j.urgent=$('iUrg').checked;j.due=$('iDue').value||'';j.pdue=$('iPdue').value||'';j.fee=+$('iFee').value||0;
     if(loadedOnly&&j.state==='wait'){j.state='loaded';j.pickedAt=Date.now()}else if(!loadedOnly&&j.state==='loaded'){j.state='wait';delete j.pickedAt}
     save();$('dAdd').close();toast('고쳤어요. 순서와 도착시간을 다시 계산해요.');recalc()}return}
+  manual=null;saveManual(); // 새 짐이 들어오면 순서를 처음부터 다시 짜고, 그 뒤에 직접 조정
   jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,due:$('iDue').value||'',pdue:$('iPdue').value||'',fee:+$('iFee').value||0,state:loadedOnly?'loaded':'wait'});
   save();$('dAdd').close();toast('추가했어요. 순서와 도착시간을 다시 계산했어요.');recalc();
 });
@@ -1170,7 +1170,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v87';
+const VER='v88';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
