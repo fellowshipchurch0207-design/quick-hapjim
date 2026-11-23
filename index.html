@@ -187,7 +187,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v21</div>
+  <div class="ver">버전 2026-11-23 v22</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -598,7 +598,7 @@ $('iPick').addEventListener('change',()=>look('pick'));
 $('iDrop').addEventListener('change',()=>look('drop'));
 $('iLoaded').addEventListener('change',()=>{$('iPick').disabled=$('iLoaded').checked});
 $('bAdd').onclick=()=>{if(!map){toast('설정에서 카카오 키를 먼저 넣어 주세요');openSet();return}
-  $('fAdd').reset();$('iPick').disabled=false;$('fPick').textContent=$('fDrop').textContent='';$('fAll').className='found';$('fAll').textContent='🎤 누르고 말하면 아래 칸이 자동으로 채워져요';found={};$('dAdd').showModal();const mb=document.querySelector('.mic[data-for="iAll"]');if(mb&&mb.style.display!=='none'&&!rec)mb.click()};
+  $('fAdd').reset();$('iPick').disabled=false;$('fPick').textContent=$('fDrop').textContent='';$('fAll').className='found';$('fAll').textContent='🎤 누르고 말하면 아래 칸이 자동으로 채워져요';found={};$('dAdd').showModal();if(rec){try{rec.abort()}catch(e){}rec=null}const mb=document.querySelector('.mic[data-for="iAll"]');if(mb)mb.click()};
 
 /* ---------- 말한 내용 나누기 ---------- */
 const KN={'한':1,'두':2,'세':3,'네':4,'다섯':5,'여섯':6,'일곱':7,'여덟':8,'아홉':9,'열':10,'열한':11,'열두':12};
@@ -680,22 +680,32 @@ $('fAdd').addEventListener('submit',async e=>{
 
 /* ---------- 음성 입력 ---------- */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-let rec=null;
+let rec=null,recT=null;
+function kbHint(inp,why){const f=$('fAll');f.className='found bad';f.textContent=(why?why+' ':'')+'키보드의 🎤(음성 입력) 버튼을 눌러 말하세요. 다 말하면 키보드를 내리면 칸이 채워져요.';inp.focus()}
 document.querySelectorAll('.mic').forEach(b=>{
-  if(!SR){b.style.display='none';return}
   b.onclick=()=>{
-    if(rec){rec.stop();return}            // 다시 누르면 멈춤
-    const inp=$(b.dataset.for),keep=inp.id==='iAll'?'':(inp.value?inp.value+' ':'');
-    const r=new SR();rec=r;r.lang='ko-KR';r.interimResults=true;r.continuous=true;
-    let fin='';b.classList.add('on');b.textContent='■';inp.classList.add('live');
+    const inp=$(b.dataset.for);
+    if(!SR){kbHint(inp,'이 화면에서는 앱 마이크를 쓸 수 없어요.');return}
+    if(rec){try{rec.stop()}catch(e){}return}            // 다시 누르면 멈춤
+    const keep=inp.id==='iAll'?'':(inp.value?inp.value+' ':'');
+    let r;try{r=new SR()}catch(e){kbHint(inp,'마이크를 시작하지 못했어요.');return}
+    rec=r;r.lang='ko-KR';r.interimResults=true;r.continuous=true;
+    let fin='',got=false;b.classList.add('on');b.textContent='■';inp.classList.add('live');
     if(inp.id==='iAll'){$('fAll').className='found';$('fAll').textContent='듣고 있어요… 다 말하면 ■ 누르기'}
-    r.onresult=ev=>{let tmp='';
+    r.onresult=ev=>{got=true;let tmp='';
       for(let i=ev.resultIndex;i<ev.results.length;i++){const t=ev.results[i][0].transcript;if(ev.results[i].isFinal)fin+=t+' ';else tmp+=t}
       inp.value=keep+fin+tmp;inp.scrollTop=inp.scrollHeight};
-    const done=()=>{rec=null;b.classList.remove('on');b.textContent='🎤';inp.classList.remove('live');
+    const done=()=>{clearTimeout(recT);if(rec!==r)return;rec=null;b.classList.remove('on');b.textContent='🎤';inp.classList.remove('live');
       inp.value=inp.value.replace(/\s+/g,' ').trim();if(inp.value)inp.dispatchEvent(new Event('change'))};
-    r.onend=done;r.onerror=e=>{if(e.error==='not-allowed')toast('마이크 권한을 허용해 주세요',4000)};
-    r.start()};
+    r.onend=done;
+    r.onerror=e=>{done();
+      if(e.error==='not-allowed'||e.error==='service-not-allowed')kbHint(inp,'마이크 권한이 꺼져 있어요(설정에서 허용).');
+      else if(e.error==='network')kbHint(inp,'인터넷 연결이 약해서 음성 인식이 안 돼요.');
+      else if(e.error==='no-speech'){if(inp.id==='iAll'){$('fAll').className='found';$('fAll').textContent='아무 말도 안 들렸어요. 🎤를 다시 누르세요.'}}
+      else if(e.error!=='aborted')kbHint(inp,'음성 인식 오류('+e.error+').')};
+    // 3초 안에 시작 신호가 없으면 막힌 것으로 보고 정리
+    let started=false;r.onstart=()=>{started=true};recT=setTimeout(()=>{if(!started&&rec===r){try{r.abort()}catch(e){}rec=null;b.classList.remove('on');b.textContent='🎤';inp.classList.remove('live');kbHint(inp,'마이크가 켜지지 않았어요.')}},3000);
+    try{r.start()}catch(e){done();kbHint(inp,'마이크를 시작하지 못했어요.')}};
 });
 $('dAdd').addEventListener('close',()=>{if(rec)rec.abort()});
 
@@ -811,7 +821,7 @@ $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v21';
+const VER='v22';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
