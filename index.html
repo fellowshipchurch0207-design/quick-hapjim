@@ -187,7 +187,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v22</div>
+  <div class="ver">버전 2026-11-23 v23</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -622,13 +622,25 @@ function parseAll(raw){
     let isPick;if(/^\s*(배송(?!지)|배달|도착(?!지)|하차(?!지)|갖다|가져다|전달|드려|보내)/.test(after))isPick=false;else if(/^\s*(픽업(?!지)|상차(?!지)|받으러|가지러|출발(?!지)|수령)/.test(after))isPick=true;else isPick=lp>ld;
     if(isPick&&!out.pdue)out.pdue=hhmm;else if(!out.due)out.due=hhmm;else if(!out.pdue)out.pdue=hhmm});
   hits.forEach(tm=>{t=t.replace(tm[0],' ')});
-  const fm=t.match(/(?:금액|요금|운임|가격|비용|운송료|배송비)?\s*(?:은|는|이|가)?\s*((?:\d|[,\s]|만|천|백|십|일|이|삼|사|오|육|칠|팔|구)+?)\s*원/);
+  const fm=t.match(/(?:금액|요금|운임|가격|비용|운송료|배송비)?\s*(?:(?:은|는|이|가)\s)?\s*((?:\d|[,\s]|만|천|백|십|일|이|삼|사|오|육|칠|팔|구)+?)\s*원/);
   if(fm){const v=korNum(fm[1]);if(v>=1000){out.fee=v;t=t.replace(fm[0],' ')}}
   if(/급송|급해|급하게|빨리|최대한 빨/.test(t))out.urgent=true;
+  // 이름표로 말한 경우: "픽업지는 ○○고 배송은 ○○로 해야해, 물품은 ○○야"
+  const LB={pick:'픽업\\s?지|픽업\\s?장소|픽업|출발\\s?지|출발|상차\\s?지|상차|보내는\\s?곳',drop:'배송\\s?지|배송\\s?장소|배송|도착\\s?지|도착|하차\\s?지|하차|받는\\s?곳|목적지',cargo:'물품|물건|짐\\s?특징|짐|품목|내용물',other:'금액|요금|운임|운송료|배송비'};
+  const LRE=new RegExp('(?:^|[\\s,./])('+Object.values(LB).join('|')+')\\s*(?:은|는|이|가|:)\\s*','g');
+  const marks=[...t.matchAll(LRE)].map(m=>({kind:Object.keys(LB).find(k=>new RegExp('^(?:'+LB[k]+')$').test(m[1])),start:m.index,vs:m.index+m[0].length}));
+  const lb={};
+  marks.forEach((mk,i)=>{let v=t.slice(mk.vs,i+1<marks.length?marks[i+1].start:t.length).split(/[,.]/)[0];
+    const vm=v.match(/^(.*?)\s*(?:으로|로|에다가|에다|에)\s*(?:해야|가야|가|배송|배달|보내|가져|갖다|드려|전달)/);
+    if(vm)v=vm[1];
+    v=v.replace(/\s*(?:해야\s?(?:해|돼|됨|합니다)?|가야\s?(?:해|돼|합니다)?|해\s?줘|가\s?줘|하고|해서|그리고)\s*$/,'').replace(/\s*(?:이고|이구|고|이에요|에요|예요|이야|야|입니다|이요|요|있어)\s*$/,'').replace(/\s*(?:으로|로|까지)\s*$/,'').trim();
+    if(!v||/^(까지|가야|해야|해|하고)/.test(v)||v.length<2)return;
+    if(mk.kind!=='other'&&!lb[mk.kind])lb[mk.kind]=v});
+  if(lb.cargo){out.cargo=lb.cargo.replace(/급하게|급송|빨리/g,'').trim()}
   // 짐
-  const cg=t.match(/(?:짐은|짐이|물건은|물건이|짐 특징은|내용물은|품목은)\s*(.+?)(?:이고|이구|이야|이에요|입니다|있고|,|\.|그리고|$)/);
+  const cg=lb.cargo?null:t.match(/(?:짐은|짐이|물건은|물건이|짐 특징은|내용물은|품목은)\s*(.+?)(?:이고|이구|이야|이에요|입니다|있고|,|\.|그리고|$)/);
   if(cg){out.cargo=cg[1].replace(/급하게|급송|빨리/g,'').trim();t=t.replace(cg[0],' ')}
-  else{const IT='(?:(?![가-힣]*(?:까지|에서|으로)\\s)(?!도착|배송|배달|하차|출발|픽업|급하게)[가-힣]+\\s)?(?:서류\\s?봉투|서류|봉투|박스|상자|택배|꽃다발|꽃|케이크|도시락|쇼핑백|가방|노트북|모니터)(?:\\s*(?:\\d+|한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|하나|둘|셋|넷)\\s*(?:개|박스|상자|장|봉투|묶음|통|세트|짝)?)?';
+  else if(!lb.cargo){const IT='(?:(?![가-힣]*(?:까지|에서|으로)\\s)(?!도착|배송|배달|하차|출발|픽업|급하게)[가-힣]+\\s)?(?:서류\\s?봉투|서류|봉투|박스|상자|택배|꽃다발|꽃|케이크|도시락|쇼핑백|가방|노트북|모니터)(?:\\s*(?:\\d+|한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|하나|둘|셋|넷)\\s*(?:개|박스|상자|장|봉투|묶음|통|세트|짝)?)?';
     const ci=t.match(new RegExp('(?:^|\\s)('+IT+'(?:\\s*(?:이랑|랑|하고|과|와|,)\\s*'+IT+')*)'));
     if(ci){out.cargo=ci[1].trim();t=t.replace(ci[0],' ')}}
   t=t.replace(/\s+/g,' ').trim();
@@ -636,8 +648,8 @@ function parseAll(raw){
   const DV='(?:배송|배달|도착|가져다|갖다|보내|전달|하차|내려|납품|드려|가야|가줘|가 줘|넣어)';
   const STOP='(?=\\s*(?:이고|이구|고\\s|,|/|\\.|$|배송지|도착지|하차지|받는\\s?곳|목적지|픽업지|출발지|상차지|보내는\\s?곳))';
   const lab=(L)=>{const m=t.match(new RegExp('(?:'+L+')\\s*(?:은|는|이|가|:)?\\s*(.+?)'+STOP));return m?m[1].trim():''};
-  out.pick=lab('픽업지|출발지|상차지|보내는\\s?곳|픽업\\s?장소|출발\\s?장소');
-  out.drop=lab('배송지|도착지|하차지|받는\\s?곳|목적지|배송\\s?장소|도착\\s?장소');
+  out.pick=lb.pick||lab('픽업지|출발지|상차지|보내는\\s?곳|픽업\\s?장소|출발\\s?장소');
+  out.drop=lb.drop||lab('배송지|도착지|하차지|받는\\s?곳|목적지|배송\\s?장소|도착\\s?장소');
   const tail=r=>{r=r.replace(new RegExp('^\\s*'+PV+'[가-힣]*\\s*'),'').replace(/^(?:해서|하고|하여|해|서|고|후에?|다음에?|그리고|그다음)\s*/,'').trim();
     let m=r.match(new RegExp('^(.+?)\\s*(?:으로|로|까지|에다가|에다|에)?\\s*'+DV));
     if(!m)m=r.match(/^(.+?)\s*(?:으로|로|까지)\s*$/);
@@ -821,7 +833,7 @@ $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v22';
+const VER='v23';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
