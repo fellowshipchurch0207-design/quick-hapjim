@@ -17,9 +17,10 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;overflow-x:clip}
 button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;border-radius:10px;min-height:44px;padding:0 14px;font-weight:600}
-.app{display:grid;grid-template-rows:minmax(0,1fr) auto;height:100dvh;padding-top:env(safe-area-inset-top)}
+.app{display:grid;grid-template-rows:minmax(0,1fr);height:100dvh;padding-top:env(safe-area-inset-top)}
 header{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:var(--card);border-bottom:1px solid var(--line);position:fixed;top:0;left:0;right:0;z-index:8;transform:translateY(-105%);transition:transform .25s ease;box-shadow:0 4px 14px #0004}
 header.show{transform:none}
+body.bars .fab,body.bars .fab2{bottom:calc(80px + env(safe-area-inset-bottom))}
 #hHandle{position:fixed;top:calc(4px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:7;background:light-dark(#ffffffdd,#1b1f25dd);border:1px solid var(--line);border-radius:16px;min-height:30px;padding:0 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px #0003}
 #hHandle .dot{width:8px;height:8px;border-radius:50%;background:var(--sub)}#hHandle .dot.on{background:var(--drop)}
 @media (prefers-reduced-motion:reduce){header{transition:none}}
@@ -49,7 +50,7 @@ header h1{font-size:18px;margin:0;flex:1}
 .done{background:var(--ok);color:#fff}
 .nav{background:#fee500;color:#191919}
 .empty{color:var(--sub);text-align:center;padding:30px 10px}
-.fab{position:fixed;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);font-size:17px;min-height:56px;padding:0 22px;border-radius:28px;box-shadow:0 4px 14px #0005;z-index:5}
+.fab{position:fixed;right:16px;bottom:calc(46px + env(safe-area-inset-bottom));transition:bottom .25s;background:var(--ink);color:var(--bg);font-size:17px;min-height:56px;padding:0 22px;border-radius:28px;box-shadow:0 4px 14px #0005;z-index:5}
 dialog{border:0;border-radius:16px;padding:0;width:min(520px,94vw);background:var(--card);color:var(--ink)}
 dialog::backdrop{background:#0008}
 .dlg{padding:16px;display:grid;gap:12px}
@@ -62,7 +63,7 @@ textarea{min-height:60px;resize:vertical}
 .mic.on{background:var(--drop);color:#fff}
 .mic.big{width:64px;font-size:26px}
 .numc{display:flex;flex-direction:column;align-items:center}.mv{display:flex;flex-direction:column;gap:4px;margin-top:6px}.mv button{min-height:34px;width:40px;padding:0;font-size:14px;color:var(--ink)}.mv button:disabled{opacity:.25}
-.fab2{position:fixed;left:16px;bottom:calc(76px + env(safe-area-inset-bottom));background:#7c3aed;color:#fff;font-size:15px;min-height:50px;padding:0 16px;border-radius:25px;box-shadow:0 4px 14px #0005;z-index:5}
+.fab2{position:fixed;left:16px;bottom:calc(46px + env(safe-area-inset-bottom));transition:bottom .25s;background:#7c3aed;color:#fff;font-size:15px;min-height:50px;padding:0 16px;border-radius:25px;box-shadow:0 4px 14px #0005;z-index:5}
 .S .num{background:#7c3aed}.S .kind{color:#7c3aed}.stop.S{border-color:#7c3aed}
 .ptime{font-size:15px;font-weight:700}
 .warn{grid-column:1/-1;background:light-dark(#fff7e0,#2b2413);border-radius:10px;padding:8px 10px;font-size:14px;font-weight:700}
@@ -113,7 +114,10 @@ header h1{font-size:17px}
 .detail{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:12px;display:grid;gap:8px}
 .detail h3{margin:0;font-size:17px}
 .shift{display:flex;justify-content:space-between;font-size:14px;border-bottom:1px solid var(--line);padding:4px 0}
-.tabs{display:flex;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line)}
+.tabs{display:flex;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);position:fixed;left:0;right:0;bottom:0;z-index:8;transform:translateY(105%);transition:transform .25s ease;box-shadow:0 -4px 14px #0004}
+body.bars .tabs{transform:none}
+#bHandle{position:fixed;bottom:calc(6px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:7;background:light-dark(#ffffffdd,#1b1f25dd);border:1px solid var(--line);border-radius:16px;min-height:30px;padding:0 14px;font-size:13px;font-weight:700;box-shadow:0 2px 8px #0003}
+body.bars #bHandle{display:none}
 .tab{flex:1;background:var(--bg);border:1px solid var(--line);min-height:48px;font-size:16px}
 .tab.on{background:var(--ink);color:var(--bg)}
 .fee{display:inline-block;font-size:13px;font-weight:800;color:var(--ok);margin-left:6px;white-space:nowrap}
@@ -162,6 +166,7 @@ header h1{font-size:17px}
   </div>
   <nav class="tabs"><button type="button" class="tab on" data-tab="run">진행 중 <b id="cRun">0</b></button><button type="button" class="tab" data-tab="done">완료 <b id="cDone">0</b></button><button type="button" class="tab" data-tab="cal">달력</button></nav>
 </div>
+<button type="button" id="bHandle">▴ 진행 중 · 완료 · 달력</button>
 <button class="fab" id="bAdd">＋ 합짐 추가</button>
 <button class="fab2" id="bPlan">＋ 개인 일정</button>
 <div class="toast" id="toast"></div>
@@ -200,7 +205,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v34</div>
+  <div class="ver">버전 2026-11-23 v35</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -956,9 +961,9 @@ $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요
 fbInit();
 /* ---------- 위 메뉴 자동 숨김 ---------- */
 let hT=null;
-function showHdr(ms=5000){$('hdr').classList.add('show');clearTimeout(hT);hT=setTimeout(hideHdr,ms)}
-function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(3000);$('hdr').classList.remove('show')}
-$('hHandle').onclick=()=>showHdr();
+function showHdr(ms=5000){$('hdr').classList.add('show');document.body.classList.add('bars');clearTimeout(hT);hT=setTimeout(hideHdr,ms)}
+function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(3000);$('hdr').classList.remove('show');document.body.classList.remove('bars')}
+$('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 // 목록을 맨 위에서 아래로 끌어내리거나, 위로 스크롤하면 메뉴가 내려와요
 {const sd=document.querySelector('.side');let y0=null,lastTop=0;
@@ -967,9 +972,11 @@ $('hdr').addEventListener('click',()=>showHdr());
  sd.addEventListener('scroll',()=>{const t=sd.scrollTop;if(t<lastTop-25)showHdr();else if(t>lastTop+25)hideHdr();lastTop=t},{passive:true});
  // 화면 맨 위 가장자리에서 아래로 쓸어도 내려와요
  let ty=null;window.addEventListener('touchstart',e=>{const y=e.touches[0].clientY;ty=y<70?y:null},{passive:true});
- window.addEventListener('touchmove',e=>{if(ty!=null&&e.touches[0].clientY-ty>30){showHdr();ty=null}},{passive:true});}
+ window.addEventListener('touchmove',e=>{if(ty!=null&&e.touches[0].clientY-ty>30){showHdr();ty=null}},{passive:true});
+ let by=null;window.addEventListener('touchstart',e=>{const y=e.touches[0].clientY;by=y>innerHeight-80?y:null},{passive:true});
+ window.addEventListener('touchmove',e=>{if(by!=null&&by-e.touches[0].clientY>30){showHdr();by=null}},{passive:true});}
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v34';
+const VER='v35';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
