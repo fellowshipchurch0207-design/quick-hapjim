@@ -194,7 +194,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v29</div>
+  <div class="ver">버전 2026-11-23 v30</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -338,10 +338,10 @@ function solve(st){
   const T=(i,j)=>tmin(st[i].pt,st[j].pt);
   const T0=i=>start?tmin(start,st[i].pt):0;
   const sm=i=>(planAt(st[i].plan,'start')-Date.now())/60000,sdur=i=>(planAt(st[i].plan,'end')-planAt(st[i].plan,'start'))/60000;
-  const wt=(i,t)=>st[i].t==='S'?Math.max(0,sm(i)-t):0;
+  const wt=(i,t)=>st[i].t==='S'?Math.max(0,sm(i)-t)*0.03:0; // 약속 전 대기는 거의 손해로 치지 않음(약속은 시간 순서대로 노선 중간에)
   const after=(i,t)=>st[i].t==='S'?Math.max(t,sm(i))+sdur(i)-dw:t;
-  const pen=(i,time)=>{if(st[i].t==='S'){const l=time-sm(i);return l>0?1000+l*100:0}const j=st[i].job;if(st[i].t!=='D'){const pm=dueMin(j,'pdue');if(pm==null)return 0;let p=time*0.3;if(time>pm)p+=200+(time-pm)*20;return p}let p=j.urgent?time*1.5:0;
-    const dm=dueMin(j);if(dm!=null){p+=time*0.3;if(time>dm)p+=200+(time-dm)*20}return p};
+  const pen=(i,time)=>{if(st[i].t==='S'){const l=time-sm(i);return l>0?1000+l*100:0}const j=st[i].job;if(st[i].t!=='D'){const pm=dueMin(j,'pdue');if(pm==null)return 0;let p=time*0.02;if(time>pm)p+=200+(time-pm)*20;return p}let p=j.urgent?time*1.5:0;
+    const dm=dueMin(j);if(dm!=null){p+=time*0.02;if(time>dm)p+=200+(time-dm)*20}return p};
   if(n>16){ // 너무 많으면 가까운 곳부터
     const out=[],left=new Set(st.keys());let cur=start,used=new Set();
     while(left.size){let best=-1,bd=1e9;for(const i of left){if(st[i].pred>=0&&!used.has(st[i].pred))continue;const d=cur?tmin(cur,st[i].pt):0;if(d<bd){bd=d;best=i}}out.push(best);used.add(best);left.delete(best);cur=st[best].pt}
@@ -918,7 +918,7 @@ $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v29';
+const VER='v30';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
