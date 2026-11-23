@@ -21,7 +21,7 @@ button{cursor:pointer;border:0;border-radius:10px;min-height:44px;padding:0 14px
 header{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:var(--card);border-bottom:1px solid var(--line)}
 header h1{font-size:18px;margin:0;flex:1}
 .ghost{background:transparent;border:1px solid var(--line)}
-.main{display:grid;grid-template-rows:42vh 1fr;overflow:hidden}
+.main{display:grid;grid-template-rows:minmax(0,4fr) minmax(0,6fr);overflow:hidden}
 @media(min-width:760px){.main{grid-template-rows:1fr;grid-template-columns:1fr 400px}}
 #map{width:100%;height:100%;background:var(--line)}
 .side{overflow-y:auto;padding:10px 10px 90px}
@@ -194,7 +194,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v31</div>
+  <div class="ver">버전 2026-11-23 v32</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -926,7 +926,7 @@ $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v31';
+const VER='v32';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
