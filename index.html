@@ -65,6 +65,8 @@ textarea{min-height:60px;resize:vertical}
 .mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
 .mic.on{background:var(--drop);color:#fff}
 .mic.big{width:64px;font-size:26px}
+@keyframes fl{0%{box-shadow:0 0 0 4px #f0a400}100%{box-shadow:0 0 0 0 transparent}}.stop.flash{animation:fl 1.6s ease-out}
+.side{position:relative}
 .stop.past{opacity:.55;filter:grayscale(1);padding:6px 10px;margin-bottom:6px;grid-template-columns:30px 1fr auto;align-items:center;border-style:dashed}
 .stop.past .num{width:24px;height:24px;font-size:13px;background:var(--sub)!important}
 .stop.past .kind{font-size:12px;color:var(--sub)!important}.paddr{font-size:13px;color:var(--ink)}
@@ -212,7 +214,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v45</div>
+  <div class="ver">버전 2026-11-24 v46</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -455,7 +457,10 @@ function draw(path,km){
   const b=new kakao.maps.LatLngBounds();if(me)b.extend(new kakao.maps.LatLng(me.lat,me.lng));
   route.forEach((s,k)=>{
     const ll=new kakao.maps.LatLng(s.pt.lat,s.pt.lng);b.extend(ll);
-    const o=new kakao.maps.CustomOverlay({position:ll,content:`<div class="mkw"><div class="mk" style="background:${s.t==='P'?'#1f6feb':s.t==='S'?'#7c3aed':'#e5482d'}">${k+1}</div>${s.job?cargoIcons(s.job.cargo,true):''}</div>`,zIndex:2});
+    const el=document.createElement('div');el.className='mkw';el.style.cursor='pointer';
+    el.innerHTML=`<div class="mk" style="background:${s.t==='P'?'#1f6feb':s.t==='S'?'#7c3aed':'#e5482d'}">${k+1}</div>${s.job?cargoIcons(s.job.cargo,true):''}`;
+    const go=ev=>{ev.stopPropagation();ev.preventDefault();focusStop(k)};el.addEventListener('click',go);el.addEventListener('touchend',go);
+    const o=new kakao.maps.CustomOverlay({position:ll,content:el,zIndex:2,clickable:true});
     o.setMap(map);overlays.push(o);
   });
   plans.filter(p=>!p.done&&p.place&&planAt(p,'end')>Date.now()&&!route.some(s=>s.plan===p)&&planAt(p,'start')-Date.now()<7*864e5).forEach(p=>{
@@ -473,6 +478,9 @@ function pastHtml(){const tk=todayKey(),ev=[];
   ev.sort((a,b)=>a.time-b.time);
   return ev.map(e=>`<div class="stop past ${e.t}"><div class="numc"><div class="num">✔</div></div><div><div class="kind">${{P:'픽업 완료',D:'배송 완료',S:'일정 끝'}[e.t]} · ${hm(new Date(e.time))}${e.t==='D'&&e.j.fee?' · '+won(e.j.fee):''}</div><div class="paddr">${esc(e.t==='S'?(e.p.title||'일정')+' · '+nm(e.pt):full(e.pt))}</div></div>
     <button type="button" class="ghost undo" data-back="${e.t}:${e.t==='S'?e.p.id:e.j.id}">되돌리기</button></div>`).join('')}
+function focusStop(k){const c=$('stop-'+k);if(!c)return;const sd=document.querySelector('.side');
+  sd.scrollTo({top:c.offsetTop-sd.offsetTop-6,behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
+  const s=route[k];if(s&&map)map.panTo(new kakao.maps.LatLng(s.pt.lat,s.pt.lng))}
 function laterPlans(){const tk=todayKey(),l=plans.filter(p=>!p.done&&planAt(p,'end')>Date.now()&&!inWindow(p)).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
   return l.length?`<div class="later"><h4>📅 다가오는 개인 일정</h4>${l.map(p=>`<div class="exp"><span><b>${dlabel(p.date)} ${p.start}~${p.end}</b> ${esc(p.title||'')} · ${esc(p.place?nm(p.place):'')}</span><span><button class="ghost" data-pedit="${p.id}">수정</button><button class="ghost" data-pdel="${p.id}">삭제</button></span></div>`).join('')}<div class="tm" style="margin:4px">그날이 되면 순서에 번호로 들어가요.</div></div>`:''}
 function renderList(km){
@@ -485,7 +493,7 @@ function renderList(km){
     const nx=route[k+1],from=k?`${k}번(${KN2[route[k-1].t]})에서`:'현재 위치에서';
     const nextWarn=nx&&nx.t==='S'?`<div class="warn ${nx.wait<0?'bad':''}">⏰ <b>늦어도 ${hm(nx.leaveBy)} 출발</b>${nx.wait<0?' ('+(-nx.wait)+'분 늦음)':''}</div>`:'';
     if(s.t==='S'){const p=s.plan,nav=`https://map.kakao.com/link/to/${encodeURIComponent(p.place.name)},${p.place.lat},${p.place.lng}`;
-      return `<div class="stop S ${k?'':'next'}"><div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
+      return `<div class="stop S ${k?'':'next'}" id="stop-${k}"><div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
       <div><div class="kind">📅 개인 일정</div><div class="place">${esc(p.title||'일정')}</div><div class="ptime" data-pedit="${p.id}">${p.start} ~ ${p.end} <small style="color:var(--sub)">✎ 눌러서 수정</small></div>
         ${s.wait>0?`<div class="eta">${hm(s.target)}<small>도착 목표</small></div>`:`<div class="eta">${hm(s.eta)}<small>도착 예정</small></div>`}
         <div class="leg">🚗 ${from} <b>${s.leg}분</b></div>
@@ -496,7 +504,7 @@ function renderList(km){
     const j=s.job,isP=s.t==='P';
     const cargo=j.cargo?`<div class="cargo">${isP?'실을 짐':'여기서 내릴 짐'}: ${esc(j.cargo)}</div>`:'';
     const nav=`https://map.kakao.com/link/to/${encodeURIComponent(s.pt.name)},${s.pt.lat},${s.pt.lng}`;
-    return `<div class="stop ${s.t} ${k?'':'next'}">
+    return `<div class="stop ${s.t} ${k?'':'next'}" id="stop-${k}">
       <div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
       <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${(()=>{const f=isP?'pdue':'due';return j[f]?`<span class="due ${s.eta>dueDate(j,f)?'late':''}">${j[f]}까지${s.eta>dueDate(j,f)?' · 늦을 수 있음':''}</span>`:''})()}</div>
         <div class="eta">${hm(s.eta)}<small>도착 예정</small></div>
@@ -986,7 +994,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v45';
+const VER='v46';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
