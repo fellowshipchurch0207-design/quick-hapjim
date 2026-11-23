@@ -208,7 +208,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v39</div>
+  <div class="ver">버전 2026-11-23 v40</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -473,7 +473,7 @@ function renderList(km){
   const KN2={P:'픽업',D:'배송',S:'일정'};
   $('list').innerHTML=route.map((s,k)=>{
     const nx=route[k+1],from=k?`${k}번(${KN2[route[k-1].t]})에서`:'현재 위치에서';
-    const nextWarn=nx&&nx.t==='S'?`<div class="warn ${nx.wait<0?'bad':''}">📅 다음 일정(${esc(nx.plan.title)} ${nx.plan.start}, ${+cfg.pbuf||0}분 일찍 도착) 때문에 여기서 <b>늦어도 ${hm(nx.leaveBy)}</b>에 출발하세요${nx.wait<0?' — 지금 순서로는 '+(-nx.wait)+'분 늦어요':''}</div>`:'';
+    const nextWarn=nx&&nx.t==='S'?`<div class="warn ${nx.wait<0?'bad':''}">⏰ <b>늦어도 ${hm(nx.leaveBy)} 출발</b>${nx.wait<0?' ('+(-nx.wait)+'분 늦음)':''}</div>`:'';
     if(s.t==='S'){const p=s.plan,nav=`https://map.kakao.com/link/to/${encodeURIComponent(p.place.name)},${p.place.lat},${p.place.lng}`;
       return `<div class="stop S ${k?'':'next'}"><div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
       <div><div class="kind">📅 개인 일정</div><div class="place">${esc(p.title||'일정')}</div><div class="ptime" data-pedit="${p.id}">${p.start} ~ ${p.end} <small style="color:var(--sub)">✎ 눌러서 수정</small></div>
@@ -981,7 +981,7 @@ $('hdr').addEventListener('click',()=>showHdr());
  let by=null;window.addEventListener('touchstart',e=>{const y=e.touches[0].clientY;by=y>innerHeight-80?y:null},{passive:true});
  window.addEventListener('touchmove',e=>{if(by!=null&&by-e.touches[0].clientY>30){showHdr();by=null}},{passive:true});}
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v39';
+const VER='v40';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
