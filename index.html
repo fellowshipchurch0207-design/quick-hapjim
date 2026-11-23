@@ -205,7 +205,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v36</div>
+  <div class="ver">버전 2026-11-23 v37</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -303,7 +303,7 @@ function geocode(q){
     q=q.trim();
     const clean=q.replace(/\(.*?\)/g,' ').replace(/\s+\d+층.*$/,'').replace(/\s+/g,' ').trim();
     const byAddr=(s,next)=>geocoder.addressSearch(s,(r,st)=>{
-      if(st===kakao.maps.services.Status.OK&&r[0]){const a=r[0];res({name:(a.road_address&&a.road_address.building_name)||a.address_name,addr:a.address_name,lat:+a.y,lng:+a.x})}else next()});
+      if(st===kakao.maps.services.Status.OK&&r[0]){const a=r[0];res({name:(a.road_address&&a.road_address.building_name)||a.address_name,addr:(a.road_address&&a.road_address.address_name)||a.address_name,lat:+a.y,lng:+a.x})}else next()});
     const byKey=()=>{const o={};if(me){o.location=new kakao.maps.LatLng(me.lat,me.lng);o.sort=kakao.maps.services.SortBy.DISTANCE}
       places.keywordSearch(clean||q,(r,st)=>{if(st===kakao.maps.services.Status.OK&&r[0]){const p=r[0];res({name:p.place_name,addr:p.road_address_name||p.address_name,lat:+p.y,lng:+p.x})}else res(null)},o)};
     byAddr(q,()=>clean!==q?byAddr(clean,byKey):byKey());
@@ -316,6 +316,7 @@ function cityOf(addr){if(!addr)return'';const t=addr.trim().split(/\s+/);if(!t.l
   const parts=[f];
   if(t[1]&&/(시|군|구)$/.test(t[1])){parts.push(t[1]);if(/시$/.test(t[1])&&t[2]&&/구$/.test(t[2]))parts.push(t[2])}
   return parts.join(' ')}
+function full(pt){if(!pt)return'';const a=(pt.addr||'').trim(),n=(pt.name||'').trim();if(!a)return nm(pt);if(!n||n===a||a.includes(n))return a;return a+'('+n+')'}
 function nm(pt){if(!pt)return'';const c=cityOf(pt.addr),n=(pt.name||'').trim();if(!c)return n;const f=c.split(' ')[0];if(n.startsWith(f)||n.startsWith(c))return n;return c+' '+n}
 /* ---------- 개인 일정 ---------- */
 let plans=LS.get('plans',[]),manual=LS.get('manual',null);
@@ -474,7 +475,7 @@ function renderList(km){
       <div><div class="kind">📅 개인 일정</div><div class="place">${esc(p.title||'일정')}</div><div class="ptime" data-pedit="${p.id}">${p.start} ~ ${p.end} <small style="color:var(--sub)">✎ 눌러서 수정</small></div>
         ${s.wait>0?`<div class="eta">${hm(s.leaveBy)}<small>에 출발하면 ${p.start} 정시 도착</small></div>`:`<div class="eta">${hm(s.eta)}<small>도착 예정</small></div>`}
         <div class="leg">🚗 ${from} <b>${s.leg}분</b></div>
-        <div class="addr">${esc(nm(p.place))}${p.place.addr&&p.place.addr!==p.place.name?' · '+esc(p.place.addr):''}</div></div>
+        <div class="addr">${esc(full(p.place))}</div></div>
       <div class="warn ${s.wait<0?'bad':''}">${s.wait>=0?`✅ ${s.wait}분 여유 있게 도착`:`⚠ ${-s.wait}분 늦을 수 있어요`} · 늦지 않으려면 ${k?k+'번에서':'지금 위치에서'} <b>${hm(s.leaveBy)}</b>까지 출발</div>
       ${nx?`<div class="warn">끝나고 <b>${hm(s.depart)}</b> 출발 → ${k+2}번 ${KN2[nx.t]} ${hm(nx.eta)} 도착 (🚗 ${nx.leg}분)</div>`:''}
       <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a><button class="ghost" data-pedit="${p.id}" style="flex:0 0 64px">수정</button><button class="done" data-pdone="${p.id}">일정 끝</button><button class="ghost" data-pdel="${p.id}" style="flex:0 0 64px">삭제</button></div></div>`}
@@ -486,9 +487,9 @@ function renderList(km){
       <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${(()=>{const f=isP?'pdue':'due';return j[f]?`<span class="due ${s.eta>dueDate(j,f)?'late':''}">${j[f]}까지${s.eta>dueDate(j,f)?' · 늦을 수 있음':''}</span>`:''})()}</div>
         <div class="eta">${hm(s.eta)}<small>도착 예정</small></div>
         <div class="leg">🚗 ${from} <b>${s.leg}분</b>${k&&route[k-1].t!=='S'?` <span>+ 상하차 ${+cfg.dwell||0}분</span>`:''}</div>
-        <div class="place">${esc(nm(s.pt))}</div><div class="addr">${esc(s.pt.addr)}</div></div>
+        <div class="addr">${esc(full(s.pt))}</div></div>
       ${cargo}
-      ${!isP?`<div class="loaded">픽업지: ${esc(nm(j.pick))}</div>`:''}
+      ${!isP?`<div class="loaded">픽업지: ${esc(full(j.pick))}</div>`:''}
       <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a>
         <button class="done" data-job="${j.id}" data-t="${s.t}">${isP?'픽업 완료':'배송 완료'}</button>
         <button class="ghost" data-del="${j.id}" style="flex:0 0 64px">삭제</button></div>
@@ -976,7 +977,7 @@ $('hdr').addEventListener('click',()=>showHdr());
  let by=null;window.addEventListener('touchstart',e=>{const y=e.touches[0].clientY;by=y>innerHeight-80?y:null},{passive:true});
  window.addEventListener('touchmove',e=>{if(by!=null&&by-e.touches[0].clientY>30){showHdr();by=null}},{passive:true});}
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v36';
+const VER='v37';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
