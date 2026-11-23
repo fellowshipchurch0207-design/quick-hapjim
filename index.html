@@ -100,7 +100,7 @@ textarea{min-height:60px;resize:vertical}
 .sync{display:grid;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px}.sync input{margin-bottom:6px}
 .syncdot{width:10px;height:10px;border-radius:50%;background:var(--sub);display:inline-block}.syncdot.on{background:var(--ok)}
 .shot{display:flex;align-items:center;justify-content:center;min-height:44px;border:1px dashed var(--line);border-radius:10px;color:var(--ink);font-size:15px;cursor:pointer}
-.mkw{display:flex;align-items:center;gap:2px;transform:translateX(calc(50% - 15px))}.mko{position:relative;transition:transform .15s}.mko.moved::after{content:'';position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#fff;border:2px solid #333;transform:translate(calc(-1*var(--dx)),calc(-1*var(--dy)));pointer-events:none}.mko.moved .mk{box-shadow:0 0 0 2px #000a,0 1px 4px #0006}
+.mkw{display:flex;align-items:center;gap:2px;transform:translateX(calc(50% - 15px))}.mk.mkpast{background:#8a9099!important;width:24px;height:24px;font-size:12px;opacity:.9}.mko{position:relative;transition:transform .15s}.mko.moved::after{content:'';position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#fff;border:2px solid #333;transform:translate(calc(-1*var(--dx)),calc(-1*var(--dy)));pointer-events:none}.mko.moved .mk{box-shadow:0 0 0 2px #000a,0 1px 4px #0006}
 .mki{display:flex;align-items:center;gap:1px;background:#fff;border-radius:8px;padding:2px 3px;box-shadow:0 1px 3px #0005}
 .mki svg{width:16px;height:16px}.mki b{font-size:11px;color:#000;margin-left:1px}.mki .fragile{font-size:10px;padding:0 4px}
 .ver{font-size:12px;color:var(--sub);text-align:center}
@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v64</div>
+  <div class="ver">버전 2026-11-24 v65</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -542,6 +542,10 @@ function draw(path,km){
     const pe=document.createElement('div');pe.className='mko';pe.innerHTML='<div class="mkw"><div class="mk" style="background:#7c3aed;opacity:.85">📅</div></div>';mks.push({el:pe,ll});
     const o=new kakao.maps.CustomOverlay({position:ll,content:pe,zIndex:1});
     o.setMap(map);overlays.push(o);hasPlanMk=true});
+  pastEvents().forEach((e,i)=>{if(!e.pt||e.pt.lat==null)return;const ll=new kakao.maps.LatLng(e.pt.lat,e.pt.lng);
+    const el=document.createElement('div');el.className='mko';el.style.cursor='pointer';el.innerHTML='<div class="mkw" style="transform:none"><div class="mk mkpast">✔</div></div>';mks.push({el,ll});
+    const go=ev=>{ev.stopPropagation();ev.preventDefault();const c=$('past-'+i);if(c){c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash')}};el.addEventListener('click',go);el.addEventListener('touchend',go);
+    const o=new kakao.maps.CustomOverlay({position:ll,content:el,zIndex:0,clickable:true});o.setMap(map);overlays.push(o)});
   declutterSoon();
   const lp=path?path.map(p=>new kakao.maps.LatLng(p[0],p[1])):[...(me?[me]:[]),...route.map(s=>s.pt)].map(p=>new kakao.maps.LatLng(p.lat,p.lng));
   lastPath=path?path.slice():null;planBounds=hasPlanMk&&!route.length?b:null;
@@ -549,11 +553,12 @@ function draw(path,km){
   trimPath();fitRoute();
   renderList(km);
 }
-function pastHtml(){const tk=todayKey(),ev=[];
+function pastEvents(){const tk=todayKey(),ev=[];
   jobs.forEach(j=>{if(j.pickedAt&&dkey(j.pickedAt)===tk)ev.push({t:'P',time:j.pickedAt,j,pt:j.pick});if(j.state==='done'&&j.doneAt&&dkey(j.doneAt)===tk)ev.push({t:'D',time:j.doneAt,j,pt:j.drop})});
   plans.forEach(p=>{if(p.done&&p.doneAt&&dkey(p.doneAt)===tk)ev.push({t:'S',time:p.doneAt,p,pt:p.place})});
-  ev.sort((a,b)=>a.time-b.time);
-  return ev.map(e=>`<div class="stop past ${e.t}"><div class="numc"><div class="num">✔</div></div><div><div class="kind">${{P:'픽업 완료',D:'배송 완료',S:'일정 끝'}[e.t]} · ${hm(new Date(e.time))}${e.t==='D'&&e.j.fee?' · '+won(e.j.fee):''}</div><div class="paddr">${esc(e.t==='S'?(e.p.title||'일정')+' · '+nm(e.pt):full(e.pt))}</div></div>
+  ev.sort((a,b)=>a.time-b.time);return ev}
+function pastHtml(){const ev=pastEvents();
+  return ev.map((e,i)=>`<div class="stop past ${e.t}" id="past-${i}"><div class="numc"><div class="num">✔</div></div><div><div class="kind">${{P:'픽업 완료',D:'배송 완료',S:'일정 끝'}[e.t]} · ${hm(new Date(e.time))}${e.t==='D'&&e.j.fee?' · '+won(e.j.fee):''}</div><div class="paddr">${esc(e.t==='S'?(e.p.title||'일정')+' · '+nm(e.pt):full(e.pt))}</div></div>
     <button type="button" class="ghost undo" data-back="${e.t}:${e.t==='S'?e.p.id:e.j.id}">되돌리기</button></div>`).join('')}
 function focusStop(k){const c=$('stop-'+k);if(!c)return;const sd=document.querySelector('.side');
   let y=0,n=c;while(n&&n!==sd){y+=n.offsetTop;n=n.offsetParent}
@@ -1096,7 +1101,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v64';
+const VER='v65';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
