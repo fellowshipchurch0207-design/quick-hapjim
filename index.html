@@ -57,6 +57,12 @@ textarea{min-height:60px;resize:vertical}
 .mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
 .mic.on{background:var(--drop);color:#fff}
 .mic.big{width:64px;font-size:26px}
+.fab2{position:fixed;left:16px;bottom:calc(76px + env(safe-area-inset-bottom));background:#7c3aed;color:#fff;font-size:15px;min-height:50px;padding:0 16px;border-radius:25px;box-shadow:0 4px 14px #0005;z-index:5}
+.S .num{background:#7c3aed}.S .kind{color:#7c3aed}.stop.S{border-color:#7c3aed}
+.ptime{font-size:15px;font-weight:700}
+.warn{grid-column:1/-1;background:light-dark(#fff7e0,#2b2413);border-radius:10px;padding:8px 10px;font-size:14px;font-weight:700}
+.warn.bad{background:light-dark(#fff1ee,#2b1715);color:var(--drop)}
+.later{margin-top:14px}.later h4{margin:6px 4px;font-size:15px}
 .leg{font-size:14px;color:var(--sub);margin:2px 0}.leg b{color:var(--ink);font-size:16px}.leg span{font-size:12px}
 .mi{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;border-top:1px solid var(--line);padding:10px 0}
 .mi small{color:var(--sub);font-size:12px}.mi .tm{font-size:12px;color:var(--sub)}.mib{display:grid;gap:4px}.mib button{min-height:34px;font-size:12px;padding:0 8px}
@@ -151,6 +157,7 @@ header h1{font-size:17px}
   <nav class="tabs"><button type="button" class="tab on" data-tab="run">진행 중 <b id="cRun">0</b></button><button type="button" class="tab" data-tab="done">완료 <b id="cDone">0</b></button><button type="button" class="tab" data-tab="cal">달력</button></nav>
 </div>
 <button class="fab" id="bAdd">＋ 합짐 추가</button>
+<button class="fab2" id="bPlan">＋ 개인 일정</button>
 <div class="toast" id="toast"></div>
 
 <dialog id="dAdd"><form class="dlg" method="dialog" id="fAdd">
@@ -187,7 +194,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v24</div>
+  <div class="ver">버전 2026-11-23 v25</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -203,6 +210,14 @@ header h1{font-size:17px}
   <label>그때 주행거리 (km, 모르면 비워 두기)<input type="number" inputmode="numeric" id="msKm"></label>
   <label>날짜<input type="date" id="msDate"></label>
   <div class="btns"><button type="button" class="ghost" id="msDel">기록 지우기</button><button type="submit" class="pri">저장</button></div>
+</form></dialog>
+<dialog id="dPlan"><form class="dlg" method="dialog" id="fPlan">
+  <h2>개인 일정 추가</h2>
+  <label>무슨 일정?<input id="pTitle" placeholder="예: 점심 약속, 병원, 심방"></label>
+  <label>장소 (주소나 상호)<input id="pPlace" autocomplete="off"><div class="found" id="fPlace"></div></label>
+  <div class="row"><label style="flex:1.3">날짜<input type="date" id="pDate"></label><label style="flex:1">시작<input type="time" id="pStart"></label><label style="flex:1">끝<input type="time" id="pEnd"></label></div>
+  <div class="note">일정 시작 전에 도착하도록 배송 순서를 맞추고, 몇 시에 출발해야 하는지 알려줘요.</div>
+  <div class="btns"><button type="button" class="ghost" id="pCancel">취소</button><button type="submit" class="pri" id="pSave">추가</button></div>
 </form></dialog>
 <dialog id="dHelp"><form class="dlg" method="dialog">
   <h2>위치 권한이 꺼져 있어요</h2>
@@ -284,6 +299,12 @@ function geocode(q){
   });
 }
 
+/* ---------- 개인 일정 ---------- */
+let plans=LS.get('plans',[]);
+const savePlans=()=>{LS.set('plans',plans);syncPush('plans')};
+const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const inWindow=p=>planAt(p,'end')>Date.now()&&planAt(p,'start')-Date.now()<16*3600e3;
+function planAt(p,f){const [h,m]=(p[f]||'00:00').split(':').map(Number),[Y,M,D]=p.date.split('-').map(Number);return new Date(Y,M-1,D,h,m)}
 /* ---------- 순서 계산 (픽업은 항상 배송보다 먼저) ---------- */
 function hav(a,b){const R=6371,r=Math.PI/180,dLa=(b.lat-a.lat)*r,dLo=(b.lng-a.lng)*r;const x=Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
 const tmin=(a,b)=>hav(a,b)*1.35/cfg.speed*60;
@@ -297,6 +318,7 @@ function buildStops(){
     if(j.state==='wait'){pi=st.length;st.push({t:'P',job:j,pt:j.pick,pred:-1})}
     st.push({t:'D',job:j,pt:j.drop,pred:pi});
   });
+  plans.filter(p=>!p.done&&p.place&&inWindow(p)).forEach(p=>st.push({t:'S',plan:p,job:null,pt:p.place,pred:-1}));
   return st;
 }
 function solve(st){
@@ -304,7 +326,9 @@ function solve(st){
   const dw=+cfg.dwell||0, start=me;
   const T=(i,j)=>tmin(st[i].pt,st[j].pt);
   const T0=i=>start?tmin(start,st[i].pt):0;
-  const pen=(i,time)=>{const j=st[i].job;if(st[i].t!=='D'){const pm=dueMin(j,'pdue');if(pm==null)return 0;let p=time*0.3;if(time>pm)p+=200+(time-pm)*20;return p}let p=j.urgent?time*1.5:0;
+  const sm=i=>(planAt(st[i].plan,'start')-Date.now())/60000,sdur=i=>(planAt(st[i].plan,'end')-planAt(st[i].plan,'start'))/60000;
+  const after=(i,t)=>st[i].t==='S'?Math.max(t,sm(i))+sdur(i)-dw:t;
+  const pen=(i,time)=>{if(st[i].t==='S'){const l=time-sm(i);return l>0?1000+l*100:0}const j=st[i].job;if(st[i].t!=='D'){const pm=dueMin(j,'pdue');if(pm==null)return 0;let p=time*0.3;if(time>pm)p+=200+(time-pm)*20;return p}let p=j.urgent?time*1.5:0;
     const dm=dueMin(j);if(dm!=null){p+=time*0.3;if(time>dm)p+=200+(time-dm)*20}return p};
   if(n>16){ // 너무 많으면 가까운 곳부터
     const out=[],left=new Set(st.keys());let cur=start,used=new Set();
@@ -312,11 +336,11 @@ function solve(st){
     return out;
   }
   const N=1<<n,INF=1e18,val=new Float64Array(N*n).fill(INF),tim=new Float64Array(N*n),par=new Int16Array(N*n).fill(-1);
-  for(let i=0;i<n;i++)if(st[i].pred<0){const t=T0(i);val[(1<<i)*n+i]=t+pen(i,t);tim[(1<<i)*n+i]=t}
+  for(let i=0;i<n;i++)if(st[i].pred<0){const t=T0(i);val[(1<<i)*n+i]=t+pen(i,t);tim[(1<<i)*n+i]=after(i,t)}
   for(let m=1;m<N;m++)for(let i=0;i<n;i++){const k=m*n+i;if(val[k]>=INF)continue;
     for(let j=0;j<n;j++){if(m>>j&1)continue;const p=st[j].pred;if(p>=0&&!(m>>p&1))continue;
       const t=tim[k]+dw+T(i,j),v=val[k]+dw+T(i,j)+pen(j,t),nk=(m|1<<j)*n+j;
-      if(v<val[nk]){val[nk]=v;tim[nk]=t;par[nk]=i}}}
+      if(v<val[nk]){val[nk]=v;tim[nk]=after(j,t);par[nk]=i}}}
   let bi=0,bv=INF,full=N-1;for(let i=0;i<n;i++)if(val[full*n+i]<bv){bv=val[full*n+i];bi=i}
   const ord=[];let m=full,i=bi;while(i>=0){ord.push(i);const p=par[m*n+i];m&=~(1<<i);i=p}
   return ord.reverse();
@@ -370,7 +394,10 @@ async function recalc(){
     const leg=rd?rd.secs[k]:(prev?tmin(prev,s.pt):0);
     if(!rd&&prev)km+=hav(prev,s.pt)*1.35;
     s.leg=Math.max(1,Math.round(leg));s.legKm=prev?hav(prev,s.pt)*1.35:null;
-    t+=(k?dw:0)*60000+leg*60000;s.eta=new Date(t);prev=s.pt;
+    s.leaveBy=null;t+=leg*60000;s.eta=new Date(t);prev=s.pt;
+    if(s.t==='S'){const a=planAt(s.plan,'start').getTime(),b=planAt(s.plan,'end').getTime();s.wait=Math.round((a-t)/60000);s.leaveBy=new Date(a-leg*60000);s.depart=new Date(Math.max(t,a)+(b-a))}
+    else s.depart=new Date(t+dw*60000);
+    t=s.depart.getTime();
   });
   routeSrc=rd?'road':'est';
   draw(rd?rd.path:null,rd?rd.km:km);
@@ -381,7 +408,7 @@ function draw(path,km){
   const b=new kakao.maps.LatLngBounds();if(me)b.extend(new kakao.maps.LatLng(me.lat,me.lng));
   route.forEach((s,k)=>{
     const ll=new kakao.maps.LatLng(s.pt.lat,s.pt.lng);b.extend(ll);
-    const o=new kakao.maps.CustomOverlay({position:ll,content:`<div class="mkw"><div class="mk" style="background:${s.t==='P'?'#1f6feb':'#e5482d'}">${k+1}</div>${cargoIcons(s.job.cargo,true)}</div>`,zIndex:2});
+    const o=new kakao.maps.CustomOverlay({position:ll,content:`<div class="mkw"><div class="mk" style="background:${s.t==='P'?'#1f6feb':s.t==='S'?'#7c3aed':'#e5482d'}">${k+1}</div>${s.job?cargoIcons(s.job.cargo,true):''}</div>`,zIndex:2});
     o.setMap(map);overlays.push(o);
   });
   const lp=path?path.map(p=>new kakao.maps.LatLng(p[0],p[1])):[...(me?[me]:[]),...route.map(s=>s.pt)].map(p=>new kakao.maps.LatLng(p.lat,p.lng));
@@ -389,12 +416,26 @@ function draw(path,km){
   if(route.length)map.setBounds(b,40,40,40,40);
   renderList(km);
 }
+function laterPlans(){const tk=todayKey(),l=plans.filter(p=>!p.done&&planAt(p,'end')>Date.now()&&!inWindow(p)).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
+  return l.length?`<div class="later"><h4>📅 다가오는 개인 일정</h4>${l.map(p=>`<div class="exp"><span><b>${dlabel(p.date)} ${p.start}~${p.end}</b> ${esc(p.title||'')} · ${esc(p.place?p.place.name:'')}</span><span><button class="ghost" data-pdel="${p.id}">삭제</button></span></div>`).join('')}<div class="tm" style="margin:4px">그날이 되면 배송 순서에 자동으로 들어가요.</div></div>`:''}
 function renderList(km){
   $('cRun').textContent=jobs.filter(j=>j.state!=='done').length;
   const loaded=jobs.filter(j=>j.state==='loaded').length;
   $('sum').innerHTML=route.length?`<span>남은 곳 <b>${route.length}</b></span><span>실은 짐 <b>${loaded}</b></span><span>약 <b>${km.toFixed(1)}km</b></span><span>운전 <b>${route.reduce((a,s)=>a+s.leg,0)}분</b></span><span>마지막 도착 <b>${hm(route.at(-1).eta)}</b></span><span>${routeSrc==='road'?'실제 도로 기준':'직선거리 추정'}</span><span>출발: <b>${gpsOk?'현재 위치':'설정 출발지'}</b></span>`:'';
-  if(!route.length){$('list').innerHTML='<div class="empty">남은 배송이 없어요.<br>아래 <b>＋ 합짐 추가</b>로 콜을 넣어 주세요.</div>';return}
+  if(!route.length){$('list').innerHTML='<div class="empty">남은 배송이 없어요.<br>아래 <b>＋ 합짐 추가</b>로 콜을 넣어 주세요.</div>'+laterPlans();return}
+  const KN2={P:'픽업',D:'배송',S:'일정'};
   $('list').innerHTML=route.map((s,k)=>{
+    const nx=route[k+1],from=k?`${k}번(${KN2[route[k-1].t]})에서`:'현재 위치에서';
+    const nextWarn=nx&&nx.t==='S'?`<div class="warn ${nx.wait<0?'bad':''}">📅 다음 일정(${esc(nx.plan.title)} ${nx.plan.start}) 때문에 여기서 <b>늦어도 ${hm(nx.leaveBy)}</b>에 출발하세요${nx.wait<0?' — 지금 순서로는 '+(-nx.wait)+'분 늦어요':''}</div>`:'';
+    if(s.t==='S'){const p=s.plan,nav=`https://map.kakao.com/link/to/${encodeURIComponent(p.place.name)},${p.place.lat},${p.place.lng}`;
+      return `<div class="stop S ${k?'':'next'}"><div class="num">${k+1}</div>
+      <div><div class="kind">📅 개인 일정</div><div class="place">${esc(p.title||'일정')}</div><div class="ptime">${p.start} ~ ${p.end}</div>
+        <div class="eta">${hm(s.eta)}<small>도착 예정</small></div>
+        <div class="leg">🚗 ${from} <b>${s.leg}분</b></div>
+        <div class="addr">${esc(p.place.name)}${p.place.addr&&p.place.addr!==p.place.name?' · '+esc(p.place.addr):''}</div></div>
+      <div class="warn ${s.wait<0?'bad':''}">${s.wait>=0?`✅ ${s.wait}분 여유 있게 도착`:`⚠ ${-s.wait}분 늦을 수 있어요`} · 늦지 않으려면 ${k?k+'번에서':'지금 위치에서'} <b>${hm(s.leaveBy)}</b>까지 출발</div>
+      ${nx?`<div class="warn">끝나고 <b>${hm(s.depart)}</b> 출발 → ${k+2}번 ${KN2[nx.t]} ${hm(nx.eta)} 도착 (🚗 ${nx.leg}분)</div>`:''}
+      <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a><button class="done" data-pdone="${p.id}">일정 끝</button><button class="ghost" data-pdel="${p.id}" style="flex:0 0 64px">삭제</button></div></div>`}
     const j=s.job,isP=s.t==='P';
     const cargo=j.cargo?`<div class="cargo">${isP?'실을 짐':'여기서 내릴 짐'}: ${esc(j.cargo)}</div>`:'';
     const nav=`https://map.kakao.com/link/to/${encodeURIComponent(s.pt.name)},${s.pt.lat},${s.pt.lng}`;
@@ -402,16 +443,20 @@ function renderList(km){
       <div class="num">${k+1}</div>
       <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${(()=>{const f=isP?'pdue':'due';return j[f]?`<span class="due ${s.eta>dueDate(j,f)?'late':''}">${j[f]}까지${s.eta>dueDate(j,f)?' · 늦을 수 있음':''}</span>`:''})()}</div>
         <div class="eta">${hm(s.eta)}<small>도착 예정</small></div>
-        <div class="leg">🚗 ${k?`${k}번(${route[k-1].t==='P'?'픽업':'배송'})에서`:'현재 위치에서'} <b>${s.leg}분</b>${k?` <span>+ 상하차 ${+cfg.dwell||0}분</span>`:''}</div>
+        <div class="leg">🚗 ${from} <b>${s.leg}분</b>${k&&route[k-1].t!=='S'?` <span>+ 상하차 ${+cfg.dwell||0}분</span>`:''}</div>
         <div class="place">${esc(s.pt.name)}</div><div class="addr">${esc(s.pt.addr)}</div></div>
       ${cargo}
       ${!isP?`<div class="loaded">픽업지: ${esc(j.pick.name)}</div>`:''}
       <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a>
         <button class="done" data-job="${j.id}" data-t="${s.t}">${isP?'픽업 완료':'배송 완료'}</button>
         <button class="ghost" data-del="${j.id}" style="flex:0 0 64px">삭제</button></div>
-    </div>`}).join('');
+      ${nextWarn}
+    </div>`}).join('')+laterPlans();
 }
 $('list').addEventListener('click',e=>{
+  const pd=e.target.closest('[data-pdone]'),px=e.target.closest('[data-pdel]');
+  if(pd){const p=plans.find(p=>p.id==pd.dataset.pdone);if(p){p.done=true;savePlans();toast('일정 끝 — 다음 배송으로 다시 계산해요');recalc()}return}
+  if(px){if(px.dataset.sure){plans=plans.filter(p=>p.id!=px.dataset.pdel);savePlans();recalc()}else{px.dataset.sure=1;px.textContent='확인';setTimeout(()=>{delete px.dataset.sure;px.textContent='삭제'},3000)}return}
   const d=e.target.closest('[data-job]'),x=e.target.closest('[data-del]');
   if(d){const j=jobs.find(j=>j.id==d.dataset.job);if(!j)return;j.state=d.dataset.t==='P'?'loaded':'done';if(j.state==='done')j.doneAt=Date.now();save();renderDone();toast(d.dataset.t==='P'?'픽업 완료 — 짐이 실렸어요':'배송 완료');recalc()}
   if(x){if(x.dataset.sure){jobs=jobs.filter(j=>j.id!=x.dataset.del);save();recalc()}else{x.dataset.sure=1;x.textContent='확인';setTimeout(()=>{delete x.dataset.sure;x.textContent='삭제'},3000)}}
@@ -523,7 +568,7 @@ $('pDone').addEventListener('click',e=>{const x=expClick(e,dkey(Date.now()));if(
 $('pDone').addEventListener('change',e=>{const f=e.target.closest('[data-fee]');if(!f)return;const j=jobs.find(j=>j.id==f.dataset.fee);if(j){j.fee=+f.value||0;save();renderDone();toast('금액을 저장했어요')}});
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));
-  $('pRun').hidden=b.dataset.tab!=='run';$('pDone').hidden=b.dataset.tab!=='done';$('pCal').hidden=b.dataset.tab!=='cal';const full=b.dataset.tab!=='run';$('bAdd').style.display=full?'none':'';document.querySelector('.main').classList.toggle('nomap',full);if(!full&&map)setTimeout(()=>{map.relayout();recalc()},50);if(b.dataset.tab==='done')renderDone();if(b.dataset.tab==='cal')renderCal()});
+  $('pRun').hidden=b.dataset.tab!=='run';$('pDone').hidden=b.dataset.tab!=='done';$('pCal').hidden=b.dataset.tab!=='cal';const full=b.dataset.tab!=='run';$('bAdd').style.display=full?'none':'';$('bPlan').style.display=full?'none':'';document.querySelector('.main').classList.toggle('nomap',full);if(!full&&map)setTimeout(()=>{map.relayout();recalc()},50);if(b.dataset.tab==='done')renderDone();if(b.dataset.tab==='cal')renderCal()});
 renderDone();
 
 
@@ -584,6 +629,20 @@ $('pCal').addEventListener('click',e=>{const x=expClick(e,selDay);if(x==='r'){re
 $('pCal').addEventListener('change',e=>{if(e.target.id==='mCharge'){const mk=calM.getFullYear()+'-'+String(calM.getMonth()+1).padStart(2,'0');monthCost[mk]={charge:+e.target.value||0};saveExp();renderCal();toast('이달 충전비를 저장했어요');return}if(e.target.id!=='hFix')return;const v=e.target.value;
   if(v==='')delete hoursFix[selDay];else hoursFix[selDay]=+v;saveShifts();renderCal();toast('근무 시간을 저장했어요')});
 
+/* ---------- 개인 일정 추가 ---------- */
+let pFound=null;
+$('bPlan').onclick=()=>{if(!map){toast('설정에서 카카오 키를 먼저 넣어 주세요');return}
+  $('fPlan').reset();pFound=null;$('fPlace').textContent='';$('pDate').value=todayKey();$('dPlan').showModal()};
+$('pCancel').onclick=()=>$('dPlan').close();
+$('pPlace').addEventListener('change',async()=>{const f=$('fPlace'),v=$('pPlace').value.trim();if(!v){pFound=null;f.textContent='';return}
+  f.className='found';f.textContent='찾는 중…';pFound=await geocode(v);
+  if(pFound)f.textContent='✔ '+pFound.name+(pFound.addr&&pFound.addr!==pFound.name?' · '+pFound.addr:'');else{f.className='found bad';f.textContent='장소를 못 찾았어요. 건물명이나 동 이름을 넣어 보세요.'}});
+$('fPlan').addEventListener('submit',async e=>{e.preventDefault();
+  const st=$('pStart').value,en=$('pEnd').value;if(!st||!en){toast('시작과 끝 시각을 넣어 주세요');return}if(en<=st){toast('끝 시각이 시작보다 늦어야 해요');return}
+  if(!pFound&&$('pPlace').value.trim())pFound=await geocode($('pPlace').value);
+  if(!pFound){toast('장소를 확인해 주세요');return}
+  plans.push({id:Date.now(),title:$('pTitle').value.trim()||'개인 일정',place:pFound,date:$('pDate').value||todayKey(),start:st,end:en,done:false});
+  savePlans();$('dPlan').close();toast('일정을 넣었어요. 배송 순서를 다시 맞춰요.');recalc()});
 /* ---------- 합짐 추가 ---------- */
 let found={};
 async function look(which){
@@ -782,6 +841,7 @@ function syncPush(kind){
   if(kind==='jobs')base.child('jobs').set(toObj(jobs,'id'));
   if(kind==='shifts'){base.child('shifts').set(toObj(shifts,'start'));base.child('hoursFix').set(hoursFix)}
   if(kind==='cfg')base.child('cfg').set(cfg);
+  if(kind==='plans')base.child('plans').set(toObj(plans,'id'));
   if(kind==='car'){base.child('odo').set(odo);base.child('maint').set(maint)}
   if(kind==='exp'){base.child('expenses').set(toObj(expenses,'id'));base.child('monthCost').set(monthCost)}
 }
@@ -803,8 +863,8 @@ async function syncStart(){
   applying=true;jobs=Object.values(rj).sort((a,b)=>a.id-b.id);shifts=Object.values(rs).sort((a,b)=>a.start-b.start);
   LS.set('jobs',jobs);LS.set('shifts',shifts);LS.set('hoursFix',hoursFix);LS.set('cfg',cfg);applying=false;
   const re=r.expenses||{};expenses.forEach(x=>{if(!re[x.id])re[x.id]=x});expenses=Object.values(re).sort((a,b)=>a.id-b.id);
-  monthCost=Object.assign({},r.monthCost||{},monthCost);odo=Object.assign({},r.odo||{},odo);maint=Object.assign({},r.maint||{},maint);LS.set('odo',odo);LS.set('maint',maint);LS.set('expenses',expenses);LS.set('monthCost',monthCost);
-  await base.update({jobs:toObj(jobs,'id'),shifts:toObj(shifts,'start'),hoursFix,cfg,expenses:toObj(expenses,'id'),monthCost,odo,maint});
+  monthCost=Object.assign({},r.monthCost||{},monthCost);odo=Object.assign({},r.odo||{},odo);{const rp=r.plans||{};plans.forEach(x=>{if(!rp[x.id])rp[x.id]=x});plans=Object.values(rp).sort((a,b)=>a.id-b.id);LS.set('plans',plans)}maint=Object.assign({},r.maint||{},maint);LS.set('odo',odo);LS.set('maint',maint);LS.set('expenses',expenses);LS.set('monthCost',monthCost);
+  await base.update({jobs:toObj(jobs,'id'),shifts:toObj(shifts,'start'),hoursFix,cfg,expenses:toObj(expenses,'id'),monthCost,odo,maint,plans:toObj(plans,'id')});
   if(!hadJs&&cfg.js){location.reload();return}
   rerenderAll();
   // 실시간으로 다른 폰 변경 받기
@@ -813,6 +873,7 @@ async function syncStart(){
   base.child('shifts').on('value',v=>{const n=Object.values(v.val()||{}).sort((a,b)=>a.start-b.start);if(JSON.stringify(n)===JSON.stringify(shifts))return;
     applying=true;shifts=n;LS.set('shifts',shifts);applying=false;workBtn();if(!$('pCal').hidden)renderCal()});
   base.child('expenses').on('value',v=>{const n=Object.values(v.val()||{}).sort((a,b)=>a.id-b.id);if(JSON.stringify(n)===JSON.stringify(expenses))return;expenses=n;LS.set('expenses',n);renderDone();if(!$('pCal').hidden)renderCal()});
+  base.child('plans').on('value',v=>{const n=Object.values(v.val()||{}).sort((a,b)=>a.id-b.id);if(JSON.stringify(n)===JSON.stringify(plans))return;plans=n;LS.set('plans',n);if(map)recalc()});
   base.child('odo').on('value',v=>{const n=v.val()||{};if(JSON.stringify(n)===JSON.stringify(odo))return;odo=n;LS.set('odo',n);if(!$('pCal').hidden)renderCal()});
   base.child('maint').on('value',v=>{const n=v.val()||{};if(JSON.stringify(n)===JSON.stringify(maint))return;maint=n;LS.set('maint',n);renderCar()});
   base.child('monthCost').on('value',v=>{const n=v.val()||{};if(JSON.stringify(n)===JSON.stringify(monthCost))return;monthCost=n;LS.set('monthCost',n);renderDone();if(!$('pCal').hidden)renderCal()});
@@ -838,7 +899,7 @@ $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v24';
+const VER='v25';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
