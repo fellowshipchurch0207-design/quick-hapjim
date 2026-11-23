@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v60</div>
+  <div class="ver">버전 2026-11-24 v61</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -473,7 +473,7 @@ const slackCls=v=>v<15?'bad':v<40?'mid':'ok';
 function slackHtml(){const b=slackInfo();
   if(!b)return '<span class="slack ok"><i></i>여유 넉넉</span>';
   const c=slackCls(b.v);
-  return '<span class="slack '+c+'"><i></i>'+(b.v<0?(-b.v)+'분 늦음':'여유 '+b.v+'분')+'</span>'+(c==='bad'?'<div class="hurry">🚨 바로 다음 순서로 이동하세요!</div>':'')}
+  return '<span class="slack '+c+'"><i></i>'+(b.v<0?(-b.v)+'분 늦음':'여유 '+b.v+'분')+'</span>'+(c==='bad'?'<div class="hurry">🚨 바로 이동!</div>':'')}
 async function recalc(){
   if(!map)return;if(busy&&Date.now()-busy<15000)return;busy=Date.now();
   const st=buildStops();
@@ -1072,7 +1072,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v60';
+const VER='v61';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
