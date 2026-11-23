@@ -36,6 +36,7 @@ header h1{font-size:18px;margin:0;flex:1}
 .sum{display:flex;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--sub);margin:2px 4px 10px}
 .sum b{color:var(--ink)}
 .slack{font-size:17px;font-weight:700;padding:4px 10px;border-radius:10px;border:1px solid var(--line)}.slack small{font-size:13px;font-weight:400;color:var(--sub)}.slack.ok{color:#3ecf7a}.slack.mid{color:#f5b942}.slack.bad{color:#ff5a5a}.slack b{color:inherit;font-size:20px}
+.gap{display:inline-block;font-size:12px;font-weight:700;padding:0 6px;border-radius:6px;border:1px solid currentColor;margin-left:4px}.gap.ok{color:#3ecf7a}.gap.mid{color:#f5b942}.gap.bad{color:#ff5a5a}
 .stop{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;display:grid;grid-template-columns:44px 1fr;gap:4px 10px}
 .stop.next{border:2px solid var(--ink)}
 .num{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px}
@@ -217,7 +218,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v56</div>
+  <div class="ver">버전 2026-11-24 v57</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -459,16 +460,19 @@ function cargoIcons(text,small){
 /* ---------- 계산 + 그리기 ---------- */
 let busy=false;
 // 합짐 여유: 지금부터 몇 분을 더 써도 모든 마감·약속을 지킬 수 있는지 (약속 앞 대기 시간은 지연을 흡수)
-function slackInfo(){let wsum=0,best=null;
-  route.forEach((s,k)=>{let dl=null;
-    if(s.t==='S')dl=s.target;else{const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=dueDate(s.job,f)}
-    if(dl){const v=Math.floor((dl-s.eta)/60000)+wsum;if(!best||v<best.v)best={v,k,dl}}
-    if(s.t==='S'&&s.wait>0)wsum+=s.wait});
-  return best}
+// 구간별 여유: k번으로 가는 길에 n분을 더 쓰면 k번 이후 모든 마감이 n분씩 밀림 (약속 앞 대기는 흡수)
+function slackAll(){const n=route.length,W=[],V=[];let w=0;
+  route.forEach((s,j)=>{W[j]=w;let dl=null;if(s.t==='S')dl=s.target;else{const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=dueDate(s.job,f)}
+    V[j]=dl?{v:Math.floor((dl-s.eta)/60000)+w,dl}:null;if(s.t==='S'&&s.wait>0)w+=s.wait});
+  const out=new Array(n).fill(null);let best=null;
+  for(let k=n-1;k>=0;k--){if(V[k]&&(!best||V[k].v<best.v))best={v:V[k].v,k,dl:V[k].dl};out[k]=best?{v:best.v-W[k],k:best.k,dl:best.dl}:null}
+  return out}
+function slackInfo(){return route.length?slackAll()[0]:null}
+const slackCls=v=>v<15?'bad':v<40?'mid':'ok';
 function slackHtml(){const b=slackInfo();
   if(!b)return '<span class="slack ok">⏱ 마감 있는 곳 없음 · 끝나는 시간 <b>'+hm(route.at(-1).eta)+'</b></span>';
-  const c=b.v<0?'bad':b.v<15?'bad':b.v<40?'mid':'ok';
-  const t=b.v<0?'이미 '+(-b.v)+'분 늦음':'합짐 여유 <b>'+b.v+'분</b>';
+  const c=slackCls(b.v);
+  const t=b.v<0?'이미 '+(-b.v)+'분 늦음':'지금 합짐 여유 <b>'+b.v+'분</b>';
   return '<span class="slack '+c+'">⏱ '+t+' <small>· '+(b.k+1)+'번 '+hm(b.dl)+' 기준</small></span>'}
 async function recalc(){
   if(!map)return;if(busy&&Date.now()-busy<15000)return;busy=Date.now();
@@ -539,7 +543,7 @@ function laterPlans(){const tk=todayKey(),l=plans.filter(p=>!p.done&&planAt(p,'e
   return l.length?`<div class="later"><h4>📅 다가오는 개인 일정</h4>${l.map(p=>`<div class="exp"><span><b>${dlabel(p.date)} ${p.start}~${p.end}</b> ${esc(p.title||'')} · ${esc(p.place?nm(p.place):'')}</span><span><button class="ghost" data-pedit="${p.id}">수정</button><button class="ghost" data-pdel="${p.id}">삭제</button></span></div>`).join('')}<div class="tm" style="margin:4px">그날이 되면 순서에 번호로 들어가요.</div></div>`:''}
 function renderList(km){
   $('cRun').textContent=jobs.filter(j=>j.state!=='done').length;
-  const loaded=jobs.filter(j=>j.state==='loaded').length;
+  const loaded=jobs.filter(j=>j.state==='loaded').length,SL=slackAll();
   $('sum').innerHTML=route.length?slackHtml()+(manual?'<span>✋ <b>직접 정한 순서</b> <button type="button" class="ghost" id="bAuto" style="min-height:30px;font-size:13px;padding:0 8px">자동 순서로</button></span>':''):'';
   if(!route.length){$('list').innerHTML=pastHtml()+'<div class="empty">남은 배송이 없어요.<br>지도 오른쪽 아래 📦 버튼으로 콜을 넣어 주세요.</div>'+laterPlans();return}
   const KN2={P:'픽업',D:'배송',S:'일정'};
@@ -550,7 +554,7 @@ function renderList(km){
       return `<div class="stop S ${k?'':'next'}" id="stop-${k}"><div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
       <div><div class="kind">📅 개인 일정</div><div class="place">${esc(p.title||'일정')}</div><div class="ptime" data-pedit="${p.id}">${p.start} ~ ${p.end} <small style="color:var(--sub)">✎ 눌러서 수정</small></div>
         ${s.wait>0?`<div class="eta">${hm(s.target)}<small>도착 목표</small></div>`:`<div class="eta">${hm(s.eta)}<small>도착 예정</small></div>`}
-        <div class="leg">🚗 ${from} <b>${s.leg}분</b></div>
+        <div class="leg">🚗 ${from} <b>${s.leg}분</b> ${(()=>{const g=SL[k];return g&&k?`<span class="gap ${slackCls(g.v)}">${g.v<0?'⚠ '+(-g.v)+'분 늦음':'여유 '+g.v+'분'}</span>`:''})()}</div>
         <div class="addr">${esc(full(p.place))}</div></div>
       ${k===0?`<div class="warn ${s.wait<0?'bad':''}">⏰ <b>늦어도 ${hm(s.leaveBy)} 출발</b>${s.wait<0?' ('+(-s.wait)+'분 늦음)':''}</div>`:''}
       ${nx?`<div class="warn">끝나고 ${hm(s.depart)} 출발 → ${k+2}번 ${hm(nx.eta)} 도착</div>`:''}
@@ -562,7 +566,7 @@ function renderList(km){
       <div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
       <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${(()=>{const f=isP?'pdue':'due';return j[f]?`<span class="due ${s.eta>dueDate(j,f)?'late':''}">${j[f]}까지${s.eta>dueDate(j,f)?' · 늦을 수 있음':''}</span>`:''})()}</div>
         <div class="eta">${hm(s.eta)}<small>도착 예정</small></div>
-        <div class="leg">🚗 ${from} <b>${s.leg}분</b>${k&&route[k-1].t!=='S'?` <span>+ 상하차 ${+cfg.dwell||0}분</span>`:''}</div>
+        <div class="leg">🚗 ${from} <b>${s.leg}분</b>${k&&route[k-1].t!=='S'?` <span>+ 상하차 ${+cfg.dwell||0}분</span>`:''} ${(()=>{const g=SL[k];return g&&k?`<span class="gap ${slackCls(g.v)}">${g.v<0?'⚠ '+(-g.v)+'분 늦음':'여유 '+g.v+'분'}</span>`:''})()}</div>
         <div class="addr">${esc(full(s.pt))}</div></div>
       ${cargo}
       ${!isP?`<div class="loaded">픽업지: ${esc(full(j.pick))}</div>`:`<div class="loaded">배송지: ${esc(full(j.drop))}</div>`}
@@ -1067,7 +1071,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v56';
+const VER='v57';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
