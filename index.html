@@ -57,6 +57,7 @@ textarea{min-height:60px;resize:vertical}
 .mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
 .mic.on{background:var(--drop);color:#fff}
 .mic.big{width:64px;font-size:26px}
+.numc{display:flex;flex-direction:column;align-items:center}.mv{display:flex;flex-direction:column;gap:4px;margin-top:6px}.mv button{min-height:34px;width:40px;padding:0;font-size:14px;color:var(--ink)}.mv button:disabled{opacity:.25}
 .fab2{position:fixed;left:16px;bottom:calc(76px + env(safe-area-inset-bottom));background:#7c3aed;color:#fff;font-size:15px;min-height:50px;padding:0 16px;border-radius:25px;box-shadow:0 4px 14px #0005;z-index:5}
 .S .num{background:#7c3aed}.S .kind{color:#7c3aed}.stop.S{border-color:#7c3aed}
 .ptime{font-size:15px;font-weight:700}
@@ -194,7 +195,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v32</div>
+  <div class="ver">버전 2026-11-23 v33</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -307,7 +308,9 @@ function cityOf(addr){if(!addr)return'';const t=addr.trim().split(/\s+/);if(!t.l
   return parts.join(' ')}
 function nm(pt){if(!pt)return'';const c=cityOf(pt.addr),n=(pt.name||'').trim();if(!c)return n;const f=c.split(' ')[0];if(n.startsWith(f)||n.startsWith(c))return n;return c+' '+n}
 /* ---------- 개인 일정 ---------- */
-let plans=LS.get('plans',[]);
+let plans=LS.get('plans',[]),manual=LS.get('manual',null);
+const saveManual=()=>{LS.set('manual',manual);syncPush('manual')};
+const skey=s=>s.t+':'+(s.job?s.job.id:s.plan.id);
 const savePlans=()=>{LS.set('plans',plans);syncPush('plans')};
 const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 function addDay(k,n){const [Y,M,D]=k.split('-').map(Number),d=new Date(Y,M-1,D+n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
@@ -397,8 +400,20 @@ function cargoIcons(text,small){
 let busy=false;
 async function recalc(){
   if(!map)return;if(busy&&Date.now()-busy<15000)return;busy=Date.now();
-  const st=buildStops(),ord=solve(st);
-  route=ord.map(i=>st[i]);
+  const st=buildStops();
+  if(manual&&manual.length){
+    const byK=new Map(st.map(x=>[skey(x),x]));
+    let r=manual.map(k=>byK.get(k)).filter(Boolean);
+    const rest=st.filter(x=>!r.includes(x));
+    // 새로 들어온 곳은 가장 덜 돌아가는 자리에 끼워 넣기 (픽업이 배송보다 먼저)
+    const cost=a=>{let c=0,prev=me;a.forEach(x=>{if(prev)c+=tmin(prev,x.pt);prev=x.pt});return c};
+    rest.sort((a,b)=>(a.t==='P'?0:1)-(b.t==='P'?0:1)).forEach(x=>{
+      const pi=x.pred>=0?r.indexOf(st[x.pred]):-1;let best=r.length,bc=1e18;
+      for(let i=pi+1;i<=r.length;i++){const c=cost([...r.slice(0,i),x,...r.slice(i)]);if(c<bc){bc=c;best=i}}
+      r.splice(best,0,x)});
+    route=r;
+  } else {const ord=solve(st);route=ord.map(i=>st[i])}
+  if(manual&&!route.length){manual=null;saveManual()}
   const pts=route.map(s=>s.pt);
   const rd=await roadTimes(pts);
   const dw=+cfg.dwell||0;let t=Date.now(),prev=me,km=0;
@@ -438,14 +453,14 @@ function laterPlans(){const tk=todayKey(),l=plans.filter(p=>!p.done&&planAt(p,'e
 function renderList(km){
   $('cRun').textContent=jobs.filter(j=>j.state!=='done').length;
   const loaded=jobs.filter(j=>j.state==='loaded').length;
-  $('sum').innerHTML=route.length?`<span>남은 곳 <b>${route.length}</b></span><span>실은 짐 <b>${loaded}</b></span><span>약 <b>${km.toFixed(1)}km</b></span><span>운전 <b>${route.reduce((a,s)=>a+s.leg,0)}분</b></span><span>마지막 도착 <b>${hm(route.at(-1).eta)}</b></span><span>${routeSrc==='road'?'실제 도로 기준':'직선거리 추정'}</span><span>출발: <b>${gpsOk?'현재 위치':'설정 출발지'}</b></span>`:'';
+  $('sum').innerHTML=route.length?`<span>남은 곳 <b>${route.length}</b></span><span>실은 짐 <b>${loaded}</b></span><span>약 <b>${km.toFixed(1)}km</b></span><span>운전 <b>${route.reduce((a,s)=>a+s.leg,0)}분</b></span><span>마지막 도착 <b>${hm(route.at(-1).eta)}</b></span><span>${routeSrc==='road'?'실제 도로 기준':'직선거리 추정'}</span><span>출발: <b>${gpsOk?'현재 위치':'설정 출발지'}</b></span>${manual?'<span>✋ <b>직접 정한 순서</b> <button type="button" class="ghost" id="bAuto" style="min-height:30px;font-size:13px;padding:0 8px">자동 순서로</button></span>':'<span>▲▼로 순서를 바꿀 수 있어요</span>'}`:'';
   if(!route.length){$('list').innerHTML='<div class="empty">남은 배송이 없어요.<br>아래 <b>＋ 합짐 추가</b>로 콜을 넣어 주세요.</div>'+laterPlans();return}
   const KN2={P:'픽업',D:'배송',S:'일정'};
   $('list').innerHTML=route.map((s,k)=>{
     const nx=route[k+1],from=k?`${k}번(${KN2[route[k-1].t]})에서`:'현재 위치에서';
     const nextWarn=nx&&nx.t==='S'?`<div class="warn ${nx.wait<0?'bad':''}">📅 다음 일정(${esc(nx.plan.title)} ${nx.plan.start}) 때문에 여기서 <b>늦어도 ${hm(nx.leaveBy)}</b>에 출발하세요${nx.wait<0?' — 지금 순서로는 '+(-nx.wait)+'분 늦어요':''}</div>`:'';
     if(s.t==='S'){const p=s.plan,nav=`https://map.kakao.com/link/to/${encodeURIComponent(p.place.name)},${p.place.lat},${p.place.lng}`;
-      return `<div class="stop S ${k?'':'next'}"><div class="num">${k+1}</div>
+      return `<div class="stop S ${k?'':'next'}"><div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
       <div><div class="kind">📅 개인 일정</div><div class="place">${esc(p.title||'일정')}</div><div class="ptime" data-pedit="${p.id}">${p.start} ~ ${p.end} <small style="color:var(--sub)">✎ 눌러서 수정</small></div>
         ${s.wait>0?`<div class="eta">${hm(s.leaveBy)}<small>에 출발하면 ${p.start} 정시 도착</small></div>`:`<div class="eta">${hm(s.eta)}<small>도착 예정</small></div>`}
         <div class="leg">🚗 ${from} <b>${s.leg}분</b></div>
@@ -457,7 +472,7 @@ function renderList(km){
     const cargo=j.cargo?`<div class="cargo">${isP?'실을 짐':'여기서 내릴 짐'}: ${esc(j.cargo)}</div>`:'';
     const nav=`https://map.kakao.com/link/to/${encodeURIComponent(s.pt.name)},${s.pt.lat},${s.pt.lng}`;
     return `<div class="stop ${s.t} ${k?'':'next'}">
-      <div class="num">${k+1}</div>
+      <div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
       <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${(()=>{const f=isP?'pdue':'due';return j[f]?`<span class="due ${s.eta>dueDate(j,f)?'late':''}">${j[f]}까지${s.eta>dueDate(j,f)?' · 늦을 수 있음':''}</span>`:''})()}</div>
         <div class="eta">${hm(s.eta)}<small>도착 예정</small></div>
         <div class="leg">🚗 ${from} <b>${s.leg}분</b>${k&&route[k-1].t!=='S'?` <span>+ 상하차 ${+cfg.dwell||0}분</span>`:''}</div>
@@ -470,7 +485,14 @@ function renderList(km){
       ${nextWarn}
     </div>`}).join('')+laterPlans();
 }
+document.addEventListener('click',e=>{if(e.target.id==='bAuto'){manual=null;saveManual();toast('자동 순서로 돌렸어요');recalc()}});
 $('list').addEventListener('click',e=>{
+  const mvb=e.target.closest('[data-mv]');
+  if(mvb){const k=+mvb.dataset.mv,d=+mvb.dataset.dir,j=k+d;if(j<0||j>=route.length)return;
+    const r=route.slice();[r[k],r[j]]=[r[j],r[k]];
+    const bad=r.some((x,i)=>x.t==='D'&&x.job.state==='wait'&&r.findIndex(y=>y.t==='P'&&y.job===x.job)>i);
+    if(bad){toast('픽업보다 배송을 먼저 할 수는 없어요');return}
+    manual=r.map(skey);saveManual();recalc();return}
   const pe=e.target.closest('[data-pedit]');if(pe){openPlan(plans.find(p=>p.id==pe.dataset.pedit));return}
   const pd=e.target.closest('[data-pdone]'),px=e.target.closest('[data-pdel]');
   if(pd){const p=plans.find(p=>p.id==pd.dataset.pdone);if(p){p.done=true;savePlans();toast('일정 끝 — 다음 배송으로 다시 계산해요');recalc()}return}
@@ -868,6 +890,7 @@ function syncPush(kind){
   if(kind==='jobs')base.child('jobs').set(toObj(jobs,'id'));
   if(kind==='shifts'){base.child('shifts').set(toObj(shifts,'start'));base.child('hoursFix').set(hoursFix)}
   if(kind==='cfg')base.child('cfg').set(cfg);
+  if(kind==='manual')base.child('manual').set(manual||null);
   if(kind==='plans')base.child('plans').set(toObj(plans,'id'));
   if(kind==='car'){base.child('odo').set(odo);base.child('maint').set(maint)}
   if(kind==='exp'){base.child('expenses').set(toObj(expenses,'id'));base.child('monthCost').set(monthCost)}
@@ -900,6 +923,7 @@ async function syncStart(){
   base.child('shifts').on('value',v=>{const n=Object.values(v.val()||{}).sort((a,b)=>a.start-b.start);if(JSON.stringify(n)===JSON.stringify(shifts))return;
     applying=true;shifts=n;LS.set('shifts',shifts);applying=false;workBtn();if(!$('pCal').hidden)renderCal()});
   base.child('expenses').on('value',v=>{const n=Object.values(v.val()||{}).sort((a,b)=>a.id-b.id);if(JSON.stringify(n)===JSON.stringify(expenses))return;expenses=n;LS.set('expenses',n);renderDone();if(!$('pCal').hidden)renderCal()});
+  base.child('manual').on('value',v=>{const n=v.val()||null;if(JSON.stringify(n)===JSON.stringify(manual))return;manual=n;LS.set('manual',n);if(map)recalc()});
   base.child('plans').on('value',v=>{const n=Object.values(v.val()||{}).sort((a,b)=>a.id-b.id);if(JSON.stringify(n)===JSON.stringify(plans))return;plans=n;LS.set('plans',n);if(map)recalc()});
   base.child('odo').on('value',v=>{const n=v.val()||{};if(JSON.stringify(n)===JSON.stringify(odo))return;odo=n;LS.set('odo',n);if(!$('pCal').hidden)renderCal()});
   base.child('maint').on('value',v=>{const n=v.val()||{};if(JSON.stringify(n)===JSON.stringify(maint))return;maint=n;LS.set('maint',n);renderCar()});
@@ -926,7 +950,7 @@ $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v32';
+const VER='v33';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
