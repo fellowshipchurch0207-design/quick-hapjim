@@ -187,7 +187,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v23</div>
+  <div class="ver">버전 2026-11-23 v24</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -615,11 +615,16 @@ function parseAll(raw){
   const hits=[...t.matchAll(TRE)];
   hits.forEach(tm=>{let h=KN[tm[2]]||+tm[2],m=tm[3]==='반'?30:(+tm[4]||0);const ap=tm[1];
     if((ap==='오후'||ap==='저녁'||ap==='밤')&&h<12)h+=12;else if(!ap&&h<=7)h+=12;
-    else if(!ap){const now=new Date();if(h<12&&h*60+m<now.getHours()*60+now.getMinutes()-60)h+=12}
+    else if(!ap){const now=new Date(),nm=now.getHours()*60+now.getMinutes();if(h<12&&h*60+m<nm-60&&(h+12)*60+m>nm)h+=12}
     const hhmm=String(h%24).padStart(2,'0')+':'+String(m).padStart(2,'0');
     const before=t.slice(Math.max(0,tm.index-10),tm.index),after=t.slice(tm.index+tm[0].length,tm.index+tm[0].length+8);
     const lp=Math.max(...['픽업','상차','출발','받','가지러','수령'].map(k=>before.lastIndexOf(k))),ld=Math.max(...['배송','도착','배달','하차','갖다','가져다','전달'].map(k=>before.lastIndexOf(k)));
-    let isPick;if(/^\s*(배송(?!지)|배달|도착(?!지)|하차(?!지)|갖다|가져다|전달|드려|보내)/.test(after))isPick=false;else if(/^\s*(픽업(?!지)|상차(?!지)|받으러|가지러|출발(?!지)|수령)/.test(after))isPick=true;else isPick=lp>ld;
+    let isPick;
+    if(/(픽업|상차|출발)\s?(지|장소)?\s*(은|는|이|가|:)?\s*$/.test(before))isPick=true;
+    else if(/(배송|배달|도착|하차)\s?(지|장소)?\s*(은|는|이|가|:)?\s*$/.test(before))isPick=false;
+    else if(/^\s*(배송|배달|도착|하차|갖다|가져다|전달|드려|보내)(?![은는이가지])/.test(after))isPick=false;
+    else if(/^\s*(픽업|상차|받으러|가지러|출발|수령)(?![은는이가지])/.test(after))isPick=true;
+    else isPick=lp>ld;
     if(isPick&&!out.pdue)out.pdue=hhmm;else if(!out.due)out.due=hhmm;else if(!out.pdue)out.pdue=hhmm});
   hits.forEach(tm=>{t=t.replace(tm[0],' ')});
   const fm=t.match(/(?:금액|요금|운임|가격|비용|운송료|배송비)?\s*(?:(?:은|는|이|가)\s)?\s*((?:\d|[,\s]|만|천|백|십|일|이|삼|사|오|육|칠|팔|구)+?)\s*원/);
@@ -833,7 +838,7 @@ $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v23';
+const VER='v24';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
