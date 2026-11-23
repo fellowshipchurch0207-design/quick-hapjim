@@ -74,7 +74,7 @@ textarea{min-height:60px;resize:vertical}
 .stop.past .num{width:24px;height:24px;font-size:13px;background:var(--sub)!important}
 .stop.past .kind{font-size:12px;color:var(--sub)!important}.paddr{font-size:13px;color:var(--ink)}
 .stop.past .undo{min-height:30px;font-size:12px;padding:0 8px}
-.numc{display:flex;flex-direction:column;align-items:center}.mv{display:flex;flex-direction:column;gap:4px;margin-top:6px}.mv button{min-height:34px;width:40px;padding:0;font-size:14px;color:var(--ink)}.mv button:disabled{opacity:.25}
+.numc{display:flex;flex-direction:column;align-items:center}.stop{position:relative}.mv{position:absolute;top:6px;right:6px;display:flex;gap:4px}.mv button{min-height:26px;height:26px;width:28px;padding:0;font-size:11px;line-height:1;border-radius:7px;color:var(--sub)}.mv button:disabled{opacity:.25}
 .fab2{position:fixed;left:16px;bottom:calc(46px + env(safe-area-inset-bottom));transition:bottom .25s;background:#7c3aed;color:#fff;font-size:15px;min-height:50px;padding:0 16px;border-radius:25px;box-shadow:0 4px 14px #0005;z-index:5}
 .S .num{background:#7c3aed}.S .kind{color:#7c3aed}.stop.S{border-color:#7c3aed}
 .ptime{font-size:15px;font-weight:700}
@@ -217,7 +217,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v55</div>
+  <div class="ver">버전 2026-11-24 v56</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -1067,7 +1067,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v55';
+const VER='v56';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
