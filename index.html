@@ -216,7 +216,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v49</div>
+  <div class="ver">버전 2026-11-24 v50</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -346,13 +346,17 @@ function trimPath(){
     const rest=bd<0.3?lastPath.slice(bi):lastPath;
     line.setPath([new kakao.maps.LatLng(me.lat,me.lng),...rest.map(p=>new kakao.maps.LatLng(p[0],p[1]))])}
   else if(route.length)line.setPath([me,...route.map(s=>s.pt)].map(p=>new kakao.maps.LatLng(p.lat,p.lng)))}
-function fitRoute(){
-  if(!map)return;if(Date.now()-userMoved<10000)return;
+let fitT=null;
+function fitRoute(force){
+  if(!map)return;if(!force&&Date.now()-userMoved<10000)return;
   const pts=[...(me?[me]:[]),...route.map(s=>s.pt)];
-  if(pts.length<2){if(planBounds){fitting=true;map.setBounds(planBounds,40,40,40,40);setTimeout(()=>fitting=false,400)}return}
+  if(pts.length<2){fitting=true;if(pts.length===1){map.setLevel(5);map.setCenter(new kakao.maps.LatLng(pts[0].lat,pts[0].lng))}else if(planBounds)map.setBounds(planBounds,40,40,40,40);setTimeout(()=>fitting=false,400);return}
   const b=new kakao.maps.LatLngBounds();pts.forEach(p=>b.extend(new kakao.maps.LatLng(p.lat,p.lng)));
   fitting=true;map.setBounds(b,40,40,40,40);setTimeout(()=>fitting=false,400)}
-function watchUser(){['zoom_start','dragstart'].forEach(ev=>kakao.maps.event&&kakao.maps.event.addListener(map,ev,()=>{if(!fitting)userMoved=Date.now()}))}
+function userTouch(){userMoved=Date.now();clearTimeout(fitT);fitT=setTimeout(()=>fitRoute(true),10000)}
+function watchUser(){
+  ['zoom_start','dragstart','drag','zoom_changed'].forEach(ev=>{try{kakao.maps.event.addListener(map,ev,()=>{if(!fitting)userTouch()})}catch(e){}});
+  const el=$('map');['touchstart','touchmove','wheel','mousedown'].forEach(ev=>el.addEventListener(ev,()=>userTouch(),{passive:true}))}
 setInterval(()=>{if(!map)return;trimPath();fitRoute()},10000);
 /* ---------- 개인 일정 ---------- */
 let track=LS.get('track',{}),trackPushAt=0;
@@ -1044,7 +1048,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v49';
+const VER='v50';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
