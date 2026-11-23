@@ -17,8 +17,12 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;overflow-x:clip}
 button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;border-radius:10px;min-height:44px;padding:0 14px;font-weight:600}
-.app{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100dvh}
-header{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:var(--card);border-bottom:1px solid var(--line)}
+.app{display:grid;grid-template-rows:minmax(0,1fr) auto;height:100dvh;padding-top:env(safe-area-inset-top)}
+header{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:var(--card);border-bottom:1px solid var(--line);position:fixed;top:0;left:0;right:0;z-index:8;transform:translateY(-105%);transition:transform .25s ease;box-shadow:0 4px 14px #0004}
+header.show{transform:none}
+#hHandle{position:fixed;top:calc(4px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:7;background:light-dark(#ffffffdd,#1b1f25dd);border:1px solid var(--line);border-radius:16px;min-height:30px;padding:0 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px #0003}
+#hHandle .dot{width:8px;height:8px;border-radius:50%;background:var(--sub)}#hHandle .dot.on{background:var(--drop)}
+@media (prefers-reduced-motion:reduce){header{transition:none}}
 header h1{font-size:18px;margin:0;flex:1}
 .ghost{background:transparent;border:1px solid var(--line)}
 .main{display:grid;grid-template-rows:minmax(0,4fr) minmax(0,6fr);overflow:hidden}
@@ -140,7 +144,8 @@ header h1{font-size:17px}
 </head>
 <body>
 <div class="app">
-  <header>
+  <button type="button" id="hHandle"><span class="dot" id="hDot"></span>▾ 메뉴</button>
+  <header id="hdr">
     <h1>퀵 합짐 <span class="syncdot" id="syncDot" title="동기화"></span></h1>
     <button class="work" id="bWork">▶ 근무 시작</button>
     <button class="ghost ic" id="bLoc" aria-label="내 위치">📍</button>
@@ -195,7 +200,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v33</div>
+  <div class="ver">버전 2026-11-23 v34</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -617,7 +622,7 @@ let shifts=LS.get('shifts',[]).filter(x=>!x.end||x.end-x.start>=60000),hoursFix=
 const saveShifts=()=>{LS.set('shifts',shifts);LS.set('hoursFix',hoursFix);syncPush('shifts')};
 const openShift=()=>shifts.find(x=>!x.end);
 const hmDur=m=>{m=Math.round(m);return Math.floor(m/60)+'시간 '+(m%60)+'분'};
-function workBtn(){const o=openShift(),b=$('bWork');
+function workBtn(){const o=openShift(),b=$('bWork');$('hDot')&&$('hDot').classList.toggle('on',!!o);
   if(o){b.classList.add('on');b.textContent='■ 종료 '+hmDur((Date.now()-o.start)/60000).replace('시간 ',':').replace('분','')}
   else{b.classList.remove('on');b.textContent='▶ 근무 시작'}}
 $('bWork').onclick=()=>{const o=openShift();
@@ -949,8 +954,22 @@ async function doAuth(join){
 $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
+/* ---------- 위 메뉴 자동 숨김 ---------- */
+let hT=null;
+function showHdr(ms=5000){$('hdr').classList.add('show');clearTimeout(hT);hT=setTimeout(hideHdr,ms)}
+function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(3000);$('hdr').classList.remove('show')}
+$('hHandle').onclick=()=>showHdr();
+$('hdr').addEventListener('click',()=>showHdr());
+// 목록을 맨 위에서 아래로 끌어내리거나, 위로 스크롤하면 메뉴가 내려와요
+{const sd=document.querySelector('.side');let y0=null,lastTop=0;
+ sd.addEventListener('touchstart',e=>{y0=sd.scrollTop<=0?e.touches[0].clientY:null},{passive:true});
+ sd.addEventListener('touchmove',e=>{if(y0!=null&&e.touches[0].clientY-y0>40){showHdr();y0=null}},{passive:true});
+ sd.addEventListener('scroll',()=>{const t=sd.scrollTop;if(t<lastTop-25)showHdr();else if(t>lastTop+25)hideHdr();lastTop=t},{passive:true});
+ // 화면 맨 위 가장자리에서 아래로 쓸어도 내려와요
+ let ty=null;window.addEventListener('touchstart',e=>{const y=e.touches[0].clientY;ty=y<70?y:null},{passive:true});
+ window.addEventListener('touchmove',e=>{if(ty!=null&&e.touches[0].clientY-ty>30){showHdr();ty=null}},{passive:true});}
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v33';
+const VER='v34';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
