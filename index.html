@@ -20,7 +20,6 @@ button{cursor:pointer;border:0;border-radius:10px;min-height:44px;padding:0 14px
 .app{display:grid;grid-template-rows:minmax(0,1fr);height:100dvh;padding-top:env(safe-area-inset-top)}
 header{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:var(--card);border-bottom:1px solid var(--line);position:fixed;top:0;left:0;right:0;z-index:8;transform:translateY(-105%);transition:transform .15s ease;box-shadow:0 4px 14px #0004}
 header.show{transform:none}
-body.bars .fab,body.bars .fab2{bottom:calc(80px + env(safe-area-inset-bottom))}
 #hHandle{position:fixed;top:calc(4px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:7;background:light-dark(#ffffffdd,#1b1f25dd);border:1px solid var(--line);border-radius:16px;min-height:30px;padding:0 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px #0003}
 #hHandle .dot{width:8px;height:8px;border-radius:50%;background:var(--sub)}#hHandle .dot.on{background:var(--drop)}
 @media (prefers-reduced-motion:reduce){header{transition:none}}
@@ -29,6 +28,10 @@ header h1{font-size:18px;margin:0;flex:1}
 .main{display:grid;grid-template-rows:minmax(0,4fr) minmax(0,6fr);overflow:hidden}
 @media(min-width:760px){.main{grid-template-rows:1fr;grid-template-columns:1fr 400px}}
 #map{width:100%;height:100%;background:var(--line)}
+.mapw{position:relative;min-height:0}
+.mapbtns{position:absolute;right:10px;bottom:10px;z-index:4;display:flex;gap:8px}
+.ibtn{width:50px;height:50px;min-height:0;padding:0;border-radius:14px;background:light-dark(#fffffff0,#1b1f25f0);border:1px solid var(--line);box-shadow:0 3px 10px #0004;display:grid;place-items:center}
+.ibtn:active{transform:scale(.94)}
 .side{overflow-y:auto;padding:10px 10px 90px}
 .sum{display:flex;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--sub);margin:2px 4px 10px}
 .sum b{color:var(--ink)}
@@ -94,7 +97,7 @@ textarea{min-height:60px;resize:vertical}
 .fragile{background:#ffd34d;color:#000;font-size:12px;font-weight:800;border-radius:6px;padding:2px 6px}
 .live{border-color:var(--drop)!important;box-shadow:0 0 0 3px #e5482d33}
 #iAll{min-height:84px;font-size:17px}
-.main.nomap{grid-template-rows:1fr;grid-template-columns:1fr}.main.nomap #map{display:none}
+.main.nomap{grid-template-rows:1fr;grid-template-columns:1fr}.main.nomap .mapw{display:none}
 .main.nomap .side{max-width:760px;width:100%;margin:0 auto}
 header h1{font-size:17px}
 .ic{min-width:44px;padding:0 10px;font-size:18px}
@@ -114,11 +117,11 @@ header h1{font-size:17px}
 .detail{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:12px;display:grid;gap:8px}
 .detail h3{margin:0;font-size:17px}
 .shift{display:flex;justify-content:space-between;font-size:14px;border-bottom:1px solid var(--line);padding:4px 0}
-.tabs{display:flex;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);position:fixed;left:0;right:0;bottom:0;z-index:8;transform:translateY(105%);transition:transform .15s ease;box-shadow:0 -4px 14px #0004}
+.tabs{display:flex;gap:6px;padding:4px 8px max(2px,env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);position:fixed;left:0;right:0;bottom:0;z-index:8;transform:translateY(105%);transition:transform .15s ease;box-shadow:0 -4px 14px #0004}
 body.bars .tabs{transform:none}
-#bHandle{position:fixed;bottom:calc(6px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:7;background:light-dark(#ffffffdd,#1b1f25dd);border:1px solid var(--line);border-radius:16px;min-height:30px;padding:0 14px;font-size:13px;font-weight:700;box-shadow:0 2px 8px #0003}
+#bHandle{position:fixed;bottom:max(2px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:7;background:light-dark(#ffffffdd,#1b1f25dd);border:1px solid var(--line);border-radius:16px;min-height:30px;padding:0 14px;font-size:13px;font-weight:700;box-shadow:0 2px 8px #0003}
 body.bars #bHandle{display:none}
-.tab{flex:1;background:var(--bg);border:1px solid var(--line);min-height:48px;font-size:16px}
+.tab{flex:1;background:var(--bg);border:1px solid var(--line);min-height:38px;font-size:15px;border-radius:9px}
 .tab.on{background:var(--ink);color:var(--bg)}
 .fee{display:inline-block;font-size:13px;font-weight:800;color:var(--ok);margin-left:6px;white-space:nowrap}
 .total{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
@@ -157,7 +160,8 @@ body.bars #bHandle{display:none}
     <button class="ghost ic" id="bSet" aria-label="설정">⚙</button>
   </header>
   <div class="main">
-    <div id="map"></div>
+    <div class="mapw"><div id="map"></div>
+      <div class="mapbtns"><button type="button" class="ibtn" id="bPlan" aria-label="개인 일정 추가" title="개인 일정 추가"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect x="4" y="7" width="22" height="20" rx="3" fill="#fff" stroke="#5b21b6" stroke-width="1.6"/><rect x="4" y="7" width="22" height="6" rx="3" fill="#7c3aed"/><path d="M10 4.5v5M20 4.5v5" stroke="#5b21b6" stroke-width="2" stroke-linecap="round"/><path d="M9 17h3M14 17h3M19 17h3M9 21h3M14 21h3" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/><circle cx="25" cy="24" r="6.5" fill="#1a9b55" stroke="#fff" stroke-width="1.5"/><path d="M25 20.5v7M21.5 24h7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg></button><button type="button" class="ibtn" id="bAdd" aria-label="합짐 추가" title="합짐 추가"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><path d="M5 11l11-5 11 5v12l-11 5-11-5z" fill="#d9a066" stroke="#7d5126" stroke-width="1.6" stroke-linejoin="round"/><path d="M5 11l11 5 11-5M16 16v12" fill="none" stroke="#7d5126" stroke-width="1.6"/><circle cx="25" cy="24" r="6.5" fill="#1a9b55" stroke="#fff" stroke-width="1.5"/><path d="M25 20.5v7M21.5 24h7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg></button></div></div>
     <div class="side">
       <div id="pRun"><div class="sum" id="sum"></div><div id="list"></div></div>
       <div id="pDone" hidden><div class="total" id="total"></div><div id="dlist"></div></div>
@@ -167,8 +171,6 @@ body.bars #bHandle{display:none}
   <nav class="tabs"><button type="button" class="tab on" data-tab="run">진행 중 <b id="cRun">0</b></button><button type="button" class="tab" data-tab="done">완료 <b id="cDone">0</b></button><button type="button" class="tab" data-tab="cal">달력</button></nav>
 </div>
 <button type="button" id="bHandle">▴ 진행 중 · 완료 · 달력</button>
-<button class="fab" id="bAdd">＋ 합짐 추가</button>
-<button class="fab2" id="bPlan">＋ 개인 일정</button>
 <div class="toast" id="toast"></div>
 
 <dialog id="dAdd"><form class="dlg" method="dialog" id="fAdd">
@@ -205,7 +207,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v37</div>
+  <div class="ver">버전 2026-11-23 v38</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -465,7 +467,7 @@ function renderList(km){
   $('cRun').textContent=jobs.filter(j=>j.state!=='done').length;
   const loaded=jobs.filter(j=>j.state==='loaded').length;
   $('sum').innerHTML=route.length?`<span>남은 곳 <b>${route.length}</b></span><span>실은 짐 <b>${loaded}</b></span><span>약 <b>${km.toFixed(1)}km</b></span><span>운전 <b>${route.reduce((a,s)=>a+s.leg,0)}분</b></span><span>마지막 도착 <b>${hm(route.at(-1).eta)}</b></span><span>${routeSrc==='road'?'실제 도로 기준':'직선거리 추정'}</span><span>출발: <b>${gpsOk?'현재 위치':'설정 출발지'}</b></span>${manual?'<span>✋ <b>직접 정한 순서</b> <button type="button" class="ghost" id="bAuto" style="min-height:30px;font-size:13px;padding:0 8px">자동 순서로</button></span>':'<span>▲▼로 순서를 바꿀 수 있어요</span>'}`:'';
-  if(!route.length){$('list').innerHTML='<div class="empty">남은 배송이 없어요.<br>아래 <b>＋ 합짐 추가</b>로 콜을 넣어 주세요.</div>'+laterPlans();return}
+  if(!route.length){$('list').innerHTML='<div class="empty">남은 배송이 없어요.<br>지도 오른쪽 아래 📦 버튼으로 콜을 넣어 주세요.</div>'+laterPlans();return}
   const KN2={P:'픽업',D:'배송',S:'일정'};
   $('list').innerHTML=route.map((s,k)=>{
     const nx=route[k+1],from=k?`${k}번(${KN2[route[k-1].t]})에서`:'현재 위치에서';
@@ -619,7 +621,7 @@ $('pDone').addEventListener('click',e=>{const x=expClick(e,dkey(Date.now()));if(
 $('pDone').addEventListener('change',e=>{const f=e.target.closest('[data-fee]');if(!f)return;const j=jobs.find(j=>j.id==f.dataset.fee);if(j){j.fee=+f.value||0;save();renderDone();toast('금액을 저장했어요')}});
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));
-  $('pRun').hidden=b.dataset.tab!=='run';$('pDone').hidden=b.dataset.tab!=='done';$('pCal').hidden=b.dataset.tab!=='cal';const full=b.dataset.tab!=='run';$('bAdd').style.display=full?'none':'';$('bPlan').style.display=full?'none':'';document.querySelector('.main').classList.toggle('nomap',full);if(!full&&map)setTimeout(()=>{map.relayout();recalc()},50);if(b.dataset.tab==='done')renderDone();if(b.dataset.tab==='cal')renderCal()});
+  $('pRun').hidden=b.dataset.tab!=='run';$('pDone').hidden=b.dataset.tab!=='done';$('pCal').hidden=b.dataset.tab!=='cal';const full=b.dataset.tab!=='run';document.querySelector('.main').classList.toggle('nomap',full);if(!full&&map)setTimeout(()=>{map.relayout();recalc()},50);if(b.dataset.tab==='done')renderDone();if(b.dataset.tab==='cal')renderCal()});
 renderDone();
 
 
@@ -977,7 +979,7 @@ $('hdr').addEventListener('click',()=>showHdr());
  let by=null;window.addEventListener('touchstart',e=>{const y=e.touches[0].clientY;by=y>innerHeight-80?y:null},{passive:true});
  window.addEventListener('touchmove',e=>{if(by!=null&&by-e.touches[0].clientY>30){showHdr();by=null}},{passive:true});}
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v37';
+const VER='v38';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
