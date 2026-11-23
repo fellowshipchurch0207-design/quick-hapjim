@@ -37,7 +37,7 @@ header h1{font-size:18px;margin:0;flex:1}
 .sum b{color:var(--ink)}
 .slack{font-size:17px;font-weight:700;padding:4px 10px;border-radius:10px;border:1px solid var(--line)}.slack small{font-size:13px;font-weight:400;color:var(--sub)}.slack.ok{color:#3ecf7a}.slack.mid{color:#f5b942}.slack.bad{color:#ff5a5a}.slack b{color:inherit;font-size:20px}
 #mslack{position:absolute;left:8px;top:8px;z-index:5;max-width:80%;pointer-events:none}#mslack .slack{display:inline-block;background:rgba(20,22,28,.88);border-width:2px;border-color:currentColor;line-height:1.25;box-shadow:0 2px 8px rgba(0,0,0,.4)}#mslack .slack{display:inline-flex;align-items:center;gap:7px;color:#fff;border:0;font-size:18px;padding:5px 11px 5px 8px}#mslack .slack i{width:18px;height:18px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.25)}#mslack .ok i{background:#3ecf7a}#mslack .mid i{background:#f5b942}#mslack .bad i{background:#ff4a4a;animation:blink 1s infinite}#mslack .hurry{margin-top:6px;background:#e0262bee;color:#fff;font-weight:800;font-size:16px;padding:7px 11px;border-radius:10px;box-shadow:0 2px 10px rgba(224,38,43,.6);animation:pulse 1.2s infinite;white-space:nowrap}@keyframes blink{50%{opacity:.25}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-.gap{display:inline-block;font-size:12px;font-weight:700;padding:0 6px;border-radius:6px;border:1px solid currentColor;margin-left:4px}.gap.ok{color:#3ecf7a}.gap.mid{color:#f5b942}.gap.bad{color:#ff5a5a}
+.gap{display:inline-block;font-size:12px;font-weight:700;padding:0 6px;border-radius:6px;border:1px solid currentColor;margin-left:4px}.gap.ok{color:#3ecf7a}.gap.mid{color:#f5b942}.gap.bad{color:#ff5a5a}.gapline{font-size:13px;color:var(--sub);margin:6px 0 2px}
 .stop{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;display:grid;grid-template-columns:44px 1fr;gap:4px 10px}
 .stop.next{border:2px solid var(--ink)}
 .num{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px}
@@ -100,7 +100,7 @@ textarea{min-height:60px;resize:vertical}
 .sync{display:grid;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px}.sync input{margin-bottom:6px}
 .syncdot{width:10px;height:10px;border-radius:50%;background:var(--sub);display:inline-block}.syncdot.on{background:var(--ok)}
 .shot{display:flex;align-items:center;justify-content:center;min-height:44px;border:1px dashed var(--line);border-radius:10px;color:var(--ink);font-size:15px;cursor:pointer}
-.mkw{display:flex;align-items:center;gap:2px;transform:translateX(calc(50% - 15px))}
+.mkw{display:flex;align-items:center;gap:2px;transform:translateX(calc(50% - 15px))}.mko{position:relative;transition:transform .15s}.mko.moved::after{content:'';position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#fff;border:2px solid #333;transform:translate(calc(-1*var(--dx)),calc(-1*var(--dy)));pointer-events:none}.mko.moved .mk{box-shadow:0 0 0 2px #000a,0 1px 4px #0006}
 .mki{display:flex;align-items:center;gap:1px;background:#fff;border-radius:8px;padding:2px 3px;box-shadow:0 1px 3px #0005}
 .mki svg{width:16px;height:16px}.mki b{font-size:11px;color:#000;margin-left:1px}.mki .fragile{font-size:10px;padding:0 4px}
 .ver{font-size:12px;color:var(--sub);text-align:center}
@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v62</div>
+  <div class="ver">버전 2026-11-24 v64</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -364,6 +364,7 @@ function fitLevel(pts){const el=$('map'),W=el.clientWidth,H=el.clientHeight;if(!
   for(let lv=1;lv<=14;lv++){map.setLevel(lv);if(fits())return}}
 function userTouch(){userMoved=Date.now();clearTimeout(fitT);fitT=setTimeout(()=>fitRoute(true),10000)}
 function watchUser(){
+  ['zoom_changed','idle'].forEach(ev=>{try{kakao.maps.event.addListener(map,ev,declutterSoon)}catch(e){}});
   ['zoom_start','dragstart','drag','zoom_changed'].forEach(ev=>{try{kakao.maps.event.addListener(map,ev,()=>{if(!fitting)userTouch()})}catch(e){}});
   const el=$('map');['touchstart','touchmove','wheel','mousedown'].forEach(ev=>el.addEventListener(ev,()=>userTouch(),{passive:true}))}
 setInterval(()=>{if(!map)return;trimPath();fitRoute()},10000);
@@ -383,6 +384,9 @@ function planAt(p,f){const [h,m]=(p[f]||'00:00').split(':').map(Number),[Y,M,D]=
 function hav(a,b){const R=6371,r=Math.PI/180,dLa=(b.lat-a.lat)*r,dLo=(b.lng-a.lng)*r;const x=Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
 const tmin=(a,b)=>hav(a,b)*1.35/cfg.speed*60;
 function dueDate(j,f='due'){if(!j[f])return null;const [h,m]=j[f].split(':').map(Number),d=new Date(j.id);d.setHours(h,m,0,0);if(d<new Date(j.id)-3600000)d.setDate(d.getDate()+1);return d}
+// 콜 받은 때보다 3시간 이상 뒤로 잡힌 픽업 = 그 시각에 맞춰 가야 하는 예약 픽업 (미리 가도 못 받음)
+function schedP(j){const d=dueDate(j,'pdue');return !!d&&d-j.id>=3*36e5}
+const hmd=d=>(d.toDateString()===new Date().toDateString()?'':d.toDateString()===new Date(Date.now()+864e5).toDateString()?'내일 ':(d.getMonth()+1)+'/'+d.getDate()+' ')+hm(d);
 function dueMin(j,f='due'){const d=dueDate(j,f);return d?(d-Date.now())/60000:null}
 function buildStops(){
   const st=[];
@@ -403,8 +407,9 @@ function solve(st){
   const T0=i=>start?tmin(start,st[i].pt):0;
   const pb=+cfg.pbuf||0;
   const sm=i=>(planAt(st[i].plan,'start')-Date.now())/60000-pb,sdur=i=>(planAt(st[i].plan,'end')-planAt(st[i].plan,'start'))/60000+pb;
-  const wt=(i,t)=>st[i].t==='S'?Math.max(0,sm(i)-t)*0.03:0; // 약속 전 대기는 거의 손해로 치지 않음(약속은 시간 순서대로 노선 중간에)
-  const after=(i,t)=>st[i].t==='S'?Math.max(t,sm(i))+sdur(i)-dw:t;
+  const rdy=i=>st[i].t==='S'?sm(i):(st[i].t==='P'&&schedP(st[i].job))?dueMin(st[i].job,'pdue')-pb:null;
+  const wt=(i,t)=>{const r=rdy(i);return r!=null?Math.max(0,r-t)*0.03:0}; // 약속 전 대기는 거의 손해로 치지 않음(약속은 시간 순서대로 노선 중간에)
+  const after=(i,t)=>{if(st[i].t==='S')return Math.max(t,sm(i))+sdur(i)-dw;const r=rdy(i);return r!=null?Math.max(t,r):t};
   const pen=(i,time)=>{if(st[i].t==='S'){const l=time-sm(i);return l>0?1000+l*100:0}const j=st[i].job;if(st[i].t!=='D'){const pm=dueMin(j,'pdue');if(pm==null)return 0;let p=time*0.02;if(time>pm)p+=200+(time-pm)*20;return p}let p=j.urgent?time*1.5:0;
     const dm=dueMin(j);if(dm!=null){p+=time*0.02;if(time>dm)p+=200+(time-dm)*20}return p};
   if(n>16){ // 너무 많으면 가까운 곳부터
@@ -464,16 +469,17 @@ let busy=false;
 // 구간별 여유: k번으로 가는 길에 n분을 더 쓰면 k번 이후 모든 마감이 n분씩 밀림 (약속 앞 대기는 흡수)
 function slackAll(){const n=route.length,W=[],V=[];let w=0;
   route.forEach((s,j)=>{W[j]=w;let dl=null;if(s.t==='S')dl=s.target;else{const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=dueDate(s.job,f)}
-    V[j]=dl?{v:Math.floor((dl-s.eta)/60000)+w,dl}:null;if(s.t==='S'&&s.wait>0)w+=s.wait});
+    V[j]=dl?{v:Math.floor((dl-s.eta)/60000)+w,dl}:null;if(s.wait>0)w+=s.wait});
   const out=new Array(n).fill(null);let best=null;
   for(let k=n-1;k>=0;k--){if(V[k]&&(!best||V[k].v<best.v))best={v:V[k].v,k,dl:V[k].dl};out[k]=best?{v:best.v-W[k],k:best.k,dl:best.dl}:null}
   return out}
 function slackInfo(){return route.length?slackAll()[0]:null}
 const slackCls=v=>v<15?'bad':v<40?'mid':'ok';
+const fmin=v=>v>=60?Math.floor(v/60)+'시간'+(v%60?' '+(v%60)+'분':''):v+'분';
 function slackHtml(){const b=slackInfo();
   if(!b)return '<span class="slack ok"><i></i>여유 넉넉</span>';
   const c=slackCls(b.v);
-  return '<span class="slack '+c+'"><i></i>'+(b.v<0?(-b.v)+'분 늦음':'여유 '+b.v+'분')+'</span>'+(c==='bad'?'<div class="hurry">🚨 바로 이동!</div>':'')}
+  return '<span class="slack '+c+'"><i></i>'+(b.v<0?(-b.v)+'분 늦음':'여유 '+fmin(b.v))+'</span>'+(c==='bad'?'<div class="hurry">🚨 바로 이동!</div>':'')}
 async function recalc(){
   if(!map)return;if(busy&&Date.now()-busy<15000)return;busy=Date.now();
   const st=buildStops();
@@ -497,8 +503,9 @@ async function recalc(){
     const leg=rd?rd.secs[k]:(prev?tmin(prev,s.pt):0);
     if(!rd&&prev)km+=hav(prev,s.pt)*1.35;
     s.leg=Math.max(1,Math.round(leg));s.legKm=prev?hav(prev,s.pt)*1.35:null;
-    s.leaveBy=null;t+=leg*60000;s.eta=new Date(t);prev=s.pt;
+    s.leaveBy=null;s.wait=null;s.target=null;t+=leg*60000;s.eta=new Date(t);prev=s.pt;
     if(s.t==='S'){const a=planAt(s.plan,'start').getTime()-(+cfg.pbuf||0)*60000,b=planAt(s.plan,'end').getTime();s.target=new Date(a);s.wait=Math.round((a-t)/60000);s.leaveBy=new Date(a-leg*60000);s.depart=new Date(Math.max(t,a)+(b-a))}
+    else if(s.t==='P'&&schedP(s.job)){const a=dueDate(s.job,'pdue').getTime()-(+cfg.pbuf||0)*60000;s.target=new Date(a);s.wait=Math.round((a-t)/60000);s.leaveBy=new Date(a-leg*60000);s.depart=new Date(Math.max(t,a)+dw*60000)}
     else s.depart=new Date(t+dw*60000);
     t=s.depart.getTime();
   });
@@ -506,22 +513,36 @@ async function recalc(){
   draw(rd?rd.path:null,rd?rd.km:km);
   busy=false;
 }
+// 번호가 겹치면 둥글게 펼쳐서 모두 누를 수 있게 (확대해서 안 겹치면 원래 자리로)
+let mks=[],dcT=0;
+function declutter(){if(!map||!mks.length)return;let pj;try{pj=map.getProjection()}catch(e){return}
+  const P=mks.map(m=>{const c=pj.containerPointFromCoords(m.ll);return{x:c.x,y:c.y,m}}),used=new Set(),TH=34;
+  P.forEach(p=>{p.m.el.classList.remove('moved');p.m.el.style.transform=''});
+  for(let i=0;i<P.length;i++){if(used.has(i))continue;const g=[i];used.add(i);
+    for(let q=0;q<g.length;q++)for(let j=0;j<P.length;j++)if(!used.has(j)&&Math.hypot(P[g[q]].x-P[j].x,P[g[q]].y-P[j].y)<TH){g.push(j);used.add(j)}
+    if(g.length<2)continue;
+    const cx=g.reduce((a,k)=>a+P[k].x,0)/g.length,cy=g.reduce((a,k)=>a+P[k].y,0)/g.length,r=Math.max(26,g.length*36/(2*Math.PI));
+    g.forEach((k,n)=>{const an=-Math.PI/2+n*2*Math.PI/g.length,dx=cx+r*Math.cos(an)-P[k].x,dy=cy+r*Math.sin(an)-P[k].y,el=P[k].m.el;
+      el.classList.add('moved');el.style.setProperty('--dx',dx+'px');el.style.setProperty('--dy',dy+'px');el.style.transform=`translate(${dx}px,${dy}px)`})}}
+function declutterSoon(){clearTimeout(dcT);dcT=setTimeout(declutter,30)}
 function draw(path,km){
   let hasPlanMk=false;
-  overlays.forEach(o=>o.setMap(null));overlays=[];if(line){line.setMap(null);line=null}
+  overlays.forEach(o=>o.setMap(null));overlays=[];mks=[];if(line){line.setMap(null);line=null}
   const b=new kakao.maps.LatLngBounds();if(me)b.extend(new kakao.maps.LatLng(me.lat,me.lng));
   route.forEach((s,k)=>{
     const ll=new kakao.maps.LatLng(s.pt.lat,s.pt.lng);b.extend(ll);
-    const el=document.createElement('div');el.className='mkw';el.style.cursor='pointer';
-    el.innerHTML=`<div class="mk" style="background:${s.t==='P'?'#1f6feb':s.t==='S'?'#7c3aed':'#e5482d'}">${k+1}</div>${s.job?cargoIcons(s.job.cargo,true):''}`;
+    const el=document.createElement('div');el.className='mko';el.style.cursor='pointer';
+    el.innerHTML=`<div class="mkw"><div class="mk" style="background:${s.t==='P'?'#1f6feb':s.t==='S'?'#7c3aed':'#e5482d'}">${k+1}</div>${s.job?cargoIcons(s.job.cargo,true):''}</div>`;mks.push({el,ll});
     const go=ev=>{ev.stopPropagation();ev.preventDefault();focusStop(k)};el.addEventListener('click',go);el.addEventListener('touchend',go);
     const o=new kakao.maps.CustomOverlay({position:ll,content:el,zIndex:2,clickable:true});
     o.setMap(map);overlays.push(o);
   });
   plans.filter(p=>!p.done&&p.place&&planAt(p,'end')>Date.now()&&!route.some(s=>s.plan===p)&&planAt(p,'start')-Date.now()<7*864e5).forEach(p=>{
     const ll=new kakao.maps.LatLng(p.place.lat,p.place.lng);if(!route.length)b.extend(ll);
-    const o=new kakao.maps.CustomOverlay({position:ll,content:`<div class="mkw"><div class="mk" style="background:#7c3aed;opacity:.85">📅</div></div>`,zIndex:1});
+    const pe=document.createElement('div');pe.className='mko';pe.innerHTML='<div class="mkw"><div class="mk" style="background:#7c3aed;opacity:.85">📅</div></div>';mks.push({el:pe,ll});
+    const o=new kakao.maps.CustomOverlay({position:ll,content:pe,zIndex:1});
     o.setMap(map);overlays.push(o);hasPlanMk=true});
+  declutterSoon();
   const lp=path?path.map(p=>new kakao.maps.LatLng(p[0],p[1])):[...(me?[me]:[]),...route.map(s=>s.pt)].map(p=>new kakao.maps.LatLng(p.lat,p.lng));
   lastPath=path?path.slice():null;planBounds=hasPlanMk&&!route.length?b:null;
   if(lp.length>1){line=new kakao.maps.Polyline({path:lp,strokeWeight:5,strokeColor:'#e5482d',strokeOpacity:.8,strokeStyle:path?'solid':'shortdash'});line.setMap(map)}
@@ -550,14 +571,15 @@ function renderList(km){
   const KN2={P:'픽업',D:'배송',S:'일정'};
   $('list').innerHTML=pastHtml()+route.map((s,k)=>{
     const nx=route[k+1],from=k?`${k}번(${KN2[route[k-1].t]})에서`:'현재 위치에서';
-    const nextWarn=nx&&nx.t==='S'?`<div class="warn ${nx.wait<0?'bad':''}">⏰ <b>늦어도 ${hm(nx.leaveBy)} 출발</b>${nx.wait<0?' ('+(-nx.wait)+'분 늦음)':''}</div>`:'';
+    const nextWarn=nx&&nx.leaveBy?`<div class="warn ${nx.wait<0?'bad':''}">⏰ <b>늦어도 ${hmd(nx.leaveBy)} 출발</b>${nx.wait<0?' ('+(-nx.wait)+'분 늦음)':''}</div>`:'';
     if(s.t==='S'){const p=s.plan,nav=`https://map.kakao.com/link/to/${encodeURIComponent(p.place.name)},${p.place.lat},${p.place.lng}`;
       return `<div class="stop S ${k?'':'next'}" id="stop-${k}"><div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
       <div><div class="kind">📅 개인 일정</div><div class="place">${esc(p.title||'일정')}</div><div class="ptime" data-pedit="${p.id}">${p.start} ~ ${p.end} <small style="color:var(--sub)">✎ 눌러서 수정</small></div>
         ${s.wait>0?`<div class="eta">${hm(s.target)}<small>도착 목표</small></div>`:`<div class="eta">${hm(s.eta)}<small>도착 예정</small></div>`}
-        <div class="leg">🚗 ${from} <b>${s.leg}분</b> ${(()=>{const g=SL[k];return g&&k?`<span class="gap ${slackCls(g.v)}">${g.v<0?'⚠ '+(-g.v)+'분 늦음':'여유 '+g.v+'분'}</span>`:''})()}</div>
+        <div class="leg">🚗 ${from} <b>${s.leg}분</b></div>
         <div class="addr">${esc(full(p.place))}</div></div>
       ${k===0?`<div class="warn ${s.wait<0?'bad':''}">⏰ <b>늦어도 ${hm(s.leaveBy)} 출발</b>${s.wait<0?' ('+(-s.wait)+'분 늦음)':''}</div>`:''}
+      ${nx&&SL[k+1]?`<div class="gapline">→ ${k+2}번까지 <span class="gap ${slackCls(SL[k+1].v)}">${SL[k+1].v<0?'⚠ '+(-SL[k+1].v)+'분 늦음':'여유 '+fmin(SL[k+1].v)}</span></div>`:''}
       ${nx?`<div class="warn">끝나고 ${hm(s.depart)} 출발 → ${k+2}번 ${hm(nx.eta)} 도착</div>`:''}
       <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a><button class="ghost" data-pedit="${p.id}" style="flex:0 0 64px">수정</button><button class="done" data-pdone="${p.id}">일정 끝</button><button class="ghost" data-pdel="${p.id}" style="flex:0 0 64px">삭제</button></div></div>`}
     const j=s.job,isP=s.t==='P';
@@ -566,10 +588,12 @@ function renderList(km){
     return `<div class="stop ${s.t} ${k?'':'next'}" id="stop-${k}">
       <div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
       <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${(()=>{const f=isP?'pdue':'due';return j[f]?`<span class="due ${s.eta>dueDate(j,f)?'late':''}">${j[f]}까지${s.eta>dueDate(j,f)?' · 늦을 수 있음':''}</span>`:''})()}</div>
-        <div class="eta">${hm(s.eta)}<small>도착 예정</small></div>
-        <div class="leg">🚗 ${from} <b>${s.leg}분</b>${k&&route[k-1].t!=='S'?` <span>+ 상하차 ${+cfg.dwell||0}분</span>`:''} ${(()=>{const g=SL[k];return g&&k?`<span class="gap ${slackCls(g.v)}">${g.v<0?'⚠ '+(-g.v)+'분 늦음':'여유 '+g.v+'분'}</span>`:''})()}</div>
+        ${s.wait>0?`<div class="eta">${hmd(s.target)}<small>도착 목표 · 예약 픽업</small></div>`:`<div class="eta">${hmd(s.eta)}<small>도착 예정</small></div>`}
+        ${k===0&&s.leaveBy?`<div class="warn ${s.wait<0?'bad':''}">⏰ <b>늦어도 ${hmd(s.leaveBy)} 출발</b></div>`:''}
+        <div class="leg">🚗 ${from} <b>${s.leg}분</b>${k&&route[k-1].t!=='S'?` <span>+ 상하차 ${+cfg.dwell||0}분</span>`:''}</div>
         <div class="addr">${esc(full(s.pt))}</div></div>
       ${cargo}
+      ${nx&&SL[k+1]?`<div class="gapline">→ ${k+2}번까지 <span class="gap ${slackCls(SL[k+1].v)}">${SL[k+1].v<0?'⚠ '+(-SL[k+1].v)+'분 늦음':'여유 '+fmin(SL[k+1].v)}</span></div>`:''}
       ${!isP?`<div class="loaded">픽업지: ${esc(full(j.pick))}</div>`:`<div class="loaded">배송지: ${esc(full(j.drop))}</div>`}
       <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a>
         <button class="done" data-job="${j.id}" data-t="${s.t}">${isP?'픽업 완료':'배송 완료'}</button>
@@ -1072,7 +1096,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v62';
+const VER='v64';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
