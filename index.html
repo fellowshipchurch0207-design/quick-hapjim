@@ -18,7 +18,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-ap
 button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;border-radius:10px;min-height:44px;padding:0 14px;font-weight:600}
 .app{display:grid;grid-template-rows:minmax(0,1fr);height:100dvh;padding-top:env(safe-area-inset-top)}
-header{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:var(--card);border-bottom:1px solid var(--line);position:fixed;top:0;left:0;right:0;z-index:8;transform:translateY(-105%);transition:transform .25s ease;box-shadow:0 4px 14px #0004}
+header{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:var(--card);border-bottom:1px solid var(--line);position:fixed;top:0;left:0;right:0;z-index:8;transform:translateY(-105%);transition:transform .15s ease;box-shadow:0 4px 14px #0004}
 header.show{transform:none}
 body.bars .fab,body.bars .fab2{bottom:calc(80px + env(safe-area-inset-bottom))}
 #hHandle{position:fixed;top:calc(4px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:7;background:light-dark(#ffffffdd,#1b1f25dd);border:1px solid var(--line);border-radius:16px;min-height:30px;padding:0 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px #0003}
@@ -114,7 +114,7 @@ header h1{font-size:17px}
 .detail{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:12px;display:grid;gap:8px}
 .detail h3{margin:0;font-size:17px}
 .shift{display:flex;justify-content:space-between;font-size:14px;border-bottom:1px solid var(--line);padding:4px 0}
-.tabs{display:flex;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);position:fixed;left:0;right:0;bottom:0;z-index:8;transform:translateY(105%);transition:transform .25s ease;box-shadow:0 -4px 14px #0004}
+.tabs{display:flex;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);position:fixed;left:0;right:0;bottom:0;z-index:8;transform:translateY(105%);transition:transform .15s ease;box-shadow:0 -4px 14px #0004}
 body.bars .tabs{transform:none}
 #bHandle{position:fixed;bottom:calc(6px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:7;background:light-dark(#ffffffdd,#1b1f25dd);border:1px solid var(--line);border-radius:16px;min-height:30px;padding:0 14px;font-size:13px;font-weight:700;box-shadow:0 2px 8px #0003}
 body.bars #bHandle{display:none}
@@ -205,7 +205,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v35</div>
+  <div class="ver">버전 2026-11-23 v36</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -961,8 +961,8 @@ $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요
 fbInit();
 /* ---------- 위 메뉴 자동 숨김 ---------- */
 let hT=null;
-function showHdr(ms=5000){$('hdr').classList.add('show');document.body.classList.add('bars');clearTimeout(hT);hT=setTimeout(hideHdr,ms)}
-function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(3000);$('hdr').classList.remove('show');document.body.classList.remove('bars')}
+function showHdr(ms=2500){$('hdr').classList.add('show');document.body.classList.add('bars');clearTimeout(hT);hT=setTimeout(hideHdr,ms)}
+function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500);$('hdr').classList.remove('show');document.body.classList.remove('bars')}
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 // 목록을 맨 위에서 아래로 끌어내리거나, 위로 스크롤하면 메뉴가 내려와요
@@ -976,7 +976,7 @@ $('hdr').addEventListener('click',()=>showHdr());
  let by=null;window.addEventListener('touchstart',e=>{const y=e.touches[0].clientY;by=y>innerHeight-80?y:null},{passive:true});
  window.addEventListener('touchmove',e=>{if(by!=null&&by-e.touches[0].clientY>30){showHdr();by=null}},{passive:true});}
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v35';
+const VER='v36';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
