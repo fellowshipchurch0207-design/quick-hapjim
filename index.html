@@ -194,7 +194,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v27</div>
+  <div class="ver">버전 2026-11-23 v28</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -301,10 +301,11 @@ function geocode(q){
 
 /* ---------- 도시 이름 붙이기 ---------- */
 function cityOf(addr){if(!addr)return'';const t=addr.trim().split(/\s+/);if(!t.length)return'';
-  const f=t[0];
-  if(/(도|^경기|^강원|^충북|^충남|^전북|^전남|^경북|^경남|^제주)$/.test(f)||/^(경기|강원|충청|전라|경상|제주)/.test(f)){const c=(t[1]||'').replace(/(시|군)$/,'');return c||f}
-  return f.replace(/(특별자치시|특별시|광역시|시)$/,'')}
-function nm(pt){if(!pt)return'';const c=cityOf(pt.addr),n=pt.name||'';if(!c||n.startsWith(c))return n;return c+' '+n}
+  const f=t[0].replace(/(특별자치시|특별자치도|특별시|광역시)$/,'').replace(/^(경기|강원|충청북|충청남|전라북|전라남|경상북|경상남|제주)도$/,m=>({경기도:'경기',강원도:'강원',충청북도:'충북',충청남도:'충남',전라북도:'전북',전라남도:'전남',경상북도:'경북',경상남도:'경남',제주도:'제주'})[m]||m);
+  const parts=[f];
+  if(t[1]&&/(시|군|구)$/.test(t[1])){parts.push(t[1]);if(/시$/.test(t[1])&&t[2]&&/구$/.test(t[2]))parts.push(t[2])}
+  return parts.join(' ')}
+function nm(pt){if(!pt)return'';const c=cityOf(pt.addr),n=(pt.name||'').trim();if(!c)return n;const f=c.split(' ')[0];if(n.startsWith(f)||n.startsWith(c))return n;return c+' '+n}
 /* ---------- 개인 일정 ---------- */
 let plans=LS.get('plans',[]);
 const savePlans=()=>{LS.set('plans',plans);syncPush('plans')};
@@ -917,7 +918,7 @@ $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v27';
+const VER='v28';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
