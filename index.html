@@ -216,7 +216,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v48</div>
+  <div class="ver">버전 2026-11-24 v49</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -508,7 +508,9 @@ function pastHtml(){const tk=todayKey(),ev=[];
   return ev.map(e=>`<div class="stop past ${e.t}"><div class="numc"><div class="num">✔</div></div><div><div class="kind">${{P:'픽업 완료',D:'배송 완료',S:'일정 끝'}[e.t]} · ${hm(new Date(e.time))}${e.t==='D'&&e.j.fee?' · '+won(e.j.fee):''}</div><div class="paddr">${esc(e.t==='S'?(e.p.title||'일정')+' · '+nm(e.pt):full(e.pt))}</div></div>
     <button type="button" class="ghost undo" data-back="${e.t}:${e.t==='S'?e.p.id:e.j.id}">되돌리기</button></div>`).join('')}
 function focusStop(k){const c=$('stop-'+k);if(!c)return;const sd=document.querySelector('.side');
-  sd.scrollTo({top:c.offsetTop-sd.offsetTop-6,behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
+  let y=0,n=c;while(n&&n!==sd){y+=n.offsetTop;n=n.offsetParent}
+  const top=c.offsetHeight>=sd.clientHeight?y-6:y-(sd.clientHeight-c.offsetHeight)/2;
+  sd.scrollTo({top:Math.max(0,top),behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
   const s=route[k];if(s&&map)map.panTo(new kakao.maps.LatLng(s.pt.lat,s.pt.lng))}
 function laterPlans(){const tk=todayKey(),l=plans.filter(p=>!p.done&&planAt(p,'end')>Date.now()&&!inWindow(p)).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
   return l.length?`<div class="later"><h4>📅 다가오는 개인 일정</h4>${l.map(p=>`<div class="exp"><span><b>${dlabel(p.date)} ${p.start}~${p.end}</b> ${esc(p.title||'')} · ${esc(p.place?nm(p.place):'')}</span><span><button class="ghost" data-pedit="${p.id}">수정</button><button class="ghost" data-pdel="${p.id}">삭제</button></span></div>`).join('')}<div class="tm" style="margin:4px">그날이 되면 순서에 번호로 들어가요.</div></div>`:''}
@@ -1042,7 +1044,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v48';
+const VER='v49';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
