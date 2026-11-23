@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v78</div>
+  <div class="ver">버전 2026-11-24 v79</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -331,7 +331,12 @@ function cityOf(addr){if(!addr)return'';const t=addr.trim().split(/\s+/);if(!t.l
   const parts=[f];
   if(t[1]&&/(시|군|구)$/.test(t[1])){parts.push(t[1]);if(/시$/.test(t[1])&&t[2]&&/구$/.test(t[2]))parts.push(t[2])}
   return parts.join(' ')}
-function full(pt){if(!pt)return'';const a=(pt.addr||'').trim(),n=(pt.name||'').trim();if(!a)return nm(pt);if(!n||n===a||a.includes(n))return a;return a+'('+n+')'}
+function full(pt){if(!pt)return'';const dt=pt.detail?' '+pt.detail:'';const a=(pt.addr||'').trim(),n=(pt.name||'').trim();if(!a)return nm(pt)+dt;if(!n||n===a||a.includes(n))return a+dt;return a+'('+n+')'+dt}
+// "둔산로 100 3층 302호"처럼 끝에 붙은 동·호수·층은 지도 검색에서 빼고 따로 기록
+function splitDetail(t){t=(t||'').trim();const c=t.match(/^(.+?)[,，]\s*(.+)$/);if(c&&/\d/.test(c[2])&&!/(로|길)\s*\d/.test(c[2]))return{base:c[1].trim(),detail:c[2].trim()};
+  const m=t.match(/\s((?:지하\s*)?(?:B|b)?\d+(?:-\d+)?\s*(?:동|층|호|F|f)(?:\s|$).*)$/);
+  if(m&&m.index>0){const base=t.slice(0,m.index).trim();if(/\d|[가-힣]{2,}/.test(base))return{base,detail:m[1].trim()}}
+  return{base:t,detail:''}}
 function nm(pt){if(!pt)return'';const c=cityOf(pt.addr),n=(pt.name||'').trim();if(!c)return n;const f=c.split(' ')[0];if(n.startsWith(f)||n.startsWith(c))return n;return c+' '+n}
 /* ---------- 이동 경로 기록 (근무 중일 때만, 1분·50m 간격) ---------- */
 function recordTrack(){
@@ -867,8 +872,8 @@ async function look(which){
   const inp=$(which==='pick'?'iPick':'iDrop'),f=$(which==='pick'?'fPick':'fDrop');
   if(!inp.value.trim()){f.textContent='';found[which]=null;return null}
   f.className='found';f.textContent='찾는 중…';
-  const q=inp.value;const r=await geocode(q);if(inp.value!==q)return found[which];found[which]=r;lookedTxt[which]=q.trim();
-  if(r){f.textContent='✔ '+nm(r)+(r.addr&&r.addr!==r.name?' · '+r.addr:'')}else{f.className='found bad';f.textContent='위치를 못 찾았어요. 건물명이나 동 이름을 넣어 보세요.'}
+  const q=inp.value,sd=splitDetail(q);let r=await geocode(sd.base);if(!r&&sd.detail)r=await geocode(q);if(inp.value!==q)return found[which];if(r)r=Object.assign({},r,{detail:sd.detail||''});found[which]=r;lookedTxt[which]=q.trim();
+  if(r){f.textContent='✔ '+nm(r)+(r.addr&&r.addr!==r.name?' · '+r.addr:'')+(r.detail?' · 상세: '+r.detail:'')}else{f.className='found bad';f.textContent='위치를 못 찾았어요. 건물명이나 동 이름을 넣어 보세요.'}
   return r;
 }
 $('iPick').addEventListener('change',()=>look('pick'));
@@ -968,7 +973,7 @@ let editId=null;var lookedTxt={};
 function openJobEdit(id){const j=jobs.find(x=>x.id==id);if(!j)return;editId=j.id;
   $('fAdd').reset();$('aTitle').textContent='합짐 수정';$('bSave').textContent='저장';$('fAll').className='found';$('fAll').textContent='바꿀 칸만 고치고 저장을 누르세요';
   const ld=j.state==='loaded';found={pick:ld&&!j.pick.addr?null:j.pick,drop:j.drop};
-  $('iPick').value=j.pick.addr?(j.pick.name||j.pick.addr):'';$('iDrop').value=j.drop.name||j.drop.addr;
+  const dv=pt=>(pt.name||pt.addr)+(pt.detail?' '+pt.detail:'');$('iPick').value=j.pick.addr?dv(j.pick):'';$('iDrop').value=dv(j.drop);
   $('fPick').className=$('fDrop').className='found';$('fPick').textContent=j.pick.addr?'✔ '+full(j.pick):'';$('fDrop').textContent='✔ '+full(j.drop);
   $('iCargo').value=j.cargo||'';$('iFee').value=j.fee||'';$('iPdue').value=j.pdue||'';$('iDue').value=j.due||'';$('iUrg').checked=!!j.urgent;
   lookedTxt={pick:$('iPick').value.trim(),drop:$('iDrop').value.trim()};
@@ -1146,7 +1151,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v78';
+const VER='v79';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
