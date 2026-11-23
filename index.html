@@ -57,6 +57,7 @@ textarea{min-height:60px;resize:vertical}
 .mic{flex:none;width:48px;padding:0;background:var(--bg);border:1px solid var(--line)}
 .mic.on{background:var(--drop);color:#fff}
 .mic.big{width:64px;font-size:26px}
+.leg{font-size:14px;color:var(--sub);margin:2px 0}.leg b{color:var(--ink);font-size:16px}.leg span{font-size:12px}
 .mi{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;border-top:1px solid var(--line);padding:10px 0}
 .mi small{color:var(--sub);font-size:12px}.mi .tm{font-size:12px;color:var(--sub)}.mib{display:grid;gap:4px}.mib button{min-height:34px;font-size:12px;padding:0 8px}
 .mi.over .st{color:var(--drop)}.mi.soon .st{color:var(--urg)}.mi.ok .st{color:var(--ok)}.mi.unk .st{color:var(--sub)}
@@ -186,7 +187,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v20</div>
+  <div class="ver">버전 2026-11-23 v21</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -368,6 +369,7 @@ async function recalc(){
   route.forEach((s,k)=>{
     const leg=rd?rd.secs[k]:(prev?tmin(prev,s.pt):0);
     if(!rd&&prev)km+=hav(prev,s.pt)*1.35;
+    s.leg=Math.max(1,Math.round(leg));s.legKm=prev?hav(prev,s.pt)*1.35:null;
     t+=(k?dw:0)*60000+leg*60000;s.eta=new Date(t);prev=s.pt;
   });
   routeSrc=rd?'road':'est';
@@ -390,7 +392,7 @@ function draw(path,km){
 function renderList(km){
   $('cRun').textContent=jobs.filter(j=>j.state!=='done').length;
   const loaded=jobs.filter(j=>j.state==='loaded').length;
-  $('sum').innerHTML=route.length?`<span>남은 곳 <b>${route.length}</b></span><span>실은 짐 <b>${loaded}</b></span><span>약 <b>${km.toFixed(1)}km</b></span><span>마지막 도착 <b>${hm(route.at(-1).eta)}</b></span><span>${routeSrc==='road'?'실제 도로 기준':'직선거리 추정'}</span><span>출발: <b>${gpsOk?'현재 위치':'설정 출발지'}</b></span>`:'';
+  $('sum').innerHTML=route.length?`<span>남은 곳 <b>${route.length}</b></span><span>실은 짐 <b>${loaded}</b></span><span>약 <b>${km.toFixed(1)}km</b></span><span>운전 <b>${route.reduce((a,s)=>a+s.leg,0)}분</b></span><span>마지막 도착 <b>${hm(route.at(-1).eta)}</b></span><span>${routeSrc==='road'?'실제 도로 기준':'직선거리 추정'}</span><span>출발: <b>${gpsOk?'현재 위치':'설정 출발지'}</b></span>`:'';
   if(!route.length){$('list').innerHTML='<div class="empty">남은 배송이 없어요.<br>아래 <b>＋ 합짐 추가</b>로 콜을 넣어 주세요.</div>';return}
   $('list').innerHTML=route.map((s,k)=>{
     const j=s.job,isP=s.t==='P';
@@ -400,6 +402,7 @@ function renderList(km){
       <div class="num">${k+1}</div>
       <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${(()=>{const f=isP?'pdue':'due';return j[f]?`<span class="due ${s.eta>dueDate(j,f)?'late':''}">${j[f]}까지${s.eta>dueDate(j,f)?' · 늦을 수 있음':''}</span>`:''})()}</div>
         <div class="eta">${hm(s.eta)}<small>도착 예정</small></div>
+        <div class="leg">🚗 ${k?`${k}번(${route[k-1].t==='P'?'픽업':'배송'})에서`:'현재 위치에서'} <b>${s.leg}분</b>${k?` <span>+ 상하차 ${+cfg.dwell||0}분</span>`:''}</div>
         <div class="place">${esc(s.pt.name)}</div><div class="addr">${esc(s.pt.addr)}</div></div>
       ${cargo}
       ${!isP?`<div class="loaded">픽업지: ${esc(j.pick.name)}</div>`:''}
@@ -808,7 +811,7 @@ $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v20';
+const VER='v21';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
