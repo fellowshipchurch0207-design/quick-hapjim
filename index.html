@@ -36,6 +36,7 @@ header h1{font-size:18px;margin:0;flex:1}
 .sum{display:flex;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--sub);margin:2px 4px 10px}
 .sum b{color:var(--ink)}
 .slack{font-size:17px;font-weight:700;padding:4px 10px;border-radius:10px;border:1px solid var(--line)}.slack small{font-size:13px;font-weight:400;color:var(--sub)}.slack.ok{color:#3ecf7a}.slack.mid{color:#f5b942}.slack.bad{color:#ff5a5a}.slack b{color:inherit;font-size:20px}
+#mslack{position:absolute;left:8px;bottom:10px;z-index:5;max-width:62%;pointer-events:none}#mslack .slack{display:inline-block;background:rgba(20,22,28,.88);border-width:2px;border-color:currentColor;line-height:1.25;box-shadow:0 2px 8px rgba(0,0,0,.4)}#mslack .slack small{display:block;font-size:12px}
 .gap{display:inline-block;font-size:12px;font-weight:700;padding:0 6px;border-radius:6px;border:1px solid currentColor;margin-left:4px}.gap.ok{color:#3ecf7a}.gap.mid{color:#f5b942}.gap.bad{color:#ff5a5a}
 .stop{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;display:grid;grid-template-columns:44px 1fr;gap:4px 10px}
 .stop.next{border:2px solid var(--ink)}
@@ -170,10 +171,10 @@ body.bars #bHandle{display:none}
     <button class="ghost ic" id="bSet" aria-label="설정">⚙</button>
   </header>
   <div class="main">
-    <div class="mapw"><div id="map"></div>
+    <div class="mapw"><div id="map"></div><div id="mslack"></div>
       <div class="mapbtns"><button type="button" class="ibtn" id="bPlan" aria-label="개인 일정 추가" title="개인 일정 추가"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect x="4" y="7" width="22" height="20" rx="3" fill="#fff" stroke="#5b21b6" stroke-width="1.6"/><rect x="4" y="7" width="22" height="6" rx="3" fill="#7c3aed"/><path d="M10 4.5v5M20 4.5v5" stroke="#5b21b6" stroke-width="2" stroke-linecap="round"/><path d="M9 17h3M14 17h3M19 17h3M9 21h3M14 21h3" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/><circle cx="25" cy="24" r="6.5" fill="#1a9b55" stroke="#fff" stroke-width="1.5"/><path d="M25 20.5v7M21.5 24h7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg></button><button type="button" class="ibtn" id="bAdd" aria-label="합짐 추가" title="합짐 추가"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><path d="M5 11l11-5 11 5v12l-11 5-11-5z" fill="#d9a066" stroke="#7d5126" stroke-width="1.6" stroke-linejoin="round"/><path d="M5 11l11 5 11-5M16 16v12" fill="none" stroke="#7d5126" stroke-width="1.6"/><circle cx="25" cy="24" r="6.5" fill="#1a9b55" stroke="#fff" stroke-width="1.5"/><path d="M25 20.5v7M21.5 24h7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg></button></div></div>
     <div class="side">
-      <div id="pRun"><div class="sum" id="sum"></div><div id="list"></div></div>
+      <div id="pRun"><div class="sum" id="sum" hidden></div><div id="list"></div></div>
       <div id="pDone" hidden><div class="total" id="total"></div><div id="dlist"></div></div>
       <div id="pCal" hidden></div>
     </div>
@@ -218,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v57</div>
+  <div class="ver">버전 2026-11-24 v58</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -544,7 +545,8 @@ function laterPlans(){const tk=todayKey(),l=plans.filter(p=>!p.done&&planAt(p,'e
 function renderList(km){
   $('cRun').textContent=jobs.filter(j=>j.state!=='done').length;
   const loaded=jobs.filter(j=>j.state==='loaded').length,SL=slackAll();
-  $('sum').innerHTML=route.length?slackHtml()+(manual?'<span>✋ <b>직접 정한 순서</b> <button type="button" class="ghost" id="bAuto" style="min-height:30px;font-size:13px;padding:0 8px">자동 순서로</button></span>':''):'';
+  $('mslack').innerHTML=route.length?slackHtml():'';
+  $('sum').innerHTML='';
   if(!route.length){$('list').innerHTML=pastHtml()+'<div class="empty">남은 배송이 없어요.<br>지도 오른쪽 아래 📦 버튼으로 콜을 넣어 주세요.</div>'+laterPlans();return}
   const KN2={P:'픽업',D:'배송',S:'일정'};
   $('list').innerHTML=pastHtml()+route.map((s,k)=>{
@@ -1071,7 +1073,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v57';
+const VER='v58';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
