@@ -214,12 +214,12 @@ body.bars #bHandle{display:none}
   <label>카카오 JavaScript 키 (지도·주소 검색)<input id="sJs" autocomplete="off"></label>
   <label>카카오 REST API 키 (실제 도로 도착시간)<input id="sRest" autocomplete="off"></label>
   <label>GPS가 안 될 때 쓸 출발지 (예: 집이나 차고지 주소)<input id="sHome" autocomplete="off"></label>
-  <label>개인 일정엔 몇 분 일찍 도착할까요?(분)<input id="sPbuf" type="number" min="0" max="60"></label>
+  <label>약속·픽업·배송 마감보다 몇 분 일찍 도착할까요?(분)<input id="sPbuf" type="number" min="0" max="60"></label>
   <label>한 곳 상하차 시간(분)<input id="sDwell" type="number" min="0" max="60"></label>
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v81</div>
+  <div class="ver">버전 2026-11-24 v82</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -424,8 +424,8 @@ function solve(st){
   const rdy=i=>st[i].t==='S'?sm(i):(st[i].t==='P'&&schedP(st[i].job))?dueMin(st[i].job,'pdue')-pb:null;
   const wt=(i,t)=>{const r=rdy(i);return r!=null?Math.max(0,r-t)*0.03:0}; // 약속 전 대기는 거의 손해로 치지 않음(약속은 시간 순서대로 노선 중간에)
   const after=(i,t)=>{if(st[i].t==='S')return Math.max(t,sm(i))+sdur(i)-dw;const r=rdy(i);return r!=null?Math.max(t,r):t};
-  const pen=(i,time)=>{if(st[i].t==='S'){const l=time-sm(i);return l>0?1000+l*100:0}const j=st[i].job;if(st[i].t!=='D'){const pm=dueMin(j,'pdue');if(pm==null)return 0;let p=time*0.02;if(time>pm)p+=200+(time-pm)*20;return p}let p=j.urgent?time*1.5:0;
-    const dm=dueMin(j);if(dm!=null){p+=time*0.02;if(time>dm)p+=200+(time-dm)*20}return p};
+  const pen=(i,time)=>{if(st[i].t==='S'){const l=time-sm(i);return l>0?1000+l*100:0}const j=st[i].job;if(st[i].t!=='D'){let pm=dueMin(j,'pdue');if(pm==null)return 0;pm-=pb;let p=time*0.02;if(time>pm)p+=200+(time-pm)*20;return p}let p=j.urgent?time*1.5:0;
+    let dm=dueMin(j);if(dm!=null){dm-=pb;p+=time*0.02;if(time>dm)p+=200+(time-dm)*20}return p};
   if(n>16){ // 너무 많으면 가까운 곳부터
     const out=[],left=new Set(st.keys());let cur=start,used=new Set();
     while(left.size){let best=-1,bd=1e9;for(const i of left){if(st[i].pred>=0&&!used.has(st[i].pred))continue;const d=cur?tmin(cur,st[i].pt):0;if(d<bd){bd=d;best=i}}out.push(best);used.add(best);left.delete(best);cur=st[best].pt}
@@ -493,7 +493,7 @@ let busy=false;
 // 합짐 여유: 지금부터 몇 분을 더 써도 모든 마감·약속을 지킬 수 있는지 (약속 앞 대기 시간은 지연을 흡수)
 // 구간별 여유: k번으로 가는 길에 n분을 더 쓰면 k번 이후 모든 마감이 n분씩 밀림 (약속 앞 대기는 흡수)
 function slackAll(){const n=route.length,W=[],V=[];let w=0;
-  route.forEach((s,j)=>{W[j]=w;let dl=null;if(s.t==='S')dl=s.target;else{const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=dueDate(s.job,f)}
+  route.forEach((s,j)=>{W[j]=w;let dl=null;if(s.t==='S')dl=s.target;else{const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=new Date(dueDate(s.job,f).getTime()-(+cfg.pbuf||0)*60000)}
     V[j]=dl?{v:Math.floor((dl-s.eta)/60000)+w,dl}:null;if(s.wait>0)w+=s.wait});
   const out=new Array(n).fill(null);let best=null;
   for(let k=n-1;k>=0;k--){if(V[k]&&(!best||V[k].v<best.v))best={v:V[k].v,k,dl:V[k].dl};out[k]=best?{v:best.v-W[k],k:best.k,dl:best.dl}:null}
@@ -1160,7 +1160,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v81';
+const VER='v82';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
