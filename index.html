@@ -208,7 +208,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v41</div>
+  <div class="ver">버전 2026-11-24 v42</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -477,11 +477,11 @@ function renderList(km){
     if(s.t==='S'){const p=s.plan,nav=`https://map.kakao.com/link/to/${encodeURIComponent(p.place.name)},${p.place.lat},${p.place.lng}`;
       return `<div class="stop S ${k?'':'next'}"><div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
       <div><div class="kind">📅 개인 일정</div><div class="place">${esc(p.title||'일정')}</div><div class="ptime" data-pedit="${p.id}">${p.start} ~ ${p.end} <small style="color:var(--sub)">✎ 눌러서 수정</small></div>
-        ${s.wait>0?`<div class="eta">${hm(s.leaveBy)}<small>에 출발하면 ${hm(s.target)} 도착 (${+cfg.pbuf||0}분 일찍)</small></div>`:`<div class="eta">${hm(s.eta)}<small>도착 예정</small></div>`}
+        ${s.wait>0?`<div class="eta">${hm(s.target)}<small>도착 목표</small></div>`:`<div class="eta">${hm(s.eta)}<small>도착 예정</small></div>`}
         <div class="leg">🚗 ${from} <b>${s.leg}분</b></div>
         <div class="addr">${esc(full(p.place))}</div></div>
-      <div class="warn ${s.wait<0?'bad':''}">${s.wait>=0?`✅ ${hm(s.target)}까지 도착 가능 (${s.wait}분 여유)`:`⚠ 목표(${hm(s.target)})보다 ${-s.wait}분 늦어요${s.eta>planAt(p,'start')?' — 약속 시간에도 늦어요':' — 약속 시간 전엔 도착'}`} · 늦지 않으려면 ${k?k+'번에서':'지금 위치에서'} <b>${hm(s.leaveBy)}</b>까지 출발</div>
-      ${nx?`<div class="warn">끝나고 <b>${hm(s.depart)}</b> 출발 → ${k+2}번 ${KN2[nx.t]} ${hm(nx.eta)} 도착 (🚗 ${nx.leg}분)</div>`:''}
+      <div class="warn ${s.wait<0?'bad':''}">${s.wait>=0?'✅':'⚠ '+(-s.wait)+'분 늦음 ·'} 늦어도 ${hm(s.leaveBy)} 출발</div>
+      ${nx?`<div class="warn">끝나고 ${hm(s.depart)} 출발 → ${k+2}번 ${hm(nx.eta)} 도착</div>`:''}
       <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a><button class="ghost" data-pedit="${p.id}" style="flex:0 0 64px">수정</button><button class="done" data-pdone="${p.id}">일정 끝</button><button class="ghost" data-pdel="${p.id}" style="flex:0 0 64px">삭제</button></div></div>`}
     const j=s.job,isP=s.t==='P';
     const cargo=j.cargo?`<div class="cargo">${isP?'실을 짐':'여기서 내릴 짐'}: ${esc(j.cargo)}</div>`:'';
@@ -971,7 +971,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v41';
+const VER='v42';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
