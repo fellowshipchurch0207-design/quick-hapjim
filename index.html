@@ -36,8 +36,8 @@ header h1{font-size:18px;margin:0;flex:1}
 .sum{display:flex;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--sub);margin:2px 4px 10px}
 .sum b{color:var(--ink)}
 .slack{font-size:17px;font-weight:700;padding:4px 10px;border-radius:10px;border:1px solid var(--line)}.slack small{font-size:13px;font-weight:400;color:var(--sub)}.slack.ok{color:#3ecf7a}.slack.mid{color:#f5b942}.slack.bad{color:#ff5a5a}.slack b{color:inherit;font-size:20px}
-#mslack{position:absolute;left:8px;top:8px;z-index:5;max-width:80%;pointer-events:none}#mslack .slack{display:inline-block;background:rgba(20,22,28,.88);border-width:2px;border-color:currentColor;line-height:1.25;box-shadow:0 2px 8px rgba(0,0,0,.4)}#mslack .slack{display:inline-flex;align-items:center;gap:7px;color:#fff;border:0;font-size:18px;padding:5px 11px 5px 8px}#mslack .slack i{width:18px;height:18px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.25)}#mslack .ok i{background:#3ecf7a}#mslack .mid i{background:#f5b942}#mslack .bad i{background:#ff4a4a;animation:blink 1s infinite}#mslack .hurry{margin-top:6px;background:#e0262bee;color:#fff;font-weight:800;font-size:16px;padding:7px 11px;border-radius:10px;box-shadow:0 2px 10px rgba(224,38,43,.6);animation:pulse 1.2s infinite;white-space:nowrap}@keyframes blink{50%{opacity:.25}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-.gap{display:inline-block;font-size:12px;font-weight:700;padding:0 6px;border-radius:6px;border:1px solid currentColor;margin-left:4px}.gap.ok{color:#3ecf7a}.gap.mid{color:#f5b942}.gap.bad{color:#ff5a5a}.gapline{font-size:13px;color:var(--sub);margin:6px 0 2px}
+#mslack{position:absolute;left:8px;top:44px;z-index:5;max-width:80%;pointer-events:none}#mslack .slack{display:inline-block;background:rgba(20,22,28,.88);border-width:2px;border-color:currentColor;line-height:1.25;box-shadow:0 2px 8px rgba(0,0,0,.4)}#mslack .slack{display:inline-flex;align-items:center;gap:7px;color:#fff;border:0;font-size:16px;padding:4px 10px 4px 7px}#mslack .slack i{width:15px;height:15px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.25)}#mslack .ok i{background:#3ecf7a}#mslack .mid i{background:#f5b942}#mslack .bad i{background:#ff4a4a;animation:blink 1s infinite}#mslack .hurry{margin-top:6px;background:#e0262bee;color:#fff;font-weight:800;font-size:16px;padding:7px 11px;border-radius:10px;box-shadow:0 2px 10px rgba(224,38,43,.6);animation:pulse 1.2s infinite;white-space:nowrap}@keyframes blink{50%{opacity:.25}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.gap{display:inline-block;font-size:12px;font-weight:700;padding:0 6px;border-radius:6px;border:1px solid currentColor;margin-left:4px}.gap.ok{color:#3ecf7a}.gap.mid{color:#f5b942}.gap.bad{color:#ff5a5a}.gapline{grid-column:1/-1;font-size:14px;color:var(--sub);margin:6px 0 2px}.gapline .gap{font-size:14px;padding:1px 8px}
 .stop{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;display:grid;grid-template-columns:44px 1fr;gap:4px 10px}
 .stop.next{border:2px solid var(--ink)}
 .num{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px}
@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v65</div>
+  <div class="ver">버전 2026-11-24 v66</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -516,12 +516,12 @@ async function recalc(){
 // 번호가 겹치면 둥글게 펼쳐서 모두 누를 수 있게 (확대해서 안 겹치면 원래 자리로)
 let mks=[],dcT=0;
 function declutter(){if(!map||!mks.length)return;let pj;try{pj=map.getProjection()}catch(e){return}
-  const P=mks.map(m=>{const c=pj.containerPointFromCoords(m.ll);return{x:c.x,y:c.y,m}}),used=new Set(),TH=34;
+  const P=mks.map(m=>{const c=pj.containerPointFromCoords(m.ll);return{x:c.x,y:c.y,m}}),used=new Set(),TH=40;
   P.forEach(p=>{p.m.el.classList.remove('moved');p.m.el.style.transform=''});
   for(let i=0;i<P.length;i++){if(used.has(i))continue;const g=[i];used.add(i);
     for(let q=0;q<g.length;q++)for(let j=0;j<P.length;j++)if(!used.has(j)&&Math.hypot(P[g[q]].x-P[j].x,P[g[q]].y-P[j].y)<TH){g.push(j);used.add(j)}
     if(g.length<2)continue;
-    const cx=g.reduce((a,k)=>a+P[k].x,0)/g.length,cy=g.reduce((a,k)=>a+P[k].y,0)/g.length,r=Math.max(26,g.length*36/(2*Math.PI));
+    const cx=g.reduce((a,k)=>a+P[k].x,0)/g.length,cy=g.reduce((a,k)=>a+P[k].y,0)/g.length,r=Math.max(32,g.length*42/(2*Math.PI));
     g.forEach((k,n)=>{const an=-Math.PI/2+n*2*Math.PI/g.length,dx=cx+r*Math.cos(an)-P[k].x,dy=cy+r*Math.sin(an)-P[k].y,el=P[k].m.el;
       el.classList.add('moved');el.style.setProperty('--dx',dx+'px');el.style.setProperty('--dy',dy+'px');el.style.transform=`translate(${dx}px,${dy}px)`})}}
 function declutterSoon(){clearTimeout(dcT);dcT=setTimeout(declutter,30)}
@@ -1101,7 +1101,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v65';
+const VER='v66';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
