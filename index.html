@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v66</div>
+  <div class="ver">버전 2026-11-24 v67</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -524,7 +524,7 @@ function declutter(){if(!map||!mks.length)return;let pj;try{pj=map.getProjection
     const cx=g.reduce((a,k)=>a+P[k].x,0)/g.length,cy=g.reduce((a,k)=>a+P[k].y,0)/g.length,r=Math.max(32,g.length*42/(2*Math.PI));
     g.forEach((k,n)=>{const an=-Math.PI/2+n*2*Math.PI/g.length,dx=cx+r*Math.cos(an)-P[k].x,dy=cy+r*Math.sin(an)-P[k].y,el=P[k].m.el;
       el.classList.add('moved');el.style.setProperty('--dx',dx+'px');el.style.setProperty('--dy',dy+'px');el.style.transform=`translate(${dx}px,${dy}px)`})}}
-function declutterSoon(){clearTimeout(dcT);dcT=setTimeout(declutter,30)}
+function declutterSoon(){} // 번호 펼치기는 끔 (원래 자리에 표시)
 function draw(path,km){
   let hasPlanMk=false;
   overlays.forEach(o=>o.setMap(null));overlays=[];mks=[];if(line){line.setMap(null);line=null}
@@ -1101,7 +1101,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v66';
+const VER='v67';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
