@@ -167,7 +167,7 @@ header h1{font-size:17px}
   <label>짐 특징 (예: 파란 박스 2개, 파손주의)
     <div class="row"><textarea id="iCargo"></textarea><button type="button" class="mic" data-for="iCargo">🎤</button></div></label>
   <label>금액 (원)<input type="number" inputmode="numeric" id="iFee" placeholder="예) 25000"></label>
-  <label>배송 마감 시각 (없으면 비워 두기)<input type="time" id="iDue"></label>
+  <div class="row"><label style="flex:1">픽업 마감 시각<input type="time" id="iPdue"></label><label style="flex:1">배송 마감 시각<input type="time" id="iDue"></label></div>
   <label class="chk"><input type="checkbox" id="iUrg"> 급송 (먼저 처리)</label>
   <label class="chk"><input type="checkbox" id="iLoaded"> 이미 실었음 (배송만 남음)</label>
   <div class="btns"><button type="button" class="ghost" id="bCancel">취소</button><button type="submit" class="pri" id="bSave">위치 확인 후 추가</button></div>
@@ -186,7 +186,7 @@ header h1{font-size:17px}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-23 v19</div>
+  <div class="ver">버전 2026-11-23 v20</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -286,8 +286,8 @@ function geocode(q){
 /* ---------- 순서 계산 (픽업은 항상 배송보다 먼저) ---------- */
 function hav(a,b){const R=6371,r=Math.PI/180,dLa=(b.lat-a.lat)*r,dLo=(b.lng-a.lng)*r;const x=Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
 const tmin=(a,b)=>hav(a,b)*1.35/cfg.speed*60;
-function dueDate(j){if(!j.due)return null;const [h,m]=j.due.split(':').map(Number),d=new Date(j.id);d.setHours(h,m,0,0);if(d<new Date(j.id)-3600000)d.setDate(d.getDate()+1);return d}
-function dueMin(j){const d=dueDate(j);return d?(d-Date.now())/60000:null}
+function dueDate(j,f='due'){if(!j[f])return null;const [h,m]=j[f].split(':').map(Number),d=new Date(j.id);d.setHours(h,m,0,0);if(d<new Date(j.id)-3600000)d.setDate(d.getDate()+1);return d}
+function dueMin(j,f='due'){const d=dueDate(j,f);return d?(d-Date.now())/60000:null}
 function buildStops(){
   const st=[];
   jobs.forEach(j=>{
@@ -303,7 +303,7 @@ function solve(st){
   const dw=+cfg.dwell||0, start=me;
   const T=(i,j)=>tmin(st[i].pt,st[j].pt);
   const T0=i=>start?tmin(start,st[i].pt):0;
-  const pen=(i,time)=>{if(st[i].t!=='D')return 0;const j=st[i].job;let p=j.urgent?time*1.5:0;
+  const pen=(i,time)=>{const j=st[i].job;if(st[i].t!=='D'){const pm=dueMin(j,'pdue');if(pm==null)return 0;let p=time*0.3;if(time>pm)p+=200+(time-pm)*20;return p}let p=j.urgent?time*1.5:0;
     const dm=dueMin(j);if(dm!=null){p+=time*0.3;if(time>dm)p+=200+(time-dm)*20}return p};
   if(n>16){ // 너무 많으면 가까운 곳부터
     const out=[],left=new Set(st.keys());let cur=start,used=new Set();
@@ -398,7 +398,7 @@ function renderList(km){
     const nav=`https://map.kakao.com/link/to/${encodeURIComponent(s.pt.name)},${s.pt.lat},${s.pt.lng}`;
     return `<div class="stop ${s.t} ${k?'':'next'}">
       <div class="num">${k+1}</div>
-      <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${!isP&&j.due?`<span class="due ${s.eta>dueDate(j)?'late':''}">${j.due}까지${s.eta>dueDate(j)?' · 늦을 수 있음':''}</span>`:''}</div>
+      <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${(()=>{const f=isP?'pdue':'due';return j[f]?`<span class="due ${s.eta>dueDate(j,f)?'late':''}">${j[f]}까지${s.eta>dueDate(j,f)?' · 늦을 수 있음':''}</span>`:''})()}</div>
         <div class="eta">${hm(s.eta)}<small>도착 예정</small></div>
         <div class="place">${esc(s.pt.name)}</div><div class="addr">${esc(s.pt.addr)}</div></div>
       ${cargo}
@@ -607,12 +607,18 @@ function korNum(x){x=x.replace(/[,\s]/g,'');let total=0,sec=0,num=0;
   return total+sec+num}
 function parseAll(raw){
   let t=' '+raw.replace(/\s+/g,' ').trim()+' ',out={};
-  // 마감 시각
-  const tm=t.match(/(오전|오후|아침|저녁|밤)?\s*(\d{1,2}|열두|열한|열|한|두|세|네|다섯|여섯|일곱|여덟|아홉)\s*시\s*(반|(\d{1,2})\s*분)?\s*(까지|전에|안에|이전)/);
-  if(tm){let h=KN[tm[2]]||+tm[2],m=tm[3]==='반'?30:(+tm[4]||0);const ap=tm[1];
+  // 마감 시각 (픽업 마감 / 배송 마감 구분)
+  const TRE=/(오전|오후|아침|저녁|밤)?\s*(\d{1,2}|열두|열한|열|한|두|세|네|다섯|여섯|일곱|여덟|아홉)\s*시\s*(반|(\d{1,2})\s*분)?\s*(까지|전에|안에|이전)/g;
+  const hits=[...t.matchAll(TRE)];
+  hits.forEach(tm=>{let h=KN[tm[2]]||+tm[2],m=tm[3]==='반'?30:(+tm[4]||0);const ap=tm[1];
     if((ap==='오후'||ap==='저녁'||ap==='밤')&&h<12)h+=12;else if(!ap&&h<=7)h+=12;
     else if(!ap){const now=new Date();if(h<12&&h*60+m<now.getHours()*60+now.getMinutes()-60)h+=12}
-    out.due=String(h%24).padStart(2,'0')+':'+String(m).padStart(2,'0');t=t.replace(tm[0],' ')}
+    const hhmm=String(h%24).padStart(2,'0')+':'+String(m).padStart(2,'0');
+    const before=t.slice(Math.max(0,tm.index-10),tm.index),after=t.slice(tm.index+tm[0].length,tm.index+tm[0].length+8);
+    const lp=Math.max(...['픽업','상차','출발','받','가지러','수령'].map(k=>before.lastIndexOf(k))),ld=Math.max(...['배송','도착','배달','하차','갖다','가져다','전달'].map(k=>before.lastIndexOf(k)));
+    let isPick;if(/^\s*(배송(?!지)|배달|도착(?!지)|하차(?!지)|갖다|가져다|전달|드려|보내)/.test(after))isPick=false;else if(/^\s*(픽업(?!지)|상차(?!지)|받으러|가지러|출발(?!지)|수령)/.test(after))isPick=true;else isPick=lp>ld;
+    if(isPick&&!out.pdue)out.pdue=hhmm;else if(!out.due)out.due=hhmm;else if(!out.pdue)out.pdue=hhmm});
+  hits.forEach(tm=>{t=t.replace(tm[0],' ')});
   const fm=t.match(/(?:금액|요금|운임|가격|비용|운송료|배송비)?\s*(?:은|는|이|가)?\s*((?:\d|[,\s]|만|천|백|십|일|이|삼|사|오|육|칠|팔|구)+?)\s*원/);
   if(fm){const v=korNum(fm[1]);if(v>=1000){out.fee=v;t=t.replace(fm[0],' ')}}
   if(/급송|급해|급하게|빨리|최대한 빨/.test(t))out.urgent=true;
@@ -648,7 +654,8 @@ async function applyAll(){
   if(r.pick){$('iPick').value=r.pick;got.push('픽업지')}
   if(r.drop){$('iDrop').value=r.drop;got.push('배송지')}
   if(r.cargo){$('iCargo').value=r.cargo;got.push('짐')}
-  if(r.due){$('iDue').value=r.due;got.push(r.due+' 마감')}
+  if(r.pdue){$('iPdue').value=r.pdue;got.push('픽업 '+r.pdue+'까지')}
+  if(r.due){$('iDue').value=r.due;got.push('배송 '+r.due+'까지')}
   if(r.fee){$('iFee').value=r.fee;got.push(won(r.fee))}
   if(r.urgent){$('iUrg').checked=true;got.push('급송')}
   const f=$('fAll');
@@ -664,7 +671,7 @@ $('fAdd').addEventListener('submit',async e=>{
   const p=loadedOnly?null:(found.pick||await look('pick')),d=found.drop||await look('drop');
   $('bSave').textContent='위치 확인 후 추가';
   if(!d||(!loadedOnly&&!p)){toast('주소를 확인해 주세요');return}
-  jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,due:$('iDue').value||'',fee:+$('iFee').value||0,state:loadedOnly?'loaded':'wait'});
+  jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,due:$('iDue').value||'',pdue:$('iPdue').value||'',fee:+$('iFee').value||0,state:loadedOnly?'loaded':'wait'});
   save();$('dAdd').close();toast('추가했어요. 순서와 도착시간을 다시 계산했어요.');recalc();
 });
 
@@ -801,7 +808,7 @@ $('bLogin').onclick=()=>doAuth(false);$('bJoin').onclick=()=>doAuth(true);
 $('bLogout').onclick=()=>{firebase.auth().signOut();toast('로그아웃했어요. 이 폰 기록만 보여요.')};
 fbInit();
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v19';
+const VER='v20';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
