@@ -36,7 +36,7 @@ header h1{font-size:18px;margin:0;flex:1}
 .sum{display:flex;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--sub);margin:2px 4px 10px}
 .sum b{color:var(--ink)}
 .slack{font-size:17px;font-weight:700;padding:4px 10px;border-radius:10px;border:1px solid var(--line)}.slack small{font-size:13px;font-weight:400;color:var(--sub)}.slack.ok{color:#3ecf7a}.slack.mid{color:#f5b942}.slack.bad{color:#ff5a5a}.slack b{color:inherit;font-size:20px}
-#mslack{position:absolute;left:8px;bottom:10px;z-index:5;max-width:62%;pointer-events:none}#mslack .slack{display:inline-block;background:rgba(20,22,28,.88);border-width:2px;border-color:currentColor;line-height:1.25;box-shadow:0 2px 8px rgba(0,0,0,.4)}#mslack .slack small{display:block;font-size:12px}
+#mslack{position:absolute;left:8px;top:8px;z-index:5;max-width:62%;pointer-events:none}#mslack .slack{display:inline-block;background:rgba(20,22,28,.88);border-width:2px;border-color:currentColor;line-height:1.25;box-shadow:0 2px 8px rgba(0,0,0,.4)}#mslack .slack{display:inline-flex;align-items:center;gap:7px;color:#fff;border:0;font-size:18px;padding:5px 11px 5px 8px}#mslack .slack i{width:18px;height:18px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.25)}#mslack .ok i{background:#3ecf7a}#mslack .mid i{background:#f5b942}#mslack .bad i{background:#ff4a4a}
 .gap{display:inline-block;font-size:12px;font-weight:700;padding:0 6px;border-radius:6px;border:1px solid currentColor;margin-left:4px}.gap.ok{color:#3ecf7a}.gap.mid{color:#f5b942}.gap.bad{color:#ff5a5a}
 .stop{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;display:grid;grid-template-columns:44px 1fr;gap:4px 10px}
 .stop.next{border:2px solid var(--ink)}
@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v58</div>
+  <div class="ver">버전 2026-11-24 v59</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -471,10 +471,8 @@ function slackAll(){const n=route.length,W=[],V=[];let w=0;
 function slackInfo(){return route.length?slackAll()[0]:null}
 const slackCls=v=>v<15?'bad':v<40?'mid':'ok';
 function slackHtml(){const b=slackInfo();
-  if(!b)return '<span class="slack ok">⏱ 마감 있는 곳 없음 · 끝나는 시간 <b>'+hm(route.at(-1).eta)+'</b></span>';
-  const c=slackCls(b.v);
-  const t=b.v<0?'이미 '+(-b.v)+'분 늦음':'지금 합짐 여유 <b>'+b.v+'분</b>';
-  return '<span class="slack '+c+'">⏱ '+t+' <small>· '+(b.k+1)+'번 '+hm(b.dl)+' 기준</small></span>'}
+  if(!b)return '<span class="slack ok"><i></i>여유 넉넉</span>';
+  return '<span class="slack '+slackCls(b.v)+'"><i></i>'+(b.v<0?(-b.v)+'분 늦음':'여유 '+b.v+'분')+'</span>'}
 async function recalc(){
   if(!map)return;if(busy&&Date.now()-busy<15000)return;busy=Date.now();
   const st=buildStops();
@@ -1073,7 +1071,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v58';
+const VER='v59';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
