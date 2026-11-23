@@ -35,6 +35,7 @@ header h1{font-size:18px;margin:0;flex:1}
 .side{overflow-y:auto;padding:10px 10px 90px}
 .sum{display:flex;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--sub);margin:2px 4px 10px}
 .sum b{color:var(--ink)}
+.slack{font-size:17px;font-weight:700;padding:4px 10px;border-radius:10px;border:1px solid var(--line)}.slack small{font-size:13px;font-weight:400;color:var(--sub)}.slack.ok{color:#3ecf7a}.slack.mid{color:#f5b942}.slack.bad{color:#ff5a5a}.slack b{color:inherit;font-size:20px}
 .stop{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;display:grid;grid-template-columns:44px 1fr;gap:4px 10px}
 .stop.next{border:2px solid var(--ink)}
 .num{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px}
@@ -216,7 +217,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v54</div>
+  <div class="ver">버전 2026-11-24 v55</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -457,6 +458,18 @@ function cargoIcons(text,small){
 }
 /* ---------- 계산 + 그리기 ---------- */
 let busy=false;
+// 합짐 여유: 지금부터 몇 분을 더 써도 모든 마감·약속을 지킬 수 있는지 (약속 앞 대기 시간은 지연을 흡수)
+function slackInfo(){let wsum=0,best=null;
+  route.forEach((s,k)=>{let dl=null;
+    if(s.t==='S')dl=s.target;else{const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=dueDate(s.job,f)}
+    if(dl){const v=Math.floor((dl-s.eta)/60000)+wsum;if(!best||v<best.v)best={v,k,dl}}
+    if(s.t==='S'&&s.wait>0)wsum+=s.wait});
+  return best}
+function slackHtml(){const b=slackInfo();
+  if(!b)return '<span class="slack ok">⏱ 마감 있는 곳 없음 · 끝나는 시간 <b>'+hm(route.at(-1).eta)+'</b></span>';
+  const c=b.v<0?'bad':b.v<15?'bad':b.v<40?'mid':'ok';
+  const t=b.v<0?'이미 '+(-b.v)+'분 늦음':'합짐 여유 <b>'+b.v+'분</b>';
+  return '<span class="slack '+c+'">⏱ '+t+' <small>· '+(b.k+1)+'번 '+hm(b.dl)+' 기준</small></span>'}
 async function recalc(){
   if(!map)return;if(busy&&Date.now()-busy<15000)return;busy=Date.now();
   const st=buildStops();
@@ -527,7 +540,7 @@ function laterPlans(){const tk=todayKey(),l=plans.filter(p=>!p.done&&planAt(p,'e
 function renderList(km){
   $('cRun').textContent=jobs.filter(j=>j.state!=='done').length;
   const loaded=jobs.filter(j=>j.state==='loaded').length;
-  $('sum').innerHTML=route.length?`<span>남은 곳 <b>${route.length}</b></span><span>실은 짐 <b>${loaded}</b></span><span>약 <b>${km.toFixed(1)}km</b></span><span>운전 <b>${route.reduce((a,s)=>a+s.leg,0)}분</b></span><span>마지막 도착 <b>${hm(route.at(-1).eta)}</b></span><span>${routeSrc==='road'?'실제 도로 기준':'직선거리 추정'}</span><span>출발: <b>${gpsOk?'현재 위치':'설정 출발지'}</b></span>${manual?'<span>✋ <b>직접 정한 순서</b> <button type="button" class="ghost" id="bAuto" style="min-height:30px;font-size:13px;padding:0 8px">자동 순서로</button></span>':'<span>▲▼로 순서를 바꿀 수 있어요</span>'}`:'';
+  $('sum').innerHTML=route.length?slackHtml()+(manual?'<span>✋ <b>직접 정한 순서</b> <button type="button" class="ghost" id="bAuto" style="min-height:30px;font-size:13px;padding:0 8px">자동 순서로</button></span>':''):'';
   if(!route.length){$('list').innerHTML=pastHtml()+'<div class="empty">남은 배송이 없어요.<br>지도 오른쪽 아래 📦 버튼으로 콜을 넣어 주세요.</div>'+laterPlans();return}
   const KN2={P:'픽업',D:'배송',S:'일정'};
   $('list').innerHTML=pastHtml()+route.map((s,k)=>{
@@ -1054,7 +1067,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v54';
+const VER='v55';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
