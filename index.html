@@ -51,7 +51,7 @@ header h1{font-size:18px;margin:0;flex:1}
 .cargo{grid-column:1/-1;background:light-dark(#fff3f0,#2b1b18);border-radius:10px;padding:8px 10px;font-size:17px;font-weight:700}
 .P .cargo{background:light-dark(#eef4ff,#172235)}
 .urgent{display:inline-block;background:var(--urg);color:#000;font-size:12px;font-weight:800;border-radius:6px;padding:1px 6px;margin-left:6px}
-.acts{grid-column:1/-1;display:flex;gap:8px;margin-top:6px}
+.acts{grid-column:1/-1;display:flex;gap:6px;margin-top:6px}.acts button,.acts a{white-space:nowrap}.acts .sm{flex:0 0 auto;padding:0 10px;font-size:14px}
 .acts a,.acts button{flex:1;display:grid;place-items:center;text-decoration:none;border-radius:10px;min-height:44px;font-weight:700}
 .done{background:var(--ok);color:#fff}
 .nav{background:#fee500;color:#191919}
@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v82</div>
+  <div class="ver">버전 2026-11-24 v83</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -619,7 +619,7 @@ function renderList(km){
       
       
       
-      <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a><button class="ghost" data-pedit="${p.id}" style="flex:0 0 64px">수정</button><button class="done" data-pdone="${p.id}">일정 끝</button><button class="ghost" data-pdel="${p.id}" style="flex:0 0 64px">삭제</button></div></div>`}
+      <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a><button class="done" data-pdone="${p.id}">일정 끝</button><button class="ghost sm" data-pedit="${p.id}">수정</button><button class="ghost sm" data-pdel="${p.id}">삭제</button></div></div>`}
     const j=s.job,isP=s.t==='P';
     const cargo=j.cargo?`<div class="cargo">${isP?'실을 짐':'여기서 내릴 짐'}: ${esc(j.cargo)}</div>`:'';
     const nav=`https://map.kakao.com/link/to/${encodeURIComponent(s.pt.name)},${s.pt.lat},${s.pt.lng}`;
@@ -635,7 +635,7 @@ function renderList(km){
       ${!isP?`<div class="loaded">픽업지: ${esc(full(j.pick))}</div>`:`<div class="loaded">배송지: ${esc(full(j.drop))}</div>`}
       <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a>
         <button class="done" data-job="${j.id}" data-t="${s.t}">${isP?'픽업 완료':'배송 완료'}</button>
-        <button class="ghost" data-jedit="${j.id}" style="flex:0 0 56px">수정</button><button class="ghost" data-del="${j.id}" style="flex:0 0 56px">삭제</button></div>
+        <button class="ghost sm" data-jedit="${j.id}">수정</button><button class="ghost sm" data-del="${j.id}">삭제</button></div>
       
     </div>`}).join('')+laterPlans();
 }
@@ -1160,7 +1160,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v82';
+const VER='v83';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
