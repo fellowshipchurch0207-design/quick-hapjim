@@ -220,7 +220,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v92</div>
+  <div class="ver">버전 2026-11-24 v93</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -430,7 +430,9 @@ function solve(st){
   const sm=i=>(planAt(st[i].plan,'start')-Date.now())/60000-pb,sdur=i=>(planAt(st[i].plan,'end')-planAt(st[i].plan,'start'))/60000+pb;
   const rdy=i=>st[i].t==='S'?sm(i):(st[i].t==='P'&&schedP(st[i].job))?dueMin(st[i].job,'pdue')-pb:null;
   const wt=(i,t)=>{const r=rdy(i);return r!=null?Math.max(0,r-t)*0.03:0}; // 약속 전 대기는 거의 손해로 치지 않음(약속은 시간 순서대로 노선 중간에)
-  const after=(i,t)=>{if(st[i].t==='S')return Math.max(t,sm(i))+sdur(i)-dw;const r=rdy(i);return r!=null?Math.max(t,r):t};
+  // 일정은 정해진 시각에 끝남 (늦게 도착해도 끝나는 시각은 그대로)
+  const em=i=>(planAt(st[i].plan,'end')-Date.now())/60000;
+  const after=(i,t)=>{if(st[i].t==='S')return Math.max(t,em(i))-dw;const r=rdy(i);return r!=null?Math.max(t,r):t};
   const pen=(i,time)=>{if(st[i].t==='S'){const l=time-sm(i);return l>0?1000+l*100:0}const j=st[i].job;if(st[i].t==='R')return j.urgent?time*0.3:0;if(st[i].t!=='D'){let pm=dueMin(j,'pdue');if(pm==null)return 0;pm-=pb;let p=time*0.02;if(time>pm)p+=3000+(time-pm)*300;return p}let p=j.urgent?time*1.5:0;
     let dm=dueMin(j);if(dm!=null){dm-=pb;p+=time*0.02;if(time>dm)p+=3000+(time-dm)*300}return p};
   if(n>16){ // 너무 많으면 가까운 곳부터
@@ -518,7 +520,7 @@ function slackHtml(){const b=slackInfo();
 function missCount(r){const pb=(+cfg.pbuf||0)*60000,dw=(+cfg.dwell||0)*60000;let t=Date.now(),prev=me,n=0;
   r.forEach(s=>{t+=(prev?tmin(prev,s.pt):0)*60000;prev=s.pt;let dl=null,rd=null;
     if(s.t==='S'){rd=planAt(s.plan,'start').getTime()-pb;dl=rd}else if(s.t!=='R'){const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=dueDate(s.job,f).getTime()-pb;if(s.t==='P'&&schedP(s.job))rd=dl}
-    if(dl&&t>dl+60000)n++;if(rd&&t<rd)t=rd;t+=s.t==='S'?planAt(s.plan,'end')-planAt(s.plan,'start'):dw});return n}
+    if(dl&&t>dl+60000)n++;if(rd&&t<rd)t=rd;if(s.t==='S')t=Math.max(t,planAt(s.plan,'end').getTime());else t+=dw});return n}
 let again=false;
 async function recalc(){
   if(!map)return;if(busy&&Date.now()-busy<15000){again=true;return}busy=Date.now();
@@ -550,7 +552,7 @@ async function recalc(){
     if(prev&&cfg.rest&&dep-Date.now()>=30*60000){const f=await futureMin(prev,s.pt,dep);if(f){s.legNow=leg;leg=f}}
     s.leg=Math.max(1,Math.round(leg));s.legKm=prev?hav(prev,s.pt)*1.35:null;
     s.leaveBy=null;s.wait=null;s.target=null;t+=leg*60000;s.eta=new Date(t);prev=s.pt;
-    if(s.t==='S'){const a=planAt(s.plan,'start').getTime()-(+cfg.pbuf||0)*60000,b=planAt(s.plan,'end').getTime();s.target=new Date(a);s.wait=Math.round((a-t)/60000);s.leaveBy=new Date(a-leg*60000);s.depart=new Date(Math.max(t,a)+(b-a))}
+    if(s.t==='S'){const a=planAt(s.plan,'start').getTime()-(+cfg.pbuf||0)*60000,b=planAt(s.plan,'end').getTime();s.target=new Date(a);s.wait=Math.round((a-t)/60000);s.leaveBy=new Date(a-leg*60000);s.depart=new Date(Math.max(t,b))}
     else if(s.t==='P'&&schedP(s.job)){const a=dueDate(s.job,'pdue').getTime()-(+cfg.pbuf||0)*60000;s.target=new Date(a);s.wait=Math.round((a-t)/60000);s.leaveBy=new Date(a-leg*60000);s.depart=new Date(Math.max(t,a)+dw*60000)}
     else s.depart=new Date(t+dw*60000);
     t=s.depart.getTime();
@@ -1178,7 +1180,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v92';
+const VER='v93';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
