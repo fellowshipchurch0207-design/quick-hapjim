@@ -220,7 +220,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v93</div>
+  <div class="ver">버전 2026-11-24 v94</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -433,7 +433,7 @@ function solve(st){
   // 일정은 정해진 시각에 끝남 (늦게 도착해도 끝나는 시각은 그대로)
   const em=i=>(planAt(st[i].plan,'end')-Date.now())/60000;
   const after=(i,t)=>{if(st[i].t==='S')return Math.max(t,em(i))-dw;const r=rdy(i);return r!=null?Math.max(t,r):t};
-  const pen=(i,time)=>{if(st[i].t==='S'){const l=time-sm(i);return l>0?1000+l*100:0}const j=st[i].job;if(st[i].t==='R')return j.urgent?time*0.3:0;if(st[i].t!=='D'){let pm=dueMin(j,'pdue');if(pm==null)return 0;pm-=pb;let p=time*0.02;if(time>pm)p+=3000+(time-pm)*300;return p}let p=j.urgent?time*1.5:0;
+  const pen=(i,time)=>{if(st[i].t==='S'){const l=time-sm(i);return l>0?150+l*5:0}const j=st[i].job;if(st[i].t==='R')return j.urgent?time*0.3:0;if(st[i].t!=='D'){let pm=dueMin(j,'pdue');if(pm==null)return 0;pm-=pb;let p=time*0.02;if(time>pm)p+=3000+(time-pm)*300;return p}let p=j.urgent?time*1.5:0;
     let dm=dueMin(j);if(dm!=null){dm-=pb;p+=time*0.02;if(time>dm)p+=3000+(time-dm)*300}return p};
   if(n>16){ // 너무 많으면 가까운 곳부터
     const out=[],left=new Set(st.keys());let cur=start,used=new Set();
@@ -501,11 +501,18 @@ function cargoIcons(text,small){
 let busy=false;
 // 합짐 여유: 지금부터 몇 분을 더 써도 모든 마감·약속을 지킬 수 있는지 (약속 앞 대기 시간은 지연을 흡수)
 // 구간별 여유: k번으로 가는 길에 n분을 더 쓰면 k번 이후 모든 마감이 n분씩 밀림 (약속 앞 대기는 흡수)
-function slackAll(){const n=route.length,W=[],V=[];let w=0;
-  route.forEach((s,j)=>{W[j]=w;let dl=null;if(s.t==='S')dl=s.target;else if(s.t!=='R'){const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=new Date(dueDate(s.job,f).getTime()-(+cfg.pbuf||0)*60000)}
-    V[j]=dl?{v:Math.floor((dl-s.eta)/60000)+w,dl}:null;if(s.wait>0)w+=s.wait});
-  const out=new Array(n).fill(null);let best=null;
-  for(let k=n-1;k>=0;k--){if(V[k]&&(!best||V[k].v<best.v))best={v:V[k].v,k,dl:V[k].dl};out[k]=best?{v:best.v-W[k],k:best.k,dl:best.dl}:null}
+// 배송 중심 여유: k번으로 가기 전에 D분을 더 써도 픽업·배송 마감(15분 전)을 모두 지키는 최대 D. 일정은 정해진 시각에 끝나고, 일정 전 대기는 지연을 흡수
+function jobDl(s){if(!s.job||s.t==='R')return null;const f=s.t==='P'?'pdue':'due';return s.job[f]?dueDate(s.job,f).getTime()-(+cfg.pbuf||0)*60000:null}
+function simLate(k,D){const pb=(+cfg.pbuf||0)*60000,dw=(+cfg.dwell||0)*60000;let t=(k?route[k-1].depart.getTime():Date.now())+D*60000,worst=-1e9,wk=-1;
+  for(let i=k;i<route.length;i++){const s=route[i];t+=s.leg*60000;const dl=jobDl(s);if(dl!=null){const l=(t-dl)/60000;if(l>worst){worst=l;wk=i}}
+    if(s.t==='S')t=Math.max(t,planAt(s.plan,'end').getTime());else if(s.t==='P'&&schedP(s.job))t=Math.max(t,dueDate(s.job,'pdue').getTime()-pb)+dw;else t+=dw}
+  return{worst,wk}}
+function slackAll(){const n=route.length,out=new Array(n).fill(null);
+  for(let k=0;k<n;k++){const z=simLate(k,0);if(z.wk<0)continue;
+    if(z.worst>0){out[k]={v:-Math.ceil(z.worst),k:z.wk};continue}
+    let lo=0,hi=24*60;if(simLate(k,hi).worst<=0){out[k]={v:hi,k:z.wk};continue}
+    while(hi-lo>1){const m=(lo+hi)>>1;if(simLate(k,m).worst<=0)lo=m;else hi=m}
+    out[k]={v:lo,k:simLate(k,hi).wk}}
   return out}
 function slackInfo(){return route.length?slackAll()[0]:null}
 // 이 곳으로 늦어도 언제 떠나야 하는지: 시간 맞춰 가는 곳이거나, 일정 마치고 떠나는 경우
@@ -1180,7 +1187,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v93';
+const VER='v94';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
