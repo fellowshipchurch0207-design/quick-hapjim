@@ -220,7 +220,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v95</div>
+  <div class="ver">버전 2026-11-24 v96</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -1047,7 +1047,8 @@ document.querySelectorAll('.mic').forEach(b=>{
     const inp=$(b.dataset.for);
     if(!SR){kbHint(inp,'이 화면에서는 앱 마이크를 쓸 수 없어요.');return}
     if(rec){try{rec.stop()}catch(e){}return}            // 다시 누르면 멈춤
-    const keep=inp.id==='iAll'?'':(inp.value?inp.value+' ':'');
+    const keep=(inp.id==='iAll'||inp.id==='iPick'||inp.id==='iDrop')?'':(inp.value?inp.value+' ':''); // 주소는 새로 말한 걸로 바꿈
+    if(inp.id==='iPick'||inp.id==='iDrop'){inp.dataset.prev=inp.value;inp.value=''}
     let r;try{r=new SR()}catch(e){kbHint(inp,'마이크를 시작하지 못했어요.');return}
     rec=r;r.lang='ko-KR';r.interimResults=true;r.continuous=true;
     let fin='',got=false;b.classList.add('on');b.textContent='■';inp.classList.add('live');
@@ -1056,7 +1057,7 @@ document.querySelectorAll('.mic').forEach(b=>{
       for(let i=ev.resultIndex;i<ev.results.length;i++){const t=ev.results[i][0].transcript;if(ev.results[i].isFinal)fin+=t+' ';else tmp+=t}
       inp.value=keep+fin+tmp;inp.scrollTop=inp.scrollHeight};
     const done=()=>{clearTimeout(recT);if(rec!==r)return;rec=null;b.classList.remove('on');b.textContent='🎤';inp.classList.remove('live');
-      inp.value=inp.value.replace(/\s+/g,' ').trim();if(inp.value)inp.dispatchEvent(new Event('change'))};
+      inp.value=inp.value.replace(/\s+/g,' ').trim();if(!inp.value&&inp.dataset.prev)inp.value=inp.dataset.prev;else if(inp.value)inp.dispatchEvent(new Event('change'))};
     r.onend=done;
     r.onerror=e=>{done();
       if(e.error==='not-allowed'||e.error==='service-not-allowed')kbHint(inp,'마이크 권한이 꺼져 있어요(설정에서 허용).');
@@ -1068,6 +1069,10 @@ document.querySelectorAll('.mic').forEach(b=>{
     try{r.start()}catch(e){done();kbHint(inp,'마이크를 시작하지 못했어요.')}};
 });
 $('dAdd').addEventListener('close',()=>{if(rec)rec.abort()});
+// 주소 칸을 누르면 비워서 처음부터 입력 (아무것도 안 쓰고 나가면 원래대로)
+['iPick','iDrop'].forEach(id=>{const el=$(id);
+  el.addEventListener('focus',()=>{if(el.classList.contains('live'))return;el.dataset.prev=el.value;el.value=''});
+  el.addEventListener('blur',()=>{setTimeout(()=>{if(!el.value.trim()&&el.dataset.prev&&!el.classList.contains('live'))el.value=el.dataset.prev},150)})});
 
 /* ---------- 설정 ---------- */
 function openSet(){$('sPbuf').value=cfg.pbuf??15;$('sHome').value=cfg.home||'';$('sJs').value=cfg.js;$('sRest').value=cfg.rest;$('sDwell').value=cfg.dwell;$('sSpeed').value=cfg.speed;$('dSet').showModal()}
@@ -1196,7 +1201,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v95';
+const VER='v96';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
