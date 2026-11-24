@@ -220,7 +220,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v91</div>
+  <div class="ver">버전 2026-11-24 v92</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -629,7 +629,7 @@ function renderList(km){
       return `<div class="stop S ${k?'':'next'}" id="stop-${k}"><div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
       <div><div class="kind">📅 개인 일정</div><div class="place">${esc(p.title||'일정')}</div><div class="ptime" data-pedit="${p.id}">${p.start} ~ ${p.end}</div>
         ${s.wait>0?`<div class="eta">${hm(s.target)}<small>도착 목표</small></div>`:`<div class="eta">${hm(s.eta)}<small>도착 예정</small></div>`}
-        <div class="leg">🚗 ${from} <b>${s.leg}분</b>${(()=>{const t=lbOf(k,SL);if(!t)return'';const can=k?route[k-1].depart:new Date(),late=Math.round((can-t)/60000);const fromS=k&&route[k-1].t==='S';return late>0&&!fromS?` <span class="lby bad">/ 15분 일찍은 못 감 (${late}분 부족)</span>`:` <span class="lby ${late>0?'bad':''}">/ 늦어도 <b>${hmd(t)}</b> 출발${late>0?' (일정 '+late+'분 일찍 마치기)':''}</span>`})()}</div>
+        <div class="leg">🚗 ${from} <b>${s.leg}분</b>${(()=>{const t=lbOf(k,SL);if(!t)return'';const can=k?route[k-1].depart:new Date(),late=Math.round((can-t)/60000);const fromS=k&&route[k-1].t==='S';return late>0&&!fromS?` <span class="lby bad">/ 15분 일찍은 못 감 (${late}분 부족)</span>`:` <span class="lby ${late>0?'bad':''}">/ 늦어도 <b>${hmd(t)}</b> 출발 → <b>${hm(new Date(t.getTime()+s.leg*60000))}</b> 도착${late>0?' (일정 '+late+'분 일찍 마치기)':''}</span>`})()}</div>
         <div class="addr">${esc(full(p.place))}</div>${jibunHtml(p.place)}</div>
       
       
@@ -643,7 +643,7 @@ function renderList(km){
       <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':isR?'🔁 복귀':'배송'}${j.round&&!isR?'<span class="rnd">왕복</span>':''}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&!isR&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${(()=>{const f=isP?'pdue':'due';return !isR&&j[f]?`<span class="due ${s.eta>dueDate(j,f)?'late':''}">${j[f]}까지${s.eta>dueDate(j,f)?' · 늦을 수 있음':''}</span>`:''})()}</div>
         ${s.wait>0?`<div class="eta">${hmd(s.target)}<small>도착 목표 · 예약 픽업</small></div>`:`<div class="eta">${hmd(s.eta)}<small>도착 예정</small></div>`}
         
-        <div class="leg">🚗 ${from} <b>${s.leg}분</b>${k&&route[k-1].t!=='S'?` <span>+ 상하차 ${+cfg.dwell||0}분</span>`:''}${(()=>{const t=lbOf(k,SL);if(!t)return'';const can=k?route[k-1].depart:new Date(),late=Math.round((can-t)/60000);const fromS=k&&route[k-1].t==='S';return late>0&&!fromS?` <span class="lby bad">/ 15분 일찍은 못 감 (${late}분 부족)</span>`:` <span class="lby ${late>0?'bad':''}">/ 늦어도 <b>${hmd(t)}</b> 출발${late>0?' (일정 '+late+'분 일찍 마치기)':''}</span>`})()}</div>
+        <div class="leg">🚗 ${from} <b>${s.leg}분</b>${k&&route[k-1].t!=='S'?` <span>+ 상하차 ${+cfg.dwell||0}분</span>`:''}${(()=>{const t=lbOf(k,SL);if(!t)return'';const can=k?route[k-1].depart:new Date(),late=Math.round((can-t)/60000);const fromS=k&&route[k-1].t==='S';return late>0&&!fromS?` <span class="lby bad">/ 15분 일찍은 못 감 (${late}분 부족)</span>`:` <span class="lby ${late>0?'bad':''}">/ 늦어도 <b>${hmd(t)}</b> 출발 → <b>${hm(new Date(t.getTime()+s.leg*60000))}</b> 도착${late>0?' (일정 '+late+'분 일찍 마치기)':''}</span>`})()}</div>
         <div class="addr">${esc(full(s.pt))}</div>${jibunHtml(s.pt)}</div>
       ${cargo}
       
@@ -1178,7 +1178,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v91';
+const VER='v92';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
