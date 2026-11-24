@@ -220,7 +220,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v89</div>
+  <div class="ver">버전 2026-11-24 v90</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -1010,7 +1010,7 @@ $('fAdd').addEventListener('submit',async e=>{
   if(editId!=null){const j=jobs.find(x=>x.id==editId);editId=null;if(j){
     if(p)j.pick=p;j.drop=d;j.cargo=$('iCargo').value.trim();j.urgent=$('iUrg').checked;if($('iRound').checked)j.round=true;else{if(j.round&&j.state==='back'){j.state='done';j.doneAt=j.dropAt||Date.now()}delete j.round}j.due=$('iDue').value||'';j.pdue=$('iPdue').value||'';j.fee=+$('iFee').value||0;
     if(loadedOnly&&j.state==='wait'){j.state='loaded';j.pickedAt=Date.now()}else if(!loadedOnly&&j.state==='loaded'){j.state='wait';delete j.pickedAt}
-    save();$('dAdd').close();toast('고쳤어요. 순서와 도착시간을 다시 계산해요.');recalc()}return}
+    manual=null;saveManual();save();$('dAdd').close();toast('고쳤어요. 순서를 새로 짰어요.');recalc()}return}
   manual=null;saveManual(); // 새 짐이 들어오면 순서를 처음부터 다시 짜고, 그 뒤에 직접 조정
   jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,round:$('iRound').checked||undefined,due:$('iDue').value||'',pdue:$('iPdue').value||'',fee:+$('iFee').value||0,state:loadedOnly?'loaded':'wait'});
   save();$('dAdd').close();toast('추가했어요. 순서와 도착시간을 다시 계산했어요.');recalc();
@@ -1174,7 +1174,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v89';
+const VER='v90';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
