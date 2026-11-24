@@ -37,13 +37,13 @@ header h1{font-size:18px;margin:0;flex:1}
 .sum b{color:var(--ink)}
 .slack{font-size:17px;font-weight:700;padding:4px 10px;border-radius:10px;border:1px solid var(--line)}.slack small{font-size:13px;font-weight:400;color:var(--sub)}.slack.ok{color:#3ecf7a}.slack.mid{color:#f5b942}.slack.bad{color:#ff5a5a}.slack b{color:inherit;font-size:20px}
 #mslack{position:absolute;left:8px;top:44px;z-index:5;max-width:80%;pointer-events:none}#mslack .slack{display:inline-block;background:rgba(20,22,28,.88);border-width:2px;border-color:currentColor;line-height:1.25;box-shadow:0 2px 8px rgba(0,0,0,.4)}#mslack .slack{display:inline-flex;align-items:center;gap:7px;color:#fff;border:0;font-size:16px;padding:4px 10px 4px 7px}#mslack .slack i{width:15px;height:15px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.25)}#mslack .ok i{background:#3ecf7a}#mslack .mid i{background:#f5b942}#mslack .bad i{background:#ff4a4a;animation:blink 1s infinite}#mslack .hurry{margin-top:6px;background:#e0262bee;color:#fff;font-weight:800;font-size:16px;padding:7px 11px;border-radius:10px;box-shadow:0 2px 10px rgba(224,38,43,.6);animation:pulse 1.2s infinite;white-space:nowrap}@keyframes blink{50%{opacity:.25}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-.gap{display:inline-block;font-size:12px;font-weight:700;padding:0 6px;border-radius:6px;border:1px solid currentColor;margin-left:4px}.gap.ok{color:#3ecf7a}.gap.mid{color:#f5b942}.gap.bad{color:#ff5a5a}.fut{font-size:13px;color:var(--sub)}.fut.up{color:#ff7a59;font-weight:700}.lby{color:#f5b942}.lby.bad,.lby.bad b{color:#ff5a5a!important;font-weight:700}.lby b{color:#f5b942!important}.gapline{grid-column:1/-1;font-size:14px;color:var(--sub);margin:6px 0 2px}.gapline .gap{font-size:14px;padding:1px 8px}
+.gap{display:inline-block;font-size:12px;font-weight:700;padding:0 6px;border-radius:6px;border:1px solid currentColor;margin-left:4px}.gap.ok{color:#3ecf7a}.gap.mid{color:#f5b942}.gap.bad{color:#ff5a5a}.fut{font-size:13px;color:var(--sub)}.fut.up{color:#ff7a59;font-weight:700}.rnd{font-size:12px;font-weight:700;color:#2dd4bf;border:1px solid #2dd4bf;border-radius:6px;padding:0 5px;margin-left:6px}.stop.R .kind{color:#2dd4bf}.lby{color:#f5b942}.lby.bad,.lby.bad b{color:#ff5a5a!important;font-weight:700}.lby b{color:#f5b942!important}.gapline{grid-column:1/-1;font-size:14px;color:var(--sub);margin:6px 0 2px}.gapline .gap{font-size:14px;padding:1px 8px}
 .stop{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;display:grid;grid-template-columns:44px 1fr;gap:4px 10px}
 .stop.next{border:2px solid var(--ink)}
 .num{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px}
 .P .num{background:var(--pick)}.D .num{background:var(--drop)}
 .kind{font-size:13px;font-weight:700}
-.P .kind{color:var(--pick)}.D .kind{color:var(--drop)}
+.P .kind{color:var(--pick)}.D .kind{color:var(--drop)}.R .num{background:#0d9488}.R .kind{color:#2dd4bf}
 .eta{font-size:26px;font-weight:800;line-height:1.1;white-space:nowrap}
 .eta small{font-size:13px;font-weight:600;color:var(--sub);margin-left:6px}
 .place{font-weight:600}
@@ -201,6 +201,7 @@ body.bars #bHandle{display:none}
   <label>금액 (원)<input type="number" inputmode="numeric" id="iFee" placeholder="예) 25000"></label>
   <div class="row"><label style="flex:1">픽업 마감 시각<input type="time" id="iPdue"></label><label style="flex:1">배송 마감 시각<input type="time" id="iDue"></label></div>
   <label class="chk"><input type="checkbox" id="iUrg"> 급송 (먼저 처리)</label>
+  <label class="chk"><input type="checkbox" id="iRound"> 🔁 왕복 (배송 후 픽업지로 복귀)</label>
   <label class="chk"><input type="checkbox" id="iLoaded"> 이미 실었음 (배송만 남음)</label>
   <div class="btns"><button type="button" class="ghost" id="bCancel">취소</button><button type="submit" class="pri" id="bSave">위치 확인 후 추가</button></div>
 </form></dialog>
@@ -219,7 +220,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-24 v88</div>
+  <div class="ver">버전 2026-11-24 v89</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -411,7 +412,8 @@ function buildStops(){
     if(j.state==='done')return;
     let pi=-1;
     if(j.state==='wait'){pi=st.length;st.push({t:'P',job:j,pt:j.pick,pred:-1})}
-    st.push({t:'D',job:j,pt:j.drop,pred:pi});
+    let di=-1;if(j.state!=='back'){di=st.length;st.push({t:'D',job:j,pt:j.drop,pred:pi})}
+    if(j.round)st.push({t:'R',job:j,pt:j.pick,pred:di}); // 왕복: 배송지에서 다시 픽업지로
   });
   fixPlanDates();
   plans.filter(p=>!p.done&&p.place&&inWindow(p)).forEach(p=>st.push({t:'S',plan:p,job:null,pt:p.place,pred:-1}));
@@ -427,7 +429,7 @@ function solve(st){
   const rdy=i=>st[i].t==='S'?sm(i):(st[i].t==='P'&&schedP(st[i].job))?dueMin(st[i].job,'pdue')-pb:null;
   const wt=(i,t)=>{const r=rdy(i);return r!=null?Math.max(0,r-t)*0.03:0}; // 약속 전 대기는 거의 손해로 치지 않음(약속은 시간 순서대로 노선 중간에)
   const after=(i,t)=>{if(st[i].t==='S')return Math.max(t,sm(i))+sdur(i)-dw;const r=rdy(i);return r!=null?Math.max(t,r):t};
-  const pen=(i,time)=>{if(st[i].t==='S'){const l=time-sm(i);return l>0?1000+l*100:0}const j=st[i].job;if(st[i].t!=='D'){let pm=dueMin(j,'pdue');if(pm==null)return 0;pm-=pb;let p=time*0.02;if(time>pm)p+=200+(time-pm)*20;return p}let p=j.urgent?time*1.5:0;
+  const pen=(i,time)=>{if(st[i].t==='S'){const l=time-sm(i);return l>0?1000+l*100:0}const j=st[i].job;if(st[i].t==='R')return j.urgent?time*0.3:0;if(st[i].t!=='D'){let pm=dueMin(j,'pdue');if(pm==null)return 0;pm-=pb;let p=time*0.02;if(time>pm)p+=200+(time-pm)*20;return p}let p=j.urgent?time*1.5:0;
     let dm=dueMin(j);if(dm!=null){dm-=pb;p+=time*0.02;if(time>dm)p+=200+(time-dm)*20}return p};
   if(n>16){ // 너무 많으면 가까운 곳부터
     const out=[],left=new Set(st.keys());let cur=start,used=new Set();
@@ -496,7 +498,7 @@ let busy=false;
 // 합짐 여유: 지금부터 몇 분을 더 써도 모든 마감·약속을 지킬 수 있는지 (약속 앞 대기 시간은 지연을 흡수)
 // 구간별 여유: k번으로 가는 길에 n분을 더 쓰면 k번 이후 모든 마감이 n분씩 밀림 (약속 앞 대기는 흡수)
 function slackAll(){const n=route.length,W=[],V=[];let w=0;
-  route.forEach((s,j)=>{W[j]=w;let dl=null;if(s.t==='S')dl=s.target;else{const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=new Date(dueDate(s.job,f).getTime()-(+cfg.pbuf||0)*60000)}
+  route.forEach((s,j)=>{W[j]=w;let dl=null;if(s.t==='S')dl=s.target;else if(s.t!=='R'){const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=new Date(dueDate(s.job,f).getTime()-(+cfg.pbuf||0)*60000)}
     V[j]=dl?{v:Math.floor((dl-s.eta)/60000)+w,dl}:null;if(s.wait>0)w+=s.wait});
   const out=new Array(n).fill(null);let best=null;
   for(let k=n-1;k>=0;k--){if(V[k]&&(!best||V[k].v<best.v))best={v:V[k].v,k,dl:V[k].dl};out[k]=best?{v:best.v-W[k],k:best.k,dl:best.dl}:null}
@@ -513,7 +515,7 @@ function slackHtml(){const b=slackInfo();
 // 순서대로 갔을 때 목표(마감·약속 15분 전)를 넘기는 곳 수 (직선거리 추정)
 function missCount(r){const pb=(+cfg.pbuf||0)*60000,dw=(+cfg.dwell||0)*60000;let t=Date.now(),prev=me,n=0;
   r.forEach(s=>{t+=(prev?tmin(prev,s.pt):0)*60000;prev=s.pt;let dl=null,rd=null;
-    if(s.t==='S'){rd=planAt(s.plan,'start').getTime()-pb;dl=rd}else{const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=dueDate(s.job,f).getTime()-pb;if(s.t==='P'&&schedP(s.job))rd=dl}
+    if(s.t==='S'){rd=planAt(s.plan,'start').getTime()-pb;dl=rd}else if(s.t!=='R'){const f=s.t==='P'?'pdue':'due';if(s.job[f])dl=dueDate(s.job,f).getTime()-pb;if(s.t==='P'&&schedP(s.job))rd=dl}
     if(dl&&t>dl+60000)n++;if(rd&&t<rd)t=rd;t+=s.t==='S'?planAt(s.plan,'end')-planAt(s.plan,'start'):dw});return n}
 let again=false;
 async function recalc(){
@@ -526,7 +528,7 @@ async function recalc(){
     const rest=st.filter(x=>!r.includes(x));
     // 새로 들어온 곳은 가장 덜 돌아가는 자리에 끼워 넣기 (픽업이 배송보다 먼저)
     const cost=a=>{let c=0,prev=me;a.forEach(x=>{if(prev)c+=tmin(prev,x.pt);prev=x.pt});return c};
-    rest.sort((a,b)=>(a.t==='P'?0:1)-(b.t==='P'?0:1)).forEach(x=>{
+    rest.sort((a,b)=>({P:0,D:1,R:2,S:1}[a.t])-({P:0,D:1,R:2,S:1}[b.t])).forEach(x=>{
       const pi=x.pred>=0?r.indexOf(st[x.pred]):-1;let best=r.length,bc=1e18;
       for(let i=pi+1;i<=r.length;i++){const c=cost([...r.slice(0,i),x,...r.slice(i)]);if(c<bc){bc=c;best=i}}
       r.splice(best,0,x)});
@@ -574,7 +576,7 @@ function draw(path,km){
   route.forEach((s,k)=>{
     const ll=new kakao.maps.LatLng(s.pt.lat,s.pt.lng);b.extend(ll);
     const el=document.createElement('div');el.className='mko';el.style.cursor='pointer';
-    el.innerHTML=`<div class="mkw"><div class="mk" style="background:${s.t==='P'?'#1f6feb':s.t==='S'?'#7c3aed':'#e5482d'}">${k+1}</div>${s.job?cargoIcons(s.job.cargo,true):''}</div>`;mks.push({el,ll});
+    el.innerHTML=`<div class="mkw"><div class="mk" style="background:${s.t==='P'?'#1f6feb':s.t==='S'?'#7c3aed':s.t==='R'?'#0d9488':'#e5482d'}">${k+1}</div>${s.job?cargoIcons(s.job.cargo,true):''}</div>`;mks.push({el,ll});
     const go=ev=>{ev.stopPropagation();ev.preventDefault();focusStop(k)};el.addEventListener('click',go);el.addEventListener('touchend',go);
     const o=new kakao.maps.CustomOverlay({position:ll,content:el,zIndex:2,clickable:true});
     o.setMap(map);overlays.push(o);
@@ -596,11 +598,11 @@ function draw(path,km){
   renderList(km);
 }
 function pastEvents(){const tk=todayKey(),ev=[];
-  jobs.forEach(j=>{if(j.pickedAt&&dkey(j.pickedAt)===tk)ev.push({t:'P',time:j.pickedAt,j,pt:j.pick});if(j.state==='done'&&j.doneAt&&dkey(j.doneAt)===tk)ev.push({t:'D',time:j.doneAt,j,pt:j.drop})});
+  jobs.forEach(j=>{if(j.pickedAt&&dkey(j.pickedAt)===tk)ev.push({t:'P',time:j.pickedAt,j,pt:j.pick});const dA=j.round?j.dropAt:(j.state==='done'?j.doneAt:null);if(dA&&dkey(dA)===tk)ev.push({t:'D',time:dA,j,pt:j.drop});if(j.round&&j.state==='done'&&j.doneAt&&dkey(j.doneAt)===tk)ev.push({t:'R',time:j.doneAt,j,pt:j.pick})});
   plans.forEach(p=>{if(p.done&&p.doneAt&&dkey(p.doneAt)===tk)ev.push({t:'S',time:p.doneAt,p,pt:p.place})});
   ev.sort((a,b)=>a.time-b.time);return ev}
 function pastHtml(){const ev=pastEvents();
-  return ev.map((e,i)=>`<div class="stop past ${e.t}" id="past-${i}"><div class="numc"><div class="num">✔</div></div><div><div class="kind">${{P:'픽업 완료',D:'배송 완료',S:'일정 끝'}[e.t]} · ${hm(new Date(e.time))}${e.t==='D'&&e.j.fee?' · '+won(e.j.fee):''}</div><div class="paddr">${esc(e.t==='S'?(e.p.title||'일정')+' · '+nm(e.pt):full(e.pt))}</div></div>
+  return ev.map((e,i)=>`<div class="stop past ${e.t}" id="past-${i}"><div class="numc"><div class="num">✔</div></div><div><div class="kind">${{P:'픽업 완료',D:'배송 완료',R:'복귀 완료',S:'일정 끝'}[e.t]} · ${hm(new Date(e.time))}${e.t==='D'&&e.j.fee?' · '+won(e.j.fee):''}</div><div class="paddr">${esc(e.t==='S'?(e.p.title||'일정')+' · '+nm(e.pt):full(e.pt))}</div></div>
     <button type="button" class="ghost undo" data-back="${e.t}:${e.t==='S'?e.p.id:e.j.id}">되돌리기</button></div>`).join('')}
 function focusStop(k){const c=$('stop-'+k);if(!c)return;const sd=document.querySelector('.side');
   let y=0,n=c;while(n&&n!==sd){y+=n.offsetTop;n=n.offsetParent}
@@ -629,21 +631,21 @@ function renderList(km){
       
       
       <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a><button class="done" data-pdone="${p.id}">일정 끝</button><button class="ghost sm" data-pedit="${p.id}">수정</button><button class="ghost sm" data-pdel="${p.id}">삭제</button></div></div>`}
-    const j=s.job,isP=s.t==='P';
-    const cargo=j.cargo?`<div class="cargo">${isP?'실을 짐':'여기서 내릴 짐'}: ${esc(j.cargo)}</div>`:'';
+    const j=s.job,isP=s.t==='P',isR=s.t==='R';
+    const cargo=j.cargo&&!isR?`<div class="cargo">${isP?'실을 짐':'여기서 내릴 짐'}: ${esc(j.cargo)}</div>`:'';
     const nav=`https://map.kakao.com/link/to/${encodeURIComponent(s.pt.name)},${s.pt.lat},${s.pt.lng}`;
     return `<div class="stop ${s.t} ${k?'':'next'}" id="stop-${k}">
       <div class="numc"><div class="num">${k+1}</div><div class="mv"><button type="button" class="ghost" data-mv="${k}" data-dir="-1" ${k?'':'disabled'}>▲</button><button type="button" class="ghost" data-mv="${k}" data-dir="1" ${k<route.length-1?'':'disabled'}>▼</button></div></div>
-      <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':'배송'}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${(()=>{const f=isP?'pdue':'due';return j[f]?`<span class="due ${s.eta>dueDate(j,f)?'late':''}">${j[f]}까지${s.eta>dueDate(j,f)?' · 늦을 수 있음':''}</span>`:''})()}</div>
+      <div>${cargoIcons(j.cargo)}<div class="kind">${isP?'픽업':isR?'🔁 복귀':'배송'}${j.round&&!isR?'<span class="rnd">왕복</span>':''}${j.urgent?'<span class="urgent">급송</span>':''}${!isP&&!isR&&j.fee?`<span class="fee">${won(j.fee)}</span>`:''}${(()=>{const f=isP?'pdue':'due';return !isR&&j[f]?`<span class="due ${s.eta>dueDate(j,f)?'late':''}">${j[f]}까지${s.eta>dueDate(j,f)?' · 늦을 수 있음':''}</span>`:''})()}</div>
         ${s.wait>0?`<div class="eta">${hmd(s.target)}<small>도착 목표 · 예약 픽업</small></div>`:`<div class="eta">${hmd(s.eta)}<small>도착 예정</small></div>`}
         
         <div class="leg">🚗 ${from} <b>${s.leg}분</b>${k&&route[k-1].t!=='S'?` <span>+ 상하차 ${+cfg.dwell||0}분</span>`:''}${(()=>{const t=lbOf(k,SL);if(!t)return'';const can=k?route[k-1].depart:new Date(),late=Math.round((can-t)/60000);const fromS=k&&route[k-1].t==='S';return late>0&&!fromS?` <span class="lby bad">/ 15분 일찍은 못 감 (${late}분 부족)</span>`:` <span class="lby ${late>0?'bad':''}">/ 늦어도 <b>${hmd(t)}</b> 출발${late>0?' (일정 '+late+'분 일찍 마치기)':''}</span>`})()}</div>
         <div class="addr">${esc(full(s.pt))}</div>${jibunHtml(s.pt)}</div>
       ${cargo}
       
-      ${!isP?`<div class="loaded">픽업지: ${esc(full(j.pick))}</div>`:`<div class="loaded">배송지: ${esc(full(j.drop))}</div>`}
+      ${isR?`<div class="loaded">배송지(${esc(nm(j.drop))})에서 출발지로 돌아가기</div>`:!isP?`<div class="loaded">픽업지: ${esc(full(j.pick))}</div>`:`<div class="loaded">배송지: ${esc(full(j.drop))}</div>`}
       <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a>
-        <button class="done" data-job="${j.id}" data-t="${s.t}">${isP?'픽업 완료':'배송 완료'}</button>
+        <button class="done" data-job="${j.id}" data-t="${s.t}">${isP?'픽업 완료':isR?'복귀 완료':'배송 완료'}</button>
         <button class="ghost sm" data-jedit="${j.id}">수정</button><button class="ghost sm" data-del="${j.id}">삭제</button></div>
       
     </div>`}).join('')+laterPlans();
@@ -653,13 +655,13 @@ $('list').addEventListener('click',e=>{
   const bk=e.target.closest('[data-back]');
   if(bk){const [t,id]=bk.dataset.back.split(':');
     if(t==='S'){const p=plans.find(p=>p.id==id);if(p){p.done=false;delete p.doneAt;savePlans()}}
-    else{const j=jobs.find(j=>j.id==id);if(j){if(t==='D'){j.state='loaded';delete j.doneAt}else{j.state='wait';delete j.pickedAt}save();renderDone()}}
+    else{const j=jobs.find(j=>j.id==id);if(j){if(t==='R'){j.state='back';delete j.doneAt}else if(t==='D'){j.state='loaded';delete j.doneAt;delete j.dropAt}else{j.state='wait';delete j.pickedAt}save();renderDone()}}
     toast('되돌렸어요');recalc();return}
   const mvb=e.target.closest('[data-mv]');
   if(mvb){const k=+mvb.dataset.mv,d=+mvb.dataset.dir,j=k+d;if(j<0||j>=route.length)return;
     const r=route.slice();[r[k],r[j]]=[r[j],r[k]];
-    const bad=r.some((x,i)=>x.t==='D'&&x.job.state==='wait'&&r.findIndex(y=>y.t==='P'&&y.job===x.job)>i);
-    if(bad){toast('픽업보다 배송을 먼저 할 수는 없어요');return}
+    const bad=r.some((x,i)=>(x.t==='D'&&x.job.state==='wait'&&r.findIndex(y=>y.t==='P'&&y.job===x.job)>i)||(x.t==='R'&&r.findIndex(y=>y.t==='D'&&y.job===x.job)>i));
+    if(bad){toast('픽업 → 배송 → 복귀 순서는 바꿀 수 없어요');return}
     manual=r.map(skey);saveManual();recalc();return}
   const pe=e.target.closest('[data-pedit]');if(pe){openPlan(plans.find(p=>p.id==pe.dataset.pedit));return}
   const pd=e.target.closest('[data-pdone]'),px=e.target.closest('[data-pdel]');
@@ -667,7 +669,7 @@ $('list').addEventListener('click',e=>{
   if(px){if(px.dataset.sure){plans=plans.filter(p=>p.id!=px.dataset.pdel);savePlans();recalc()}else{px.dataset.sure=1;px.textContent='확인';setTimeout(()=>{delete px.dataset.sure;px.textContent='삭제'},3000)}return}
   const d=e.target.closest('[data-job]'),x=e.target.closest('[data-del]');
   const je=e.target.closest('[data-jedit]');if(je){openJobEdit(je.dataset.jedit);return}
-  if(d){const j=jobs.find(j=>j.id==d.dataset.job);if(!j)return;j.state=d.dataset.t==='P'?'loaded':'done';if(j.state==='done')j.doneAt=Date.now();else j.pickedAt=Date.now();recordTrack();save();renderDone();toast(d.dataset.t==='P'?'픽업 완료 — 짐이 실렸어요':'배송 완료');recalc()}
+  if(d){const j=jobs.find(j=>j.id==d.dataset.job);if(!j)return;const tt=d.dataset.t;if(tt==='P'){j.state='loaded';j.pickedAt=Date.now()}else if(tt==='D'&&j.round){j.state='back';j.dropAt=Date.now()}else{j.state='done';j.doneAt=Date.now()}recordTrack();save();renderDone();toast(d.dataset.t==='P'?'픽업 완료 — 짐이 실렸어요':'배송 완료');recalc()}
   if(x){if(x.dataset.sure){jobs=jobs.filter(j=>j.id!=x.dataset.del);save();recalc()}else{x.dataset.sure=1;x.textContent='확인';setTimeout(()=>{delete x.dataset.sure;x.textContent='삭제'},3000)}}
 });
 
@@ -777,7 +779,7 @@ function expClick(e,day){
 $('pDone').addEventListener('click',e=>{const x=expClick(e,dkey(Date.now()));if(x==='r'){renderDone();return}if(x)return;
   const p=e.target.closest('[data-p]'),u=e.target.closest('[data-undo]'),r=e.target.closest('[data-rm]');
   if(p){period=p.dataset.p;renderDone()}
-  if(u){const j=jobs.find(j=>j.id==u.dataset.undo);if(j){j.state='loaded';delete j.doneAt;save();renderDone();recalc();toast('진행 중으로 되돌렸어요')}}
+  if(u){const j=jobs.find(j=>j.id==u.dataset.undo);if(j){j.state=j.round?'back':'loaded';delete j.doneAt;save();renderDone();recalc();toast('진행 중으로 되돌렸어요')}}
   if(r){if(r.dataset.sure){jobs=jobs.filter(j=>j.id!=r.dataset.rm);save();renderDone()}else{r.dataset.sure=1;r.textContent='한 번 더 누르면 삭제';setTimeout(()=>{delete r.dataset.sure;r.textContent='삭제'},3000)}}
 });
 $('pDone').addEventListener('change',e=>{const f=e.target.closest('[data-fee]');if(!f)return;const j=jobs.find(j=>j.id==f.dataset.fee);if(j){j.fee=+f.value||0;save();renderDone();toast('금액을 저장했어요')}});
@@ -826,7 +828,7 @@ function renderCal(){
   renderDay();
 }
 function dayEvents(k){const ev=[];
-  jobs.forEach(j=>{if(j.pickedAt&&dkey(j.pickedAt)===k)ev.push({t:'P',time:j.pickedAt,pt:j.pick,j});if(j.doneAt&&j.state==='done'&&dkey(j.doneAt)===k)ev.push({t:'D',time:j.doneAt,pt:j.drop,j})});
+  jobs.forEach(j=>{if(j.pickedAt&&dkey(j.pickedAt)===k)ev.push({t:'P',time:j.pickedAt,pt:j.pick,j});const dA=j.round?j.dropAt:(j.state==='done'?j.doneAt:null);if(dA&&dkey(dA)===k)ev.push({t:'D',time:dA,pt:j.drop,j});if(j.round&&j.doneAt&&j.state==='done'&&dkey(j.doneAt)===k)ev.push({t:'R',time:j.doneAt,pt:j.pick,j})});
   plans.forEach(p=>{if(p.done&&p.doneAt&&dkey(p.doneAt)===k)ev.push({t:'S',time:p.doneAt,pt:p.place,p})});
   return ev.filter(e=>e.pt&&e.pt.lat).sort((a,b)=>a.time-b.time)}
 let dayMap=null;
@@ -838,7 +840,7 @@ function drawDayMap(k){
   if(tr.length>1){const path=tr.map(p=>new kakao.maps.LatLng(p[0],p[1]));path.forEach(x=>b.extend(x));new kakao.maps.Polyline({map:dayMap,path,strokeWeight:4,strokeColor:'#1f6feb',strokeOpacity:.7})}
   else if(ev.length>1){const path=ev.map(e=>new kakao.maps.LatLng(e.pt.lat,e.pt.lng));new kakao.maps.Polyline({map:dayMap,path,strokeWeight:4,strokeColor:'#1f6feb',strokeOpacity:.6,strokeStyle:'shortdash'})}
   ev.forEach((e,i)=>{const ll=new kakao.maps.LatLng(e.pt.lat,e.pt.lng);b.extend(ll);
-    new kakao.maps.CustomOverlay({map:dayMap,position:ll,content:`<div class="mk" style="background:${e.t==='P'?'#1f6feb':e.t==='S'?'#7c3aed':'#e5482d'}">${i+1}</div>`,zIndex:2})});
+    new kakao.maps.CustomOverlay({map:dayMap,position:ll,content:`<div class="mk" style="background:${e.t==='P'?'#1f6feb':e.t==='S'?'#7c3aed':e.t==='R'?'#0d9488':'#e5482d'}">${i+1}</div>`,zIndex:2})});
   setTimeout(()=>{dayMap.relayout();dayMap.setBounds(b,30,30,30,30)},60)}
 function renderDay(){
   const k=selDay,js=dayJobs(k),sum=js.reduce((a,j)=>a+(+j.fee||0),0),mn=dayMin(k),sh=shifts.filter(x=>dkey(x.start)===k);
@@ -850,7 +852,7 @@ function renderDay(){
     <label>근무 시간 직접 입력 (시간, 예: 6.5) — 비우면 근무 시작/종료 기록으로 계산
       <input type="number" step="0.5" min="0" inputmode="decimal" id="hFix" value="${hoursFix[k]??''}"></label>
     <b style="margin-top:6px">이날 동선</b><div id="dayMap"></div>
-    ${dayEvents(k).map((e,i)=>`<div class="shift"><span><b class="dn ${e.t}">${i+1}</b> ${hm(new Date(e.time))} ${({P:'픽업',D:'배송',S:'일정'})[e.t]} · ${esc(e.t==='S'?(e.p.title||'일정')+' '+nm(e.pt):nm(e.pt))}</span><span>${e.t==='D'&&e.j.fee?won(e.j.fee):''}</span></div>`).join('')}
+    ${dayEvents(k).map((e,i)=>`<div class="shift"><span><b class="dn ${e.t}">${i+1}</b> ${hm(new Date(e.time))} ${({P:'픽업',D:'배송',R:'복귀',S:'일정'})[e.t]} · ${esc(e.t==='S'?(e.p.title||'일정')+' '+nm(e.pt):nm(e.pt))}</span><span>${e.t==='D'&&e.j.fee?won(e.j.fee):''}</span></div>`).join('')}
     ${dayExp(k).length?'<b style="margin-top:6px">이날 지출</b>'+expList(dayExp(k)):''}`;
   drawDayMap(k);
 }
@@ -931,6 +933,7 @@ function parseAll(raw){
   const fm=t.match(/(?:금액|요금|운임|가격|비용|운송료|배송비)?\s*(?:(?:은|는|이|가)\s)?\s*((?:\d|[,\s]|만|천|백|십|일|이|삼|사|오|육|칠|팔|구)+?)\s*원/);
   if(fm){const v=korNum(fm[1]);if(v>=1000){out.fee=v;t=t.replace(fm[0],' ')}}
   if(/급송|급해|급하게|빨리|최대한 빨/.test(t))out.urgent=true;
+  if(/왕복|돌아와|복귀/.test(t))out.round=true;
   // 이름표로 말한 경우: "픽업지는 ○○고 배송은 ○○로 해야해, 물품은 ○○야"
   const LB={pick:'픽업\\s?지|픽업\\s?장소|픽업|출발\\s?지|출발|상차\\s?지|상차|보내는\\s?곳',drop:'배송\\s?지|배송\\s?장소|배송|도착\\s?지|도착|하차\\s?지|하차|받는\\s?곳|목적지',cargo:'물품|물건|짐\\s?특징|짐|품목|내용물',other:'금액|요금|운임|운송료|배송비'};
   const LRE=new RegExp('(?:^|[\\s,./])('+Object.values(LB).join('|')+')\\s*(?:은|는|이|가|:)\\s*','g');
@@ -979,6 +982,7 @@ async function applyAll(){
   if(r.due){$('iDue').value=r.due;got.push('배송 '+r.due+'까지')}
   if(r.fee){$('iFee').value=r.fee;got.push(won(r.fee))}
   if(r.urgent){$('iUrg').checked=true;got.push('급송')}
+  if(r.round){$('iRound').checked=true;got.push('왕복')}
   const f=$('fAll');
   if(got.length){f.className='found';f.textContent='✔ 채웠어요: '+got.join(', ')+' — 아래 칸 확인하세요'}
   else{f.className='found bad';f.textContent='못 나눴어요. "○○에서 픽업, ○○로 배송, 짐은 ○○, ○시까지"처럼 말해 보세요'}
@@ -993,7 +997,7 @@ function openJobEdit(id){const j=jobs.find(x=>x.id==id);if(!j)return;editId=j.id
   const ld=j.state==='loaded';found={pick:ld&&!j.pick.addr?null:j.pick,drop:j.drop};
   const dv=pt=>(pt.name||pt.addr)+(pt.detail?' '+pt.detail:'');$('iPick').value=j.pick.addr?dv(j.pick):'';$('iDrop').value=dv(j.drop);
   $('fPick').className=$('fDrop').className='found';$('fPick').textContent=j.pick.addr?'✔ '+full(j.pick):'';$('fDrop').textContent='✔ '+full(j.drop);
-  $('iCargo').value=j.cargo||'';$('iFee').value=j.fee||'';$('iPdue').value=j.pdue||'';$('iDue').value=j.due||'';$('iUrg').checked=!!j.urgent;
+  $('iCargo').value=j.cargo||'';$('iFee').value=j.fee||'';$('iPdue').value=j.pdue||'';$('iDue').value=j.due||'';$('iUrg').checked=!!j.urgent;$('iRound').checked=!!j.round;
   lookedTxt={pick:$('iPick').value.trim(),drop:$('iDrop').value.trim()};
   $('iLoaded').checked=ld;$('iPick').disabled=ld;$('dAdd').showModal()}
 $('fAdd').addEventListener('submit',async e=>{
@@ -1004,11 +1008,11 @@ $('fAdd').addEventListener('submit',async e=>{
   $('bSave').textContent='위치 확인 후 추가';
   if(!d||(!loadedOnly&&!p)){toast('주소를 확인해 주세요');return}
   if(editId!=null){const j=jobs.find(x=>x.id==editId);editId=null;if(j){
-    if(p)j.pick=p;j.drop=d;j.cargo=$('iCargo').value.trim();j.urgent=$('iUrg').checked;j.due=$('iDue').value||'';j.pdue=$('iPdue').value||'';j.fee=+$('iFee').value||0;
+    if(p)j.pick=p;j.drop=d;j.cargo=$('iCargo').value.trim();j.urgent=$('iUrg').checked;if($('iRound').checked)j.round=true;else{if(j.round&&j.state==='back'){j.state='done';j.doneAt=j.dropAt||Date.now()}delete j.round}j.due=$('iDue').value||'';j.pdue=$('iPdue').value||'';j.fee=+$('iFee').value||0;
     if(loadedOnly&&j.state==='wait'){j.state='loaded';j.pickedAt=Date.now()}else if(!loadedOnly&&j.state==='loaded'){j.state='wait';delete j.pickedAt}
     save();$('dAdd').close();toast('고쳤어요. 순서와 도착시간을 다시 계산해요.');recalc()}return}
   manual=null;saveManual(); // 새 짐이 들어오면 순서를 처음부터 다시 짜고, 그 뒤에 직접 조정
-  jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,due:$('iDue').value||'',pdue:$('iPdue').value||'',fee:+$('iFee').value||0,state:loadedOnly?'loaded':'wait'});
+  jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,round:$('iRound').checked||undefined,due:$('iDue').value||'',pdue:$('iPdue').value||'',fee:+$('iFee').value||0,state:loadedOnly?'loaded':'wait'});
   save();$('dAdd').close();toast('추가했어요. 순서와 도착시간을 다시 계산했어요.');recalc();
 });
 
@@ -1170,7 +1174,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v88';
+const VER='v89';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
