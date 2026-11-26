@@ -61,7 +61,9 @@ dialog{border:0;border-radius:16px;padding:0;width:min(520px,94vw);background:va
 dialog::backdrop{background:#0008}
 .dlg{padding:16px;display:grid;gap:12px}
 .dlg h2{margin:0;font-size:19px}
-[hidden]{display:none!important}label{display:grid;gap:4px;font-size:14px;font-weight:600;color:var(--sub)}
+[hidden]{display:none!important}
+button,a.nav,.ibtn{transition:transform .08s,filter .08s,background-color .08s;-webkit-tap-highlight-color:transparent}button:active,a.nav:active,.ibtn:active,button.press,a.press{transform:scale(.92);filter:brightness(1.35)}.ghost:active,.ghost.press{background:#3b82f633!important;border-color:#3b82f6!important}
+label{display:grid;gap:4px;font-size:14px;font-weight:600;color:var(--sub)}
 .row{display:flex;gap:6px}
 input,textarea{width:100%;font-size:16px;padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
 textarea{min-height:60px;resize:vertical}
@@ -264,7 +266,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v112</div>
+  <div class="ver">버전 2026-11-27 v113</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -1181,6 +1183,10 @@ $('dAdd').addEventListener('close',()=>{if(rec)rec.abort()});
 /* ---------- 설정 ---------- */
 function openSet(){$('sPbuf').value=cfg.pbuf??5;$('sAutoNav').checked=cfg.autoNav!==false;$('sHome').value=cfg.home||'';$('sJs').value=cfg.js;$('sRest').value=cfg.rest;$('sDwell').value=cfg.dwell;$('sSpeed').value=cfg.speed;$('dSet').showModal()}
 $('bSet').onclick=openSet;
+// 눌렀다는 느낌: 누르는 순간 잠깐 색·크기 변화 + 갤럭시는 짧은 진동 (다시 그려져 버튼이 사라져도 보이게)
+document.addEventListener('pointerdown',e=>{const b=e.target.closest('button,a.nav,.ibtn');if(!b||b.disabled)return;b.classList.add('press');setTimeout(()=>b.classList.remove('press'),180);
+  if(b.closest('.mv,.acts')&&navigator.vibrate)try{navigator.vibrate(12)}catch(x){}},{passive:true});
+document.addEventListener('touchstart',()=>{},{passive:true});
 $('bHelp').onclick=()=>$('dHelp').showModal();$('bHelpClose').onclick=()=>$('dHelp').close();
 $('fSet').addEventListener('submit',e=>{e.preventDefault();
   const hadJs=cfg.js;cfg={js:$('sJs').value.trim(),rest:$('sRest').value.trim(),dwell:+$('sDwell').value||0,speed:+$('sSpeed').value||28,home:$('sHome').value.trim(),pb5:1,autoNav:$('sAutoNav').checked,pbuf:$('sPbuf').value===''?5:+$('sPbuf').value};
@@ -1306,7 +1312,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v112';
+const VER='v113';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
