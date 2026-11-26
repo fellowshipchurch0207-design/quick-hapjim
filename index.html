@@ -221,7 +221,7 @@ body.bars #bHandle{display:none}
   <li><b>배송지</b>: 옆의 🎤를 누르고 말하거나 손으로 써요.</li>
   <li><b>주소</b>: 칸을 누르면 비워져요. "둔산로 100 302호"처럼 동·호수·층까지 써도 돼요. "대전역"처럼 장소 이름을 말하면 이름이 딱 맞는 곳을 먼저 찾아요. 그래도 엉뚱한 곳이 잡히면 "동구 대전역"처럼 구·동 이름을 붙여 보세요.</li>
   <li><b>짐·금액·마감 시각</b>도 옆의 🎤를 누르고 말하면 돼요. 금액은 "삼만 오천 원", 시각은 "오후 세 시 반"처럼 말하세요. 마감은 "까지" 시각이에요.</li>
-  <li>🎤는 말이 <b>2초</b> 끊기면 저절로 꺼져요. ■를 눌러 바로 끌 수도 있어요.</li>
+  <li>🎤는 말이 <b>1초</b> 끊기면 저절로 꺼져요. ■를 눌러 바로 끌 수도 있어요.</li>
   <li><b>🔁 왕복</b>에 체크하면 배송 후 픽업지로 돌아가는 복귀까지 경로에 넣어요.</li></ul>
   <h3>3. 개인 일정</h3>
   <p><b>📅+</b> 버튼으로 약속을 넣으면 경로 중간에 보라색 번호로 들어가요. 배송 마감을 지키려면 일정을 일찍 마쳐야 할 때 일정 카드에 "○○:○○에 마치기"가 떠요.</p>
@@ -264,7 +264,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v108</div>
+  <div class="ver">버전 2026-11-27 v109</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -1149,12 +1149,12 @@ document.querySelectorAll('.mic').forEach(b=>{
     rec=r;r.lang='ko-KR';r.interimResults=true;r.continuous=true;
     const sp=inp.type==='number'||inp.type==='time';let fin='',got=false,silT=null,heard='';b.classList.add('on');b.textContent='■';inp.classList.add('live');
     if(sp){$('fAll').className='found';$('fAll').textContent='🎤 '+(inp.id==='iFee'?'금액을':'시각을')+' 말하세요'}
-    // 말이 2초 끊기면 저절로 끄기 (처음 7초 동안 아무 말 없어도 끄기)
+    // 말이 1초 끊기면 저절로 끄기 (처음 7초 동안 아무 말 없어도 끄기)
     const stopSoon=ms=>{clearTimeout(silT);silT=setTimeout(()=>{if(rec===r)try{r.stop()}catch(e){}},ms)};stopSoon(7000);
     if(inp.id==='iAll'){$('fAll').className='found';$('fAll').textContent='듣고 있어요… 다 말하면 ■ 누르기'}
     r.onresult=ev=>{got=true;let tmp='';
       for(let i=ev.resultIndex;i<ev.results.length;i++){const t=ev.results[i][0].transcript;if(ev.results[i].isFinal)fin+=t+' ';else tmp+=t}
-      heard=(fin+tmp).trim();if(sp){$('fAll').textContent='🎤 '+heard}else{inp.value=keep+fin+tmp;inp.scrollTop=inp.scrollHeight}stopSoon(2000)};
+      heard=(fin+tmp).trim();if(sp){$('fAll').textContent='🎤 '+heard}else{inp.value=keep+fin+tmp;inp.scrollTop=inp.scrollHeight}stopSoon(1000)};
     const done=()=>{clearTimeout(recT);clearTimeout(silT);if(rec!==r)return;rec=null;b.classList.remove('on');b.textContent='🎤';inp.classList.remove('live');
       if(sp){if(!heard)return;const v=inp.id==='iFee'?sayFee(heard):sayTime(heard);const f=$('fAll');if(v!=null){inp.value=v;f.className='found';f.textContent='✔ '+(inp.id==='iFee'?(+v).toLocaleString()+'원':(inp.id==='iPdue'?'픽업 마감 ':'배송 마감 ')+v)}else{f.className='found bad';f.textContent='"'+heard+'" — 알아듣지 못했어요. 다시 말해 주세요.'}saveDraft();return}
       inp.value=inp.value.replace(/\s+/g,' ').trim();if(!inp.value&&inp.dataset.prev)inp.value=inp.dataset.prev;else if(inp.value)inp.dispatchEvent(new Event('change'))};
@@ -1302,7 +1302,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v108';
+const VER='v109';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
