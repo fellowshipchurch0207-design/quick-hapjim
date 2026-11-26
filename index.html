@@ -204,7 +204,7 @@ body.bars #bHandle{display:none}
   <div class="row"><label style="flex:1">픽업 마감 시각<div class="row"><input type="time" id="iPdue"><button type="button" class="mic" data-for="iPdue">🎤</button></div></label><label style="flex:1">배송 마감 시각<div class="row"><input type="time" id="iDue"><button type="button" class="mic" data-for="iDue">🎤</button></div></label></div>
   <label class="chk"><input type="checkbox" id="iUrg"> 급송 (먼저 처리)</label>
   <label class="chk"><input type="checkbox" id="iRound"> 🔁 왕복 (배송 후 픽업지로 복귀)</label>
-  <label class="chk"><input type="checkbox" id="iLoaded"> 이미 실었음 (배송만 남음)</label>
+  <label class="chk" hidden><input type="checkbox" id="iLoaded"> 이미 실었음 (배송만 남음)</label>
   <div class="btns"><button type="button" class="ghost" id="bCancel">취소</button><button type="submit" class="pri" id="bSave">위치 확인 후 추가</button></div>
 </form></dialog>
 
@@ -264,7 +264,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v110</div>
+  <div class="ver">버전 2026-11-27 v111</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -1305,7 +1305,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v110';
+const VER='v111';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
