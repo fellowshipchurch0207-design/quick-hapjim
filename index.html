@@ -263,7 +263,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v105</div>
+  <div class="ver">버전 2026-11-27 v106</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -380,8 +380,13 @@ function geocode(q){
     // 장소 이름 검색: 정확도순으로 받아서 이름이 딱 맞는 곳을 먼저, 그다음 가까운 곳 (가까운 순만 쓰면 엉뚱한 곳이 잡힘)
     const byKey=()=>{const kw=clean||q,o={size:15};if(me)o.location=new kakao.maps.LatLng(me.lat,me.lng);
       places.keywordSearch(kw,(r,st)=>{if(st!==kakao.maps.services.Status.OK||!r.length)return res(null);
-        const n=x=>x.replace(/\s+/g,''),k=n(kw);let best=null,bs=-1e9;
-        r.forEach((p,i)=>{const pn=n(p.place_name);let sc=pn===k?100:pn.startsWith(k)?60:pn.includes(k)?30:0;sc-=i*2;if(me)sc-=Math.min(40,hav(me,{lat:+p.y,lng:+p.x})*0.3);if(sc>bs){bs=sc;best=p}});
+        // "대전 성심당"처럼 지역 이름이 섞이면 지역(주소에 있는 말)은 빼고 가게 이름으로 비교
+        const n=x=>x.replace(/\s+/g,''),tk=kw.split(/\s+/).filter(Boolean);let best=null,bs=-1e9;
+        r.forEach((p,i)=>{const pn=n(p.place_name),ad=(p.address_name||'')+' '+(p.road_address_name||'');
+          const core=n(tk.filter(t=>!(ad.includes(t)||/^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/.test(t)&&!pn.includes(t))).join(''))||n(kw);
+          let sc=pn===core?100:pn.startsWith(core)?70:pn.includes(core)?40:0;
+          tk.forEach(t=>{if(pn.includes(t))sc+=8;else if(ad.includes(t))sc+=6});
+          sc-=i*3;if(me)sc-=Math.min(20,hav(me,{lat:+p.y,lng:+p.x})*0.15);if(sc>bs){bs=sc;best=p}});
         const p=best;res({name:p.place_name,addr:p.road_address_name||p.address_name,jibun:p.address_name||'',lat:+p.y,lng:+p.x})},o)};
     byAddr(q,()=>clean!==q?byAddr(clean,byKey):byKey());
   });
@@ -1281,7 +1286,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v105';
+const VER='v106';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
