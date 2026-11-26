@@ -264,7 +264,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v109</div>
+  <div class="ver">버전 2026-11-27 v110</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -1007,7 +1007,10 @@ $('bAdd').onclick=()=>{if(!map){toast('설정에서 카카오 키를 먼저 넣�
   editId=null;$('aTitle').textContent='합짐 추가';$('bSave').textContent='위치 확인 후 추가';
   $('fAdd').reset();$('iPick').disabled=false;$('fPick').textContent=$('fDrop').textContent='';$('fAll').className='found';$('fAll').textContent='🎤 픽업지를 말하세요. 다 말하면 ■';found={};lookedTxt={};
   if(takeDraft()){$('fAll').textContent='아까 넣던 합짐이에요. 이어서 넣으세요.';$('dAdd').showModal();return}
-  $('dAdd').showModal();if(rec){try{rec.abort()}catch(e){}rec=null}const mb=document.querySelector('.mic[data-for="iPick"]');if(mb)mb.click()};
+  $('dAdd').showModal();if(rec){try{rec.abort()}catch(e){}rec=null}
+  // 아이폰은 누른 그 순간에만 키보드·마이크를 열 수 있어서 바로 픽업지 칸을 잡아 둠 (앱 마이크가 막히면 키보드 🎤로 말하기)
+  if(isIOS)try{$('iPick').focus()}catch(e){}
+  const mb=document.querySelector('.mic[data-for="iPick"]');if(mb)mb.click()};
 
 /* ---------- 말한 내용 나누기 ---------- */
 const KN={'한':1,'두':2,'세':3,'네':4,'다섯':5,'여섯':6,'일곱':7,'여덟':8,'아홉':9,'열':10,'열한':11,'열두':12};
@@ -1302,7 +1305,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v109';
+const VER='v110';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
