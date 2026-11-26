@@ -185,7 +185,7 @@ body.bars #bHandle{display:none}
 <button type="button" id="bHandle">▴ 진행 중 · 완료 · 달력</button>
 <div class="toast" id="toast"></div>
 
-<dialog id="dAdd"><form class="dlg" method="dialog" id="fAdd">
+<dialog id="dAdd"><form class="dlg" method="dialog" id="fAdd" novalidate>
   <h2 id="aTitle">합짐 추가</h2>
   <div class="found" id="fAll"></div>
   <label hidden>말로 한 번에 넣기
@@ -200,7 +200,7 @@ body.bars #bHandle{display:none}
     <div class="found" id="fDrop"></div></label>
   <label>짐 특징 (예: 파란 박스 2개, 파손주의)
     <div class="row"><textarea id="iCargo"></textarea><button type="button" class="mic" data-for="iCargo">🎤</button></div></label>
-  <label>금액 (원)<div class="row"><input type="number" inputmode="numeric" id="iFee" placeholder="예) 25000"><button type="button" class="mic" data-for="iFee">🎤</button></div></label>
+  <label>금액 (원)<div class="row"><input type="text" inputmode="numeric" id="iFee" placeholder="예) 25000"><button type="button" class="mic" data-for="iFee">🎤</button></div></label>
   <div class="row"><label style="flex:1">픽업 마감 시각<div class="row"><input type="time" id="iPdue"><button type="button" class="mic" data-for="iPdue">🎤</button></div></label><label style="flex:1">배송 마감 시각<div class="row"><input type="time" id="iDue"><button type="button" class="mic" data-for="iDue">🎤</button></div></label></div>
   <label class="chk"><input type="checkbox" id="iUrg"> 급송 (먼저 처리)</label>
   <label class="chk"><input type="checkbox" id="iRound"> 🔁 왕복 (배송 후 픽업지로 복귀)</label>
@@ -264,7 +264,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v111</div>
+  <div class="ver">버전 2026-11-27 v112</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -1021,6 +1021,7 @@ function korNum(x){x=x.replace(/[,\s]/g,'');let total=0,sec=0,num=0;
     else if(c==='만'){total+=((sec+num)||1)*10000;sec=0;num=0}}
   return total+sec+num}
 // 말로 한 금액·시각을 칸 형식으로
+function feeVal(){const v=$('iFee').value.trim();if(!v)return 0;const n=+v.replace(/[,\s원]/g,'');return isNaN(n)?(sayFee(v)||0):n}
 function sayFee(t){t=t.replace(/원|정도|이요|입니다|요/g,'').replace(/\s+/g,'');const m=t.match(/[\d일이삼사오육칠팔구십백천만,]+/);if(!m)return null;const v=korNum(m[0]);return v>=100?v:null}
 function sayTime(t){t=' '+t+' ';let m=t.match(/(\d{1,2})\s*:\s*(\d{2})/);let ap=(t.match(/오전|오후|아침|저녁|밤|낮/)||[])[0],h,mi;
   if(m){h=+m[1];mi=+m[2]}else{const a=t.match(/(\d{1,2}|열두|열한|열|한|두|세|네|다섯|여섯|일곱|여덟|아홉)\s*시\s*(반|(\d{1,2}|[일이삼사오육칠팔구십]+)\s*분)?/);if(!a)return null;
@@ -1129,11 +1130,11 @@ $('fAdd').addEventListener('submit',async e=>{
   $('bSave').textContent='위치 확인 후 추가';
   if(!d||(!loadedOnly&&!p)){toast('주소를 확인해 주세요');return}
   if(editId!=null){const j=jobs.find(x=>x.id==editId);editId=null;if(j){
-    if(p)j.pick=p;j.drop=d;j.cargo=$('iCargo').value.trim();j.urgent=$('iUrg').checked;if($('iRound').checked)j.round=true;else{if(j.round&&j.state==='back'){j.state='done';j.doneAt=j.dropAt||Date.now()}delete j.round}j.due=$('iDue').value||'';j.pdue=$('iPdue').value||'';j.fee=+$('iFee').value||0;
+    if(p)j.pick=p;j.drop=d;j.cargo=$('iCargo').value.trim();j.urgent=$('iUrg').checked;if($('iRound').checked)j.round=true;else{if(j.round&&j.state==='back'){j.state='done';j.doneAt=j.dropAt||Date.now()}delete j.round}j.due=$('iDue').value||'';j.pdue=$('iPdue').value||'';j.fee=feeVal();
     if(loadedOnly&&j.state==='wait'){j.state='loaded';j.pickedAt=Date.now()}else if(!loadedOnly&&j.state==='loaded'){j.state='wait';delete j.pickedAt}
     manual=null;saveManual();save();$('dAdd').close();toast('고쳤어요. 순서를 새로 짰어요.');recalc()}return}
   manual=null;saveManual(); // 새 짐이 들어오면 순서를 처음부터 다시 짜고, 그 뒤에 직접 조정
-  jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,round:$('iRound').checked||undefined,due:$('iDue').value||'',pdue:$('iPdue').value||'',fee:+$('iFee').value||0,state:loadedOnly?'loaded':'wait'});
+  jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,round:$('iRound').checked||undefined,due:$('iDue').value||'',pdue:$('iPdue').value||'',fee:feeVal(),state:loadedOnly?'loaded':'wait'});
   save();$('dAdd').close();toast('추가했어요. 순서와 도착시간을 다시 계산했어요.');recalc();
 });
 
@@ -1150,7 +1151,7 @@ document.querySelectorAll('.mic').forEach(b=>{
     if(inp.id==='iPick'||inp.id==='iDrop'){inp.dataset.prev=inp.value;inp.value=''}
     let r;try{r=new SR()}catch(e){kbHint(inp,'마이크를 시작하지 못했어요.');return}
     rec=r;r.lang='ko-KR';r.interimResults=true;r.continuous=true;
-    const sp=inp.type==='number'||inp.type==='time';let fin='',got=false,silT=null,heard='';b.classList.add('on');b.textContent='■';inp.classList.add('live');
+    const sp=inp.type==='number'||inp.type==='time'||inp.id==='iFee';let fin='',got=false,silT=null,heard='';b.classList.add('on');b.textContent='■';inp.classList.add('live');
     if(sp){$('fAll').className='found';$('fAll').textContent='🎤 '+(inp.id==='iFee'?'금액을':'시각을')+' 말하세요'}
     // 말이 1초 끊기면 저절로 끄기 (처음 7초 동안 아무 말 없어도 끄기)
     const stopSoon=ms=>{clearTimeout(silT);silT=setTimeout(()=>{if(rec===r)try{r.stop()}catch(e){}},ms)};stopSoon(7000);
@@ -1305,7 +1306,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v111';
+const VER='v112';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
