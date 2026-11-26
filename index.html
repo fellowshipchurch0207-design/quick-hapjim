@@ -219,7 +219,7 @@ body.bars #bHandle{display:none}
   <li><b>저절로 열기</b>: 설정의 "카카오맵 길안내 저절로 열기"를 켜 두면 픽업지를 찾자마자 카카오맵이 바로 열려요(아이폰은 막혀 있어 노란 버튼을 한 번 눌러야 할 수 있어요).</li>
   <li><b>이어서 넣기</b>: 카카오맵에 갔다 와도 넣던 내용이 3시간 동안 남아 있어요.</li>
   <li><b>배송지</b>: 옆의 🎤를 누르고 말하거나 손으로 써요.</li>
-  <li><b>주소</b>: 칸을 누르면 비워져요. "둔산로 100 302호"처럼 동·호수·층까지 써도 돼요.</li>
+  <li><b>주소</b>: 칸을 누르면 비워져요. "둔산로 100 302호"처럼 동·호수·층까지 써도 돼요. "대전역"처럼 장소 이름을 말하면 이름이 딱 맞는 곳을 먼저 찾아요. 그래도 엉뚱한 곳이 잡히면 "동구 대전역"처럼 구·동 이름을 붙여 보세요.</li>
   <li><b>짐·금액·마감 시각</b>은 아래 칸에 넣어요. 마감은 "까지" 시각이에요.</li>
   <li><b>🔁 왕복</b>에 체크하면 배송 후 픽업지로 돌아가는 복귀까지 경로에 넣어요.</li></ul>
   <h3>3. 개인 일정</h3>
@@ -263,7 +263,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v104</div>
+  <div class="ver">버전 2026-11-27 v105</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -377,8 +377,12 @@ function geocode(q){
     const clean=q.replace(/\(.*?\)/g,' ').replace(/\s+\d+층.*$/,'').replace(/\s+/g,' ').trim();
     const byAddr=(s,next)=>geocoder.addressSearch(s,(r,st)=>{
       if(st===kakao.maps.services.Status.OK&&r[0]){const a=r[0];res({name:(a.road_address&&a.road_address.building_name)||a.address_name,addr:(a.road_address&&a.road_address.address_name)||a.address_name,jibun:(a.address&&a.address.address_name)||'',lat:+a.y,lng:+a.x})}else next()});
-    const byKey=()=>{const o={};if(me){o.location=new kakao.maps.LatLng(me.lat,me.lng);o.sort=kakao.maps.services.SortBy.DISTANCE}
-      places.keywordSearch(clean||q,(r,st)=>{if(st===kakao.maps.services.Status.OK&&r[0]){const p=r[0];res({name:p.place_name,addr:p.road_address_name||p.address_name,jibun:p.address_name||'',lat:+p.y,lng:+p.x})}else res(null)},o)};
+    // 장소 이름 검색: 정확도순으로 받아서 이름이 딱 맞는 곳을 먼저, 그다음 가까운 곳 (가까운 순만 쓰면 엉뚱한 곳이 잡힘)
+    const byKey=()=>{const kw=clean||q,o={size:15};if(me)o.location=new kakao.maps.LatLng(me.lat,me.lng);
+      places.keywordSearch(kw,(r,st)=>{if(st!==kakao.maps.services.Status.OK||!r.length)return res(null);
+        const n=x=>x.replace(/\s+/g,''),k=n(kw);let best=null,bs=-1e9;
+        r.forEach((p,i)=>{const pn=n(p.place_name);let sc=pn===k?100:pn.startsWith(k)?60:pn.includes(k)?30:0;sc-=i*2;if(me)sc-=Math.min(40,hav(me,{lat:+p.y,lng:+p.x})*0.3);if(sc>bs){bs=sc;best=p}});
+        const p=best;res({name:p.place_name,addr:p.road_address_name||p.address_name,jibun:p.address_name||'',lat:+p.y,lng:+p.x})},o)};
     byAddr(q,()=>clean!==q?byAddr(clean,byKey):byKey());
   });
 }
@@ -1277,7 +1281,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v104';
+const VER='v105';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
