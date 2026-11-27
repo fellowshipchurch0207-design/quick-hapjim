@@ -264,7 +264,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v121</div>
+  <div class="ver">버전 2026-11-27 v123</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -371,7 +371,8 @@ function watchMe(){me=null;if(meOv){meOv.setMap(null);meOv=null}locate(false)}
 function showHelp(){$('dHelp').showModal()}
 
 /* ---------- 주소 찾기 ---------- */
-function geocode(q){
+function geocode(q){return Promise.race([geocode0(q),new Promise(r=>setTimeout(()=>r(null),7000))])} // 7초 넘으면 포기
+function geocode0(q){
   return new Promise(res=>{
     if(!geocoder)return res(null);
     q=q.trim();
@@ -983,7 +984,9 @@ $('fPlan').addEventListener('submit',async e=>{e.preventDefault();
   toast(moved?'오늘 그 시간은 지나서 내일('+dlabel(np.date)+') 일정으로 넣었어요':inWindow(np)?'일정을 넣었어요. 배송 순서를 다시 맞춰요.':dlabel(np.date)+' 일정으로 넣었어요. 지도에 보라색으로 표시돼요.',4500);recalc()});
 /* ---------- 합짐 추가 ---------- */
 let found={};
-async function look(which){
+const lookPend={};
+function look(which){const v=$(which==='pick'?'iPick':'iDrop').value;const pp=lookPend[which];if(pp&&pp.q===v)return pp.p;const p=look0(which);lookPend[which]={q:v,p};p.finally(()=>{if(lookPend[which]&&lookPend[which].p===p)delete lookPend[which]});return p}
+async function look0(which){
   const inp=$(which==='pick'?'iPick':'iDrop'),f=$(which==='pick'?'fPick':'fDrop');
   if(!inp.value.trim()){f.textContent='';found[which]=null;return null}
   f.className='found';f.textContent='찾는 중…';
@@ -1138,7 +1141,7 @@ $('fAdd').addEventListener('submit',async e=>{
   const loadedOnly=$('iLoaded').checked;if(rec){try{rec.stop()}catch(x){}}
   $('bSave').textContent=editId!=null?'저장 중…':'추가 중…';$('bSave').disabled=true;working(editId!=null?'저장 중…':'추가 중… 주소 확인 중');
   const fresh=w=>found[w]&&lookedTxt[w]===$(w==='pick'?'iPick':'iDrop').value.trim()?found[w]:null; // 주소를 고쳤으면 다시 찾기
-  const p=loadedOnly?null:(fresh('pick')||await look('pick')),d=fresh('drop')||await look('drop');
+  const [p,d]=await Promise.all([loadedOnly?null:(fresh('pick')||look('pick')),fresh('drop')||look('drop')]); // 픽업·배송 동시에 확인
   $('bSave').textContent='위치 확인 후 추가';$('bSave').disabled=false;adding=false;
   if(!d||(!loadedOnly&&!p)){working('');toast('주소를 확인해 주세요');return}
   if(editId!=null){const j=jobs.find(x=>x.id==editId);editId=null;if(j){
@@ -1146,7 +1149,7 @@ $('fAdd').addEventListener('submit',async e=>{
     if(loadedOnly&&j.state==='wait'){j.state='loaded';j.pickedAt=Date.now()}else if(!loadedOnly&&j.state==='loaded'){j.state='wait';delete j.pickedAt}
     manual=null;saveManual();save();$('dAdd').close();working('고치는 중… 순서 다시 짜는 중');recalc()}return}
   manual=null;saveManual(); // 새 짐이 들어오면 순서를 처음부터 다시 짜고, 그 뒤에 직접 조정
-  jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,round:$('iRound').checked||undefined,due:$('iDue').value||'',pdue:$('iPdue').value||'',fee:feeVal(),state:loadedOnly?'loaded':'wait'});
+  jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,round:$('iRound').checked,due:$('iDue').value||'',pdue:$('iPdue').value||'',fee:feeVal(),state:loadedOnly?'loaded':'wait'});
   save();$('dAdd').close();working('추가 중… 순서 짜는 중');setTimeout(recalc,30);
 });
 
@@ -1248,17 +1251,20 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(
 /* ---------- 두 폰 동기화 (Firebase) ---------- */
 const FB={apiKey:"AIzaSyCErPDJ_JjURfywKP--d7PdKJMv3GyQZd4",authDomain:"quick-hapjim.firebaseapp.com",databaseURL:"https://quick-hapjim-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"quick-hapjim",storageBucket:"quick-hapjim.firebasestorage.app",messagingSenderId:"19748421278",appId:"1:19748421278:web:1e59ef3128f8cb9127458f"};
 let fbDb=null,fbUser=null,applying=false;
-const toObj=(arr,key)=>{const o={};arr.forEach(x=>o[String(x[key])]=x);return o};
-function syncPush(kind){
+// Firebase는 값에 undefined가 있으면 저장을 거부하고 오류를 던짐 → 저장 전에 깨끗하게
+const clean=v=>v==null?null:JSON.parse(JSON.stringify(v));
+const toObj=(arr,key)=>{const o={};arr.forEach(x=>o[String(x[key])]=clean(x));return o};
+function syncPush(kind){try{syncPush0(kind)}catch(e){console.warn('sync',e)}} // 동기화 오류가 화면을 멈추지 않게
+function syncPush0(kind){
   if(!fbUser||applying)return;const base=fbDb.ref('users/'+fbUser.uid);
   if(kind==='jobs')base.child('jobs').set(toObj(jobs,'id'));
-  if(kind==='shifts'){base.child('shifts').set(toObj(shifts,'start'));base.child('hoursFix').set(hoursFix)}
-  if(kind==='cfg')base.child('cfg').set(cfg);
-  if(kind==='manual')base.child('manual').set(manual||null);
-  if(kind==='track'){const k=todayKey();base.child('track/'+k).set(track[k]||[])}
+  if(kind==='shifts'){base.child('shifts').set(toObj(shifts,'start'));base.child('hoursFix').set(clean(hoursFix))}
+  if(kind==='cfg')base.child('cfg').set(clean(cfg));
+  if(kind==='manual')base.child('manual').set(clean(manual));
+  if(kind==='track'){const k=todayKey();base.child('track/'+k).set(clean(track[k]||[]))}
   if(kind==='plans')base.child('plans').set(toObj(plans,'id'));
-  if(kind==='car'){base.child('odo').set(odo);base.child('maint').set(maint)}
-  if(kind==='exp'){base.child('expenses').set(toObj(expenses,'id'));base.child('monthCost').set(monthCost)}
+  if(kind==='car'){base.child('odo').set(clean(odo));base.child('maint').set(clean(maint))}
+  if(kind==='exp'){base.child('expenses').set(toObj(expenses,'id'));base.child('monthCost').set(clean(monthCost))}
 }
 function syncUI(){
   const on=!!fbUser;$('syncDot').classList.toggle('on',on);
@@ -1322,7 +1328,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v121';
+const VER='v123';
 try{document.getElementById('verTag').textContent=VER}catch(e){}
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
