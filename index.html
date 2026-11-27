@@ -29,7 +29,7 @@ header h1{font-size:18px;margin:0;flex:1}
 @media(min-width:760px){.main{grid-template-rows:1fr;grid-template-columns:1fr 400px}}
 #map{width:100%;height:100%;background:var(--line)}
 .mapw{position:relative;min-height:0}
-.mapbtns{position:absolute;right:10px;bottom:10px;z-index:4;display:flex;gap:8px}.ringb{position:absolute;right:10px;bottom:68px;z-index:4;width:50px;height:50px;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:0}.ringb b{font-size:10px;line-height:1;color:var(--sub)}.ringb.on{border:2px solid #0a84ff}.ringb.on b{color:#0a84ff;font-size:11px}.help h3{font-size:16px;margin:16px 0 4px;color:var(--ink)}.help p,.help li{font-size:14.5px;line-height:1.55;color:var(--sub);margin:0}.help ul{padding-left:18px;margin:0}.help li{margin:3px 0}.help b{color:var(--ink)}#dHelp .dlg{max-height:82vh;overflow:auto}a.due{text-decoration:none;cursor:pointer}.gonav{display:block;margin-top:8px;text-align:center;background:#fee500;color:#191919!important;font-weight:800;font-size:16px;padding:12px;border-radius:12px;text-decoration:none}.rgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.rgrid button{min-height:46px;font-size:16px;font-weight:700}.rgrid button.on{background:#0a84ff;color:#fff;border-color:#0a84ff}.ringl{background:#0a84ff;color:#fff;font-size:12px;font-weight:800;padding:2px 7px;border-radius:9px;box-shadow:0 1px 4px #0006}
+.mapbtns{position:absolute;right:10px;bottom:10px;z-index:4;display:flex;gap:8px}.ringb{position:absolute;right:10px;bottom:68px;z-index:4;width:50px;height:50px;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:0}.ringb b{font-size:10px;line-height:1;color:var(--sub)}.ringb.on{border:2px solid #0a84ff}.ringb.on b{color:#0a84ff;font-size:11px}.help h3{font-size:16px;margin:16px 0 4px;color:var(--ink)}.help p,.help li{font-size:14.5px;line-height:1.55;color:var(--sub);margin:0}.help ul{padding-left:18px;margin:0}.help li{margin:3px 0}.help b{color:var(--ink)}#dHelp .dlg{max-height:82vh;overflow:auto}@keyframes gone{0%{opacity:1;transform:none}30%{background:#7f1d1d}100%{opacity:0;transform:translateX(40px) scale(.96)}}.stop.gone{animation:gone .32s ease-in forwards;pointer-events:none}a.due{text-decoration:none;cursor:pointer}.gonav{display:block;margin-top:8px;text-align:center;background:#fee500;color:#191919!important;font-weight:800;font-size:16px;padding:12px;border-radius:12px;text-decoration:none}.rgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.rgrid button{min-height:46px;font-size:16px;font-weight:700}.rgrid button.on{background:#0a84ff;color:#fff;border-color:#0a84ff}.ringl{background:#0a84ff;color:#fff;font-size:12px;font-weight:800;padding:2px 7px;border-radius:9px;box-shadow:0 1px 4px #0006}
 .ibtn{width:50px;height:50px;min-height:0;padding:0;border-radius:14px;background:light-dark(#fffffff0,#1b1f25f0);border:1px solid var(--line);box-shadow:0 3px 10px #0004;display:grid;place-items:center}
 .ibtn:active{transform:scale(.94)}
 .side{overflow-y:auto;padding:10px 10px 90px}
@@ -263,7 +263,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v115</div>
+  <div class="ver">버전 2026-11-27 v116</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -755,11 +755,11 @@ $('list').addEventListener('click',e=>{
   const pe=e.target.closest('[data-pedit]');if(pe){openPlan(plans.find(p=>p.id==pe.dataset.pedit));return}
   const pd=e.target.closest('[data-pdone]'),px=e.target.closest('[data-pdel]');
   if(pd){const p=plans.find(p=>p.id==pd.dataset.pdone);if(p){p.done=true;p.doneAt=Date.now();savePlans();toast('일정 끝 — 다음 배송으로 다시 계산해요');recalc()}return}
-  if(px){if(px.dataset.sure){plans=plans.filter(p=>p.id!=px.dataset.pdel);savePlans();recalc()}else{px.dataset.sure=1;px.textContent='확인';setTimeout(()=>{delete px.dataset.sure;px.textContent='삭제'},3000)}return}
+  if(px){const id=px.dataset.pdel;delFx(px,()=>{plans=plans.filter(p=>p.id!=id);savePlans();recalc()});return}
   const d=e.target.closest('[data-job]'),x=e.target.closest('[data-del]');
   const je=e.target.closest('[data-jedit]');if(je){openJobEdit(je.dataset.jedit);return}
   if(d){const j=jobs.find(j=>j.id==d.dataset.job);if(!j)return;const tt=d.dataset.t;if(tt==='P'){j.state='loaded';j.pickedAt=Date.now()}else if(tt==='D'&&j.round){j.state='back';j.dropAt=Date.now()}else{j.state='done';j.doneAt=Date.now()}recordTrack();save();renderDone();toast(d.dataset.t==='P'?'픽업 완료 — 짐이 실렸어요':'배송 완료');recalc()}
-  if(x){if(x.dataset.sure){jobs=jobs.filter(j=>j.id!=x.dataset.del);save();recalc()}else{x.dataset.sure=1;x.textContent='확인';setTimeout(()=>{delete x.dataset.sure;x.textContent='삭제'},3000)}}
+  if(x){const id=x.dataset.del;delFx(x,()=>{jobs=jobs.filter(j=>j.id!=id);save();recalc()})}
 });
 
 /* ---------- 완료 탭 ---------- */
@@ -1121,6 +1121,9 @@ function openJobEdit(id){const j=jobs.find(x=>x.id==id);if(!j)return;editId=j.id
   $('iCargo').value=j.cargo||'';$('iFee').value=j.fee||'';$('iPdue').value=j.pdue||'';$('iDue').value=j.due||'';$('iUrg').checked=!!j.urgent;$('iRound').checked=!!j.round;
   lookedTxt={pick:$('iPick').value.trim(),drop:$('iDrop').value.trim()};
   $('iLoaded').checked=ld;$('iPick').disabled=ld;$('dAdd').showModal()}
+// 삭제: 한 번에 지우되, 카드가 빨갛게 변하며 접혀 사라지게 (눌렸다는 느낌)
+function delFx(btn,fn){const c=btn.closest('.stop');btn.textContent='삭제됨';if(navigator.vibrate)try{navigator.vibrate([15,40,15])}catch(e){}
+  if(c){c.classList.add('gone');setTimeout(fn,320)}else fn();toast('삭제했어요')}
 let adding=false;
 $('fAdd').addEventListener('submit',async e=>{
   e.preventDefault();if(adding)return;adding=true;setTimeout(()=>adding=false,8000); // 두 번 눌러도 한 번만
@@ -1311,7 +1314,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v115';
+const VER='v116';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
