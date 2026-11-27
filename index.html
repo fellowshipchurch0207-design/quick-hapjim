@@ -275,7 +275,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v137</div>
+  <div class="ver">버전 2026-11-27 v138</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -470,7 +470,7 @@ let bigMap=false,shrinkT=0;
 let follow=false;
 function setFollow(on){follow=on;$('bMe').classList.toggle('on',on);$('bMe').querySelector('b').textContent=on?'따라가는 중':'내 위치';
   if(on){if(!me||!map){follow=false;$('bMe').classList.remove('on');$('bMe').querySelector('b').textContent='내 위치';toast('내 위치를 아직 못 찾았어요');return}
-    clearTimeout(fitT);fitting=true;map.setLevel(3);map.setCenter(new kakao.maps.LatLng(me.lat,me.lng));setTimeout(()=>fitting=false,400);toast('내 위치를 따라가요. 다시 누르면 전체 경로')}
+    clearTimeout(fitT);fitting=true;map.setLevel(7);map.setCenter(new kakao.maps.LatLng(me.lat,me.lng));setTimeout(()=>fitting=false,400);toast('내 위치를 따라가요. 다시 누르면 전체 경로')}
   else fitRoute(true)}
 $('bMe').onclick=()=>setFollow(!follow);
 function setMapH(px){const m=document.querySelector('.main');if(px==null){m.style.gridTemplateRows='';bigMap=false;$('mapGrip').classList.remove('on')}else{m.style.gridTemplateRows=px+'px minmax(0,1fr)';bigMap=true;$('mapGrip').classList.add('on')}try{map&&map.relayout()}catch(e){}}
@@ -1399,7 +1399,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v137';
+const VER='v138';
 try{document.getElementById('verTag').textContent=VER}catch(e){}
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
