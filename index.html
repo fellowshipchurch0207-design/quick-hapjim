@@ -29,7 +29,7 @@ header h1{font-size:18px;margin:0;flex:1}
 @media(min-width:760px){.main{grid-template-rows:1fr;grid-template-columns:1fr 400px}}
 #map{width:100%;height:100%;background:var(--line)}
 .mapw{position:relative;min-height:0}
-.mapbtns{position:absolute;right:10px;bottom:10px;z-index:4;display:flex;gap:8px}.ringb{position:absolute;right:10px;bottom:68px;z-index:4;width:50px;height:50px;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:0}.ringb b{font-size:10px;line-height:1;color:var(--sub)}.ringb.on{border:2px solid #0a84ff}.ringb.on b{color:#0a84ff;font-size:11px}.help h3{font-size:16px;margin:16px 0 4px;color:var(--ink)}.help p,.help li{font-size:14.5px;line-height:1.55;color:var(--sub);margin:0}.help ul{padding-left:18px;margin:0}.help li{margin:3px 0}.help b{color:var(--ink)}#dHelp .dlg{max-height:82vh;overflow:auto}@keyframes gone{0%{opacity:1;transform:none}30%{background:#7f1d1d}100%{opacity:0;transform:translateX(40px) scale(.96)}}.stop.gone{animation:gone .32s ease-in forwards;pointer-events:none}#verTag{position:fixed;left:8px;bottom:calc(4px + env(safe-area-inset-bottom));z-index:40;font-size:10px;color:#9ca3af;opacity:.7;pointer-events:none}#working{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;background:#111827e6;color:#fff;font-weight:800;font-size:16px;padding:10px 16px;border-radius:12px;box-shadow:0 4px 14px #0008;pointer-events:none}.stop.deleting{opacity:.45;pointer-events:none;outline:2px dashed #ef4444}@keyframes wpulse{50%{opacity:.6}}#working{animation:wpulse 1s infinite}a.due{text-decoration:none;cursor:pointer}.gonav{display:block;margin-top:8px;text-align:center;background:#fee500;color:#191919!important;font-weight:800;font-size:16px;padding:12px;border-radius:12px;text-decoration:none}.rgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.rgrid button{min-height:46px;font-size:16px;font-weight:700}.rgrid button.on{background:#0a84ff;color:#fff;border-color:#0a84ff}.ringl{background:#0a84ff;color:#fff;font-size:12px;font-weight:800;padding:2px 7px;border-radius:9px;box-shadow:0 1px 4px #0006}
+.mapbtns{position:absolute;right:10px;bottom:10px;z-index:4;display:flex;gap:8px}.ringb{position:absolute;right:10px;bottom:68px;z-index:4;width:50px;height:50px;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:0}.ringb b{font-size:10px;line-height:1;color:var(--sub)}.ringb.on{border:2px solid #0a84ff}.ringb.on b{color:#0a84ff;font-size:11px}.help h3{font-size:16px;margin:16px 0 4px;color:var(--ink)}.help p,.help li{font-size:14.5px;line-height:1.55;color:var(--sub);margin:0}.help ul{padding-left:18px;margin:0}.help li{margin:3px 0}.help b{color:var(--ink)}#dHelp .dlg{max-height:82vh;overflow:auto}@keyframes gone{0%{opacity:1;transform:none}30%{background:#7f1d1d}100%{opacity:0;transform:translateX(40px) scale(.96)}}.stop.gone{animation:gone .32s ease-in forwards;pointer-events:none}#verTag{position:fixed;left:8px;bottom:calc(4px + env(safe-area-inset-bottom));z-index:40;font-size:10px;color:#9ca3af;opacity:.7;pointer-events:none}#mslack .homeinfo{margin-top:6px;display:inline-block;background:rgba(20,22,28,.88);color:#e5e7eb;font-size:13px;padding:4px 10px;border-radius:9px;box-shadow:0 2px 8px rgba(0,0,0,.4)}#mslack .homeinfo b{color:#fff}#working{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;background:#111827e6;color:#fff;font-weight:800;font-size:16px;padding:10px 16px;border-radius:12px;box-shadow:0 4px 14px #0008;pointer-events:none}.stop.deleting{opacity:.45;pointer-events:none;outline:2px dashed #ef4444}@keyframes wpulse{50%{opacity:.6}}#working{animation:wpulse 1s infinite}a.due{text-decoration:none;cursor:pointer}.gonav{display:block;margin-top:8px;text-align:center;background:#fee500;color:#191919!important;font-weight:800;font-size:16px;padding:12px;border-radius:12px;text-decoration:none}.rgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.rgrid button{min-height:46px;font-size:16px;font-weight:700}.rgrid button.on{background:#0a84ff;color:#fff;border-color:#0a84ff}.ringl{background:#0a84ff;color:#fff;font-size:12px;font-weight:800;padding:2px 7px;border-radius:9px;box-shadow:0 1px 4px #0006}
 .ibtn{width:50px;height:50px;min-height:0;padding:0;border-radius:14px;background:light-dark(#fffffff0,#1b1f25f0);border:1px solid var(--line);box-shadow:0 3px 10px #0004;display:grid;place-items:center}
 .ibtn:active{transform:scale(.94)}
 .side{overflow-y:auto;padding:10px 10px 90px}
@@ -238,7 +238,8 @@ body.bars #bHandle{display:none}
   <li><b>픽업 완료 / 배송 완료 / 일정 끝</b>을 누르면 회색으로 바뀌고 다음 곳으로 넘어가요. 잘못 눌렀으면 회색 카드의 <b>되돌리기</b>를 누르세요.</li>
   <li><b>수정</b>: 전화로 주소·시간·금액이 바뀌면 고쳐요. 🎤로 새 주소를 말해도 돼요.</li>
   <li>지도 번호를 누르면 그 카드로 이동해요. 지도를 만지면 10초 뒤 전체 경로로 돌아와요.</li>
-  <li><b>[반경]</b> 버튼: 내 위치에서 1~30km 동그라미를 그려요.</li></ul>
+  <li><b>[반경]</b> 버튼: 내 위치에서 1~30km 동그라미를 그려요.</li>
+  <li><b>🏠 집 도착</b>: 설정에 집 주소를 넣어 두면, 마지막 곳을 마치고 집으로 바로 갈 때 도착 시각과 오늘 총 운행 거리(근무 중 이미 달린 거리 + 지금 위치에서 남은 곳 거쳐 집까지)를 지도 왼쪽 위 여유 표시 아래에 보여줘요.</li></ul>
   <h3>7. 완료 · 달력</h3>
   <p>화면 아래 <b>▴ 진행 중 · 완료 · 달력</b>을 눌러요. 탭의 완료 숫자는 오늘 완료한 개수예요. 완료 탭에서 오늘 번 돈과 식비·통행료를 보고, 달력에서 날마다 수입, 근무 시간, 주행거리, 다닌 경로를 볼 수 있어요. 주행거리에 맞춰 정비 시기도 알려줘요.</p>
   <h3>8. 설정</h3>
@@ -264,7 +265,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v124</div>
+  <div class="ver">버전 2026-11-27 v125</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -532,6 +533,20 @@ async function futureMin(a,b,when){const d=new Date(Math.ceil(when/9e5)*9e5),p2=
     clearTimeout(tm);if(r.status===401||r.status===403){if(!futCache._w){futCache._w=1;toast('카카오 미래 운행 정보 권한이 없어 지금 도로 기준으로 계산해요',5000)}futCache[key]=null;return null}
     const j=await r.json(),rt=j.routes&&j.routes[0];
     const v=rt&&rt.result_code===0?rt.summary.duration/60:null;futCache[key]=v;return v}catch(e){return null}}
+// 집까지: 마지막 곳에서 집으로 가는 시간·거리 (30분 뒤 출발이면 그 시각 예상 교통)
+let homeInfo=null;const legCache={};
+async function homePt(){if(!cfg.home)return null;const c=LS.get('homePt',null);if(c&&c.q===cfg.home)return c;const r=await geocode(cfg.home);if(!r)return null;const v={q:cfg.home,lat:r.lat,lng:r.lng};LS.set('homePt',v);return v}
+async function legInfo(a,b,when){if(!cfg.rest)return null;const fut=when-Date.now()>=30*60000,d=new Date(Math.ceil(when/9e5)*9e5),p2=n=>String(n).padStart(2,'0');
+  const dt=d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate())+p2(d.getHours())+p2(d.getMinutes()),key=[a.lat,a.lng,b.lat,b.lng].map(x=>(+x).toFixed(3)).join(',')+(fut?'@'+dt:'@now'+Math.floor(Date.now()/3e5));
+  if(key in legCache)return legCache[key];
+  try{const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),6000);
+    const u=fut?`https://apis-navi.kakaomobility.com/v1/future/directions?origin=${a.lng},${a.lat}&destination=${b.lng},${b.lat}&departure_time=${dt}&summary=true`:`https://apis-navi.kakaomobility.com/v1/directions?origin=${a.lng},${a.lat}&destination=${b.lng},${b.lat}&summary=true`;
+    const r=await fetch(u,{headers:{'Authorization':'KakaoAK '+cfg.rest},signal:ac.signal});clearTimeout(tm);const j=await r.json(),rt=j.routes&&j.routes[0];
+    const v=rt&&rt.result_code===0?{min:rt.summary.duration/60,km:rt.summary.distance/1000}:null;legCache[key]=v;return v}catch(e){return null}}
+function drivenToday(){const a=track[todayKey()]||[];let d=0;for(let i=1;i<a.length;i++){const x=hav({lat:a[i-1][0],lng:a[i-1][1]},{lat:a[i][0],lng:a[i][1]});if(x<20)d+=x}return d*1.05}
+async function calcHome(fast,routeKm){if(!route.length){homeInfo=null;return}const h=await homePt();if(!h)return;const last=route.at(-1),from=last.pt,dep=last.depart.getTime();
+  let li=fast?null:await legInfo(from,h,dep);if(!li)li={min:tmin(from,h)*legScale,km:hav(from,h)*1.35};
+  const left=routeKm+li.km,done=drivenToday();homeInfo={at:new Date(dep+li.min*60000),km:done+left,left,done}}
 async function roadTimes(pts){
   if(!cfg.rest||!me||!pts.length)return null;
   const body={origin:{x:me.lng,y:me.lat},destination:{x:pts.at(-1).lng,y:pts.at(-1).lat},waypoints:pts.slice(0,-1).map(p=>({x:p.lng,y:p.lat})),priority:'RECOMMEND',summary:false};
@@ -593,7 +608,9 @@ function slackInfo(){return route.length?slackAll()[0]:null}
 function lbOf(k,SL){const s=route[k];if(s.leaveBy)return s.leaveBy;if(k&&route[k-1].t==='S'&&SL[k])return new Date(route[k-1].depart.getTime()+SL[k].v*60000);return null}
 const slackCls=v=>v<15?'bad':v<40?'mid':'ok';
 const fmin=v=>v>=60?Math.floor(v/60)+'시간'+(v%60?' '+(v%60)+'분':''):v+'분';
-function slackHtml(){const b=slackInfo();
+function homeHtml(){if(!homeInfo)return'';return '<div class="homeinfo">🏠 집 <b>'+hmd(homeInfo.at)+'</b> 도착 · 오늘 총 <b>'+Math.round(homeInfo.km)+'km</b>'+(homeInfo.done>=1?' <small>(운행 '+Math.round(homeInfo.done)+' + 남은 '+Math.round(homeInfo.left)+')</small>':'')+'</div>'}
+function slackHtml(){return slackHtml0()+homeHtml()}
+function slackHtml0(){const b=slackInfo();
   if(!b)return '<span class="slack ok"><i></i>여유 넉넉</span>';
   const c=slackCls(b.v);
   return '<span class="slack '+c+'"><i></i>'+(b.v<0?(-b.v)+'분 늦음':'여유 '+fmin(b.v))+'</span>'+(c==='bad'?'<div class="hurry">🚨 바로 이동!</div>':'')}
@@ -649,6 +666,7 @@ async function recalc(fast){
   if(!fast){let a=0,b=0,pv=me;route.forEach(x=>{if(pv){a+=x.leg;b+=tmin(pv,x.pt)}pv=x.pt});
    if(b>10){const sc=Math.min(3,Math.max(0.6,a/b));if(Math.abs(sc-legScale)>0.08){legScale=legScale*0.4+sc*0.6;LS.set('legScale',legScale);if(!fast)setTimeout(()=>{if(!manual)recalc()},50)}}}
   routeSrc=rd?'road':'est';
+  {const rk=rd?rd.km:route.reduce((a,x)=>a+(x.legKm||0),0)+(me&&route[0]?0:0);if(fast){calcHome(true,rk)}else{await calcHome(false,rk);if(my!==gen)return}}
   draw(rd?rd.path:null,rd?rd.km:km);
   if(workMsg)working('');if(fast)return;busy=false
 }
@@ -1328,7 +1346,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v124';
+const VER='v125';
 try{document.getElementById('verTag').textContent=VER}catch(e){}
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
