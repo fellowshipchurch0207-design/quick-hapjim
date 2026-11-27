@@ -217,6 +217,7 @@ body.bars #bHandle{display:none}
   <h2>🏠 오늘 수고하셨어요!</h2>
   <div class="daysum" id="daySum"></div>
   <label>지금 계기판 주행거리(km)<input id="dayKmIn" type="text" inputmode="numeric" placeholder="예) 45380"></label>
+  <label>지금 하이패스 잔액(원)<input id="dayHpIn" type="text" inputmode="numeric" placeholder="예) 28900"></label>
   <div class="hint" id="dayKmHint"></div>
   <div class="btns"><button type="button" class="ghost" id="bDaySkip">나중에</button><button class="pri" id="bDaySave">저장하고 끝내기</button></div>
 </form></dialog>
@@ -224,7 +225,7 @@ body.bars #bHandle{display:none}
 <dialog id="dHelp"><div class="dlg help">
   <h2>📖 퀵 합짐 사용법</h2>
   <h3>1. 하루 시작과 끝</h3>
-  <p>그날 <b>첫 합짐을 넣으면 저절로 근무가 시작</b>되고 계기판 주행거리를 물어봐요. 일을 다 마치고 목록 맨 끝 집으로 카드의 <b>[🏠 집 도착 · 오늘 끝]</b>을 누르면 근무가 끝나면서 오늘 번 돈·일한 시간·시간당 수입을 보여주고 마감 주행거리를 물어봐요. 메뉴의 ▶ 근무 시작 / ■ 종료로 직접 해도 돼요.</p>
+  <p>그날 <b>첫 합짐을 넣으면 저절로 근무가 시작</b>되고 계기판 주행거리와 <b>하이패스 잔액</b>을 물어봐요. 일을 다 마치고 목록 맨 끝 집으로 카드의 <b>[🏠 집 도착 · 오늘 끝]</b>을 누르면 근무가 끝나면서 오늘 번 돈·일한 시간·시간당 수입을 보여주고 마감 주행거리와 하이패스 잔액을 물어봐요. 하이패스는 시작 잔액에서 마칠 때 잔액을 뺀 만큼 그날 통행료 경비로 저절로 기록돼요(중간에 충전했다면 완료 탭 경비에서 고치세요). 메뉴의 ▶ 근무 시작 / ■ 종료로 직접 해도 돼요.</p>
   <h3>2. 콜 넣기</h3>
   <p>지도 오른쪽 아래 <b>📦+</b> 버튼을 눌러요.</p>
   <ul><li><b>픽업지</b>: 누르자마자 마이크가 켜져요. 픽업지 주소를 말하고 <b>■</b>를 누르면 지도에서 찾고, 노란 <b>🧭 카카오맵으로 픽업지 길안내</b> 버튼이 떠요. 바로 출발하고 싶을 때만 누르세요.</li>
@@ -255,6 +256,7 @@ body.bars #bHandle{display:none}
   <li><b>내 위치</b> 버튼(지도 오른쪽, 반경 위): 누르면 내 주변이 보이게 확대되고, <b>움직이는 대로 지도가 따라와요</b>(버튼에 "따라가는 중"). 다시 누르면 전체 경로로 돌아가요. 지도를 손가락으로 끌어 옮기면 따라가기가 멈춰요(두 손가락 확대·축소는 괜찮아요).</li>
   <li><b>지도 크게 보기</b>: 지도 아래 가운데의 하얀 막대를 아래로 끌면 지도가 커져요. 5초 동안 지도를 안 만지면 원래 크기로 돌아와요.</li>
   <li><b>[반경]</b> 버튼: 내 위치에서 1~30km 동그라미를 그려요.</li>
+  <li><b>회색 길</b>: 오늘 근무 중에 실제로 다닌 길이 지도에 회색으로 남아요.</li>
   <li><b>🏠 집으로</b>: 목록 맨 끝에 집 도착 카드가 생겨요. 배송을 다 끝내도 이 카드는 남아서 [길안내]로 집까지 가고, 도착하면 <b>[🏠 집 도착 · 오늘 끝]</b>을 누르면 근무 종료까지 마무리돼요. 지도에 마지막 곳에서 집까지 하늘색 길이 그려지고, 집 표시 옆에 도착 시각이 붙어요.</li>
   <li><b>🏠 집 도착</b>: 설정에 집 주소를 넣어 두면, 마지막 곳을 마치고 집으로 바로 갈 때 도착 시각과 오늘 총 운행 거리(근무 중 이미 달린 거리 + 지금 위치에서 남은 곳 거쳐 집까지)를 지도 왼쪽 위 여유 표시 아래에 보여줘요.</li></ul>
   <h3>7. 완료 · 달력</h3>
@@ -282,13 +284,14 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v141</div>
+  <div class="ver">버전 2026-11-27 v142</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
 <dialog id="dOdo"><form class="dlg" method="dialog" id="fOdo">
   <h2 id="oTitle">오늘 마무리 — 주행거리</h2>
   <label>계기판 총 주행거리 (km)<input type="number" inputmode="numeric" id="oKm" placeholder="예: 45230"></label>
+  <label>하이패스 잔액 (원)<input type="text" inputmode="numeric" id="oHp" placeholder="예: 35400"></label>
   <div class="note" id="oInfo"></div>
   <div id="oAlerts"></div>
   <div class="btns"><button type="button" class="ghost" id="oSkip">나중에</button><button type="submit" class="pri">저장</button></div>
@@ -441,11 +444,15 @@ function splitDetail(t){t=(t||'').trim();const c=t.match(/^(.+?)[,，]\s*(.+)$/)
   return{base:t,detail:''}}
 function nm(pt){if(!pt)return'';const c=cityOf(pt.addr),n=(pt.name||'').trim();if(!c)return n;const f=c.split(' ')[0];if(n.startsWith(f)||n.startsWith(c))return n;return c+' '+n}
 /* ---------- 이동 경로 기록 (근무 중일 때만, 1분·50m 간격) ---------- */
+// 오늘 실제로 다닌 길을 회색으로 남김
+let trailLine=null;
+function drawTrail(){if(!map||typeof kakao==='undefined')return;const a=track[todayKey()]||[];if(trailLine){trailLine.setMap(null);trailLine=null}if(a.length<2)return;
+  try{trailLine=new kakao.maps.Polyline({path:a.map(p=>new kakao.maps.LatLng(p[0],p[1])),strokeWeight:5,strokeColor:'#9ca3af',strokeOpacity:.75,strokeStyle:'solid',zIndex:0});trailLine.setMap(map)}catch(e){}}
 function recordTrack(){
   if(!me||typeof openShift!=='function'||!openShift())return;
   const k=todayKey(),a=track[k]||(track[k]=[]),now=Date.now(),l=a[a.length-1];
   if(l&&now-l[2]<60000&&hav({lat:l[0],lng:l[1]},me)<0.05)return;
-  a.push([+me.lat.toFixed(5),+me.lng.toFixed(5),now]);LS.set('track',track);
+  a.push([+me.lat.toFixed(5),+me.lng.toFixed(5),now]);LS.set('track',track);drawTrail();
   if(now-trackPushAt>180000){trackPushAt=now;syncPush('track')}}
 /* ---------- 지도: 지나간 길 지우기 + 10초 뒤 전체 보기 ---------- */
 let lastPath=null,planBounds=null,userMoved=0,fitting=false;
@@ -761,7 +768,7 @@ function draw(path,km){
   const lp=path?path.map(p=>new kakao.maps.LatLng(p[0],p[1])):[...(me?[me]:[]),...route.map(s=>s.pt)].map(p=>new kakao.maps.LatLng(p.lat,p.lng));
   lastPath=path?path.slice():null;planBounds=hasPlanMk&&!route.length?b:null;
   if(lp.length>1){line=new kakao.maps.Polyline({path:lp,strokeWeight:5,strokeColor:'#e5482d',strokeOpacity:.8,strokeStyle:path?'solid':'shortdash'});line.setMap(map)}
-  drawHomeLine();
+  drawHomeLine();drawTrail();
   trimPath();fitRoute();
   renderList(km);
 }
@@ -878,7 +885,7 @@ const MI=[
 // odo[날짜]=마칠 때, odo['S'+날짜]=근무 시작할 때
 function lastOdo(before){const ks=Object.keys(odo).filter(d=>/^\d/.test(d)&&(!before||d<before)).sort();return ks.length?{d:ks.at(-1),km:+odo[ks.at(-1)]}:null}
 function dayKm(k){if(!odo[k])return null;const st=odo['S'+k]?+odo['S'+k]:(lastOdo(k)||{}).km;return st!=null?Math.max(0,+odo[k]-st):null}
-function curKm(){const v=Object.values(odo).map(Number).filter(x=>x>0);return v.length?Math.max(...v):null}
+function curKm(){const v=Object.entries(odo).filter(([k])=>!/^H/.test(k)).map(([,x])=>+x).filter(x=>x>0);return v.length?Math.max(...v):null}
 function mStatus(it){
   const m=maint[it.k],km=curKm();if(!m)return{lvl:'unk',txt:'기록 없음'};
   let left=[],lvl='ok';
@@ -898,7 +905,7 @@ function renderCar(){
 function openOdo(day,mode){const st=mode==='start';
   $('fOdo').dataset.day=day;$('fOdo').dataset.mode=st?'start':'end';$('oTitle').textContent=st?'근무 시작 — 계기판 주행거리':'오늘 마무리 — 계기판 주행거리';
   const p=lastOdo(st?null:day),s0=odo['S'+day];
-  $('oKm').value=st?(odo['S'+day]||''):(odo[day]||'');
+  $('oKm').value=st?(odo['S'+day]||''):(odo[day]||'');$('oHp').value=(st?odo['HS'+day]:odo['HE'+day])||'';
   $('oInfo').textContent=st?(p?`지난 기록: ${dlabel(p.d)} ${p.km.toLocaleString()}km — 지금 계기판 숫자를 넣어 주세요.`:'계기판의 총 주행거리(ODO)를 넣어 주세요.')
     :s0?`오늘 시작: ${(+s0).toLocaleString()}km`:p?`지난 기록: ${dlabel(p.d)} ${p.km.toLocaleString()}km`:'처음 입력이에요. 계기판의 총 주행거리(ODO)를 넣어 주세요.';
   $('oAlerts').innerHTML=alertsHtml();$('dOdo').showModal()}
@@ -908,8 +915,9 @@ $('msDel').onclick=()=>{delete maint[$('fMset').dataset.k];saveCar();$('dMset').
 $('fOdo').addEventListener('submit',e=>{e.preventDefault();const v=+$('oKm').value,day=$('fOdo').dataset.day;if(!v){toast('주행거리를 넣어 주세요');return}
   const st=$('fOdo').dataset.mode==='start',p=st?lastOdo():(odo['S'+day]?{km:+odo['S'+day]}:lastOdo(day));
   if(p&&v<p.km){toast((st?'지난 기록(':'오늘 시작(')+p.km.toLocaleString()+'km)보다 작아요. 다시 확인해 주세요',4000);return}
-  if(st){odo['S'+day]=v;saveCar();$('dOdo').close();toast('시작 주행거리 저장 — 마칠 때 다시 물어볼게요',3000);return}
-  odo[day]=v;saveCar();const d=dayKm(day);$('dOdo').close();
+  const hp=hpVal($('oHp').value);if(hp!=null)odo[(st?'HS':'HE')+day]=hp;
+  if(st){odo['S'+day]=v;saveCar();$('dOdo').close();toast('시작 주행거리·하이패스 저장 — 마칠 때 다시 물어볼게요',3000);return}
+  odo[day]=v;saveCar();hpToll(day);const d=dayKm(day);$('dOdo').close();
   const al=MI.filter(it=>['over','soon'].includes(mStatus(it).lvl)).map(it=>it.n);
   toast((d!=null?'오늘 '+d.toLocaleString()+'km 달렸어요. ':'저장했어요. ')+(al.length?'정비 확인: '+al.join(', '):''),6000);
   if(!$('pCal').hidden)renderCal()});
@@ -969,17 +977,22 @@ renderDone();
 let shifts=LS.get('shifts',[]).filter(x=>!x.end||x.end-x.start>=60000),hoursFix=LS.get('hoursFix',{}),calM=new Date(),selDay=dkey(Date.now());calM.setDate(1);
 const saveShifts=()=>{LS.set('shifts',shifts);LS.set('hoursFix',hoursFix);syncPush('shifts')};
 const openShift=()=>shifts.find(x=>!x.end);
+// 하이패스: 시작 잔액 − 마칠 때 잔액 = 오늘 통행료 (자동으로 경비에 기록, 충전하면 그만큼 빼고 계산되게 수동 수정 가능)
+const hpVal=t=>{const n=String(t||'').replace(/[^\d]/g,'');return n?+n:null};
+function hpToll(day){const a=+odo['HS'+day],b=+odo['HE'+day];if(!a||isNaN(b)||odo['HE'+day]==null)return;const t=a-b;
+  expenses=expenses.filter(x=>!(x.day===day&&x.auto==='hipass'));if(t>0){expenses.push({id:Date.now(),day,type:'통행료',amt:t,memo:'하이패스 자동',auto:'hipass'});toast('하이패스 통행료 '+won(t)+' 기록했어요',3500)}saveExp()}
 // 첫 합짐을 넣으면 근무 시작 + 계기판 주행거리 묻기
 function autoStart(){const tk=todayKey();if(!openShift()){shifts.push({start:Date.now()});saveShifts();workBtn();toast('첫 합짐 — 근무를 시작했어요',3000)}
   if(!odo['S'+tk])setTimeout(()=>openOdo(tk,'start'),500)}
 // 집 도착: 근무 끝 + 오늘 정리(번 돈·시간·시급) + 마감 주행거리
 function finishDay(){const tk=todayKey(),o=openShift();if(o){o.end=Date.now();if(o.end-o.start<60000)shifts=shifts.filter(x=>x!==o);saveShifts();workBtn()}
   const js=dayJobs(tk),earn=js.reduce((a,j)=>a+(+j.fee||0),0),min=dayMin(tk),hr=min>=15?Math.round(earn/(min/60)):null,st=odo['S'+tk];
-  $('daySum').innerHTML=`<div><span>오늘 번 돈</span><b>${won(earn)}</b></div><div><span>완료한 콜</span><b>${js.length}건</b></div><div><span>일한 시간</span><b>${hmDur(min)}</b></div><div><span>시간당</span><b>${hr!=null?won(hr):'-'}</b></div>`+(st?`<div><span>시작 주행거리</span><b>${(+st).toLocaleString()}km</b></div>`:'');
-  $('dayKmIn').value=odo[tk]||'';$('dayKmHint').textContent=st?'마감 숫자를 넣으면 오늘 달린 거리도 계산해요.':'';$('dDay').showModal()}
+  $('daySum').innerHTML=`<div><span>오늘 번 돈</span><b>${won(earn)}</b></div><div><span>완료한 콜</span><b>${js.length}건</b></div><div><span>일한 시간</span><b>${hmDur(min)}</b></div><div><span>시간당</span><b>${hr!=null?won(hr):'-'}</b></div>`+(st?`<div><span>시작 주행거리</span><b>${(+st).toLocaleString()}km</b></div>`:'')+(odo['HS'+tk]?`<div><span>시작 하이패스</span><b>${won(+odo['HS'+tk])}</b></div>`:'');
+  $('dayKmIn').value=odo[tk]||'';$('dayHpIn').value=odo['HE'+tk]||'';$('dayKmHint').textContent=st?'마감 숫자를 넣으면 오늘 달린 거리도 계산해요.':'';$('dDay').showModal()}
 $('bDaySkip').onclick=()=>$('dDay').close();
 $('fDay').addEventListener('submit',e=>{e.preventDefault();const tk=todayKey(),v=+String($('dayKmIn').value).replace(/[^\d.]/g,'');
   if(v){const st=+odo['S'+tk]||0;if(st&&v<st){toast('시작 주행거리('+st.toLocaleString()+'km)보다 작아요',3500);return}odo[tk]=v;saveCar();const d=dayKm(tk);toast(d!=null?'저장했어요 — 오늘 '+Math.round(d)+'km 달렸어요':'저장했어요',3500)}
+  const hp=hpVal($('dayHpIn').value);if(hp!=null){odo['HE'+tk]=hp;saveCar();hpToll(tk)}
   $('dDay').close();if(!$('pCal').hidden)renderCal()});
 const hmDur=m=>{m=Math.round(m);return Math.floor(m/60)+'시간 '+(m%60)+'분'};
 function workBtn(){const o=openShift(),b=$('bWork');$('hDot')&&$('hDot').classList.toggle('on',!!o);
@@ -1425,7 +1438,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v141';
+const VER='v142';
 try{document.getElementById('verTag').textContent=VER}catch(e){}
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
