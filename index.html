@@ -248,7 +248,7 @@ body.bars #bHandle{display:none}
   <li><b>내 위치</b> 버튼(지도 오른쪽, 반경 위): 누르면 내 주변이 보이게 확대되고, <b>움직이는 대로 지도가 따라와요</b>(버튼에 "따라가는 중"). 다시 누르면 전체 경로로 돌아가요. 지도를 손가락으로 끌어 옮기면 따라가기가 멈춰요(두 손가락 확대·축소는 괜찮아요).</li>
   <li><b>지도 크게 보기</b>: 지도 아래 가운데의 하얀 막대를 아래로 끌면 지도가 커져요. 5초 동안 지도를 안 만지면 원래 크기로 돌아와요.</li>
   <li><b>[반경]</b> 버튼: 내 위치에서 1~30km 동그라미를 그려요.</li>
-  <li><b>🏠 집으로</b>: 목록 맨 끝에 집 도착 카드가 생기고, 지도에 마지막 곳에서 집까지 하늘색 길이 그려지고, 집 표시 옆에 도착 시각이 붙어요.</li>
+  <li><b>🏠 집으로</b>: 목록 맨 끝에 집 도착 카드가 생겨요. 배송을 다 끝내도 이 카드는 남아서 [길안내]로 집까지 가고, 도착하면 <b>[🏠 집 도착 · 오늘 끝]</b>을 누르면 근무 종료까지 마무리돼요. 지도에 마지막 곳에서 집까지 하늘색 길이 그려지고, 집 표시 옆에 도착 시각이 붙어요.</li>
   <li><b>🏠 집 도착</b>: 설정에 집 주소를 넣어 두면, 마지막 곳을 마치고 집으로 바로 갈 때 도착 시각과 오늘 총 운행 거리(근무 중 이미 달린 거리 + 지금 위치에서 남은 곳 거쳐 집까지)를 지도 왼쪽 위 여유 표시 아래에 보여줘요.</li></ul>
   <h3>7. 완료 · 달력</h3>
   <p>화면 아래 <b>▴ 진행 중 · 완료 · 달력</b>을 눌러요. 탭의 완료 숫자는 오늘 완료한 개수예요. 완료 탭에서 오늘 번 돈과 식비·통행료를 보고, 달력에서 날마다 수입, 근무 시간, 주행거리, 다닌 경로를 볼 수 있어요. 주행거리에 맞춰 정비 시기도 알려줘요.</p>
@@ -275,7 +275,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v139</div>
+  <div class="ver">버전 2026-11-27 v140</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -359,6 +359,7 @@ function setMe(p,center){
   drawRing();
   if(center){map.setCenter(ll);map.setLevel(6)}
   if(typeof follow!=='undefined'&&follow&&map){fitting=true;map.panTo(ll);setTimeout(()=>fitting=false,600)}
+  if(!route.length&&!homeInfo&&!homeDoneToday()&&cfg.home&&!setMe._t){setMe._t=1;setTimeout(()=>{setMe._t=0;recalc()},500)} // 일을 다 끝낸 뒤 위치가 잡히면 집 가는 카드 계산
 }
 function gpsErr(e){
   gpsOk=false;
@@ -578,7 +579,12 @@ function drawHomeLine(){if(homeLine){homeLine.setMap(null);homeLine=null}if(home
   try{const pts=homeInfo.path&&homeInfo.path.length?homeInfo.path.map(p=>new kakao.maps.LatLng(p[0],p[1])):[new kakao.maps.LatLng(homeInfo.from.lat,homeInfo.from.lng),new kakao.maps.LatLng(homeInfo.h.lat,homeInfo.h.lng)];
     homeLine=new kakao.maps.Polyline({path:pts,strokeWeight:5,strokeColor:'#38bdf8',strokeOpacity:.9,strokeStyle:'solid'});homeLine.setMap(map);
     homeMk=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(homeInfo.h.lat,homeInfo.h.lng),content:'<div class="homemk">🏠<span>'+hmd(homeInfo.at)+' 도착</span></div>',zIndex:1});homeMk.setMap(map)}catch(e){}}
-async function calcHome(fast,routeKm){if(!route.length){homeInfo=null;return}const h=await homePt();if(!h)return;const last=route.at(-1),from=last.pt,dep=last.depart.getTime();
+// 남은 곳이 없어도, 오늘 일을 했고 아직 '집 도착'을 안 눌렀으면 지금 위치에서 집으로 가는 카드를 남김
+const homeDoneToday=()=>LS.get('homeDone','')===todayKey();
+async function calcHome(fast,routeKm){let from,dep;
+  if(route.length){const last=route.at(-1);from=last.pt;dep=last.depart.getTime()}
+  else{if(!me||homeDoneToday()||!(pastEvents().length||openShift())){homeInfo=null;return}from={lat:me.lat,lng:me.lng};dep=Date.now()}
+  const h=await homePt();if(!h){homeInfo=null;return}if(hav(from,h)<0.15&&!route.length){homeInfo=null;return}
   let li=fast?null:await legInfo(from,h,dep);if(!li)li={min:tmin(from,h)*legScale,km:hav(from,h)*1.35,path:null};
   const left=routeKm+li.km,done=drivenToday();homeInfo={at:new Date(dep+li.min*60000),km:done+left,left,done,leg:Math.max(1,Math.round(li.min)),legKm:li.km,path:li.path,from,h}}
 async function roadTimes(pts){
@@ -764,12 +770,12 @@ function focusStop(k){const c=$('stop-'+k);if(!c)return;const sd=document.queryS
   const top=c.offsetHeight>=sd.clientHeight?y-6:y-(sd.clientHeight-c.offsetHeight)/2;
   sd.scrollTo({top:Math.max(0,top),behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
   const s=route[k];if(s&&map)map.panTo(new kakao.maps.LatLng(s.pt.lat,s.pt.lng))}
-function homeCard(){const h=homeInfo;if(!h||!route.length)return'';const n=route.length,nav=`https://map.kakao.com/link/to/${encodeURIComponent('집')},${h.h.lat},${h.h.lng}`;
+function homeCard(){const h=homeInfo;if(!h)return'';const n=route.length,nav=`https://map.kakao.com/link/to/${encodeURIComponent('집')},${h.h.lat},${h.h.lng}`;
   return `<div class="stop homec"><div class="numc"><div class="num">🏠</div></div><div><div class="kind">🏠 오늘 일 끝, 집으로</div>
     <div class="eta">${hmd(h.at)}<small>집 도착 예정</small></div>
-    <div class="leg">🚗 ${n}번에서 <b>${h.leg}분</b> · ${Math.round(h.legKm)}km</div>
+    <div class="leg">🚗 ${n?n+'번에서':'지금 위치에서'} <b>${h.leg}분</b> · ${Math.round(h.legKm)}km</div>
     <div class="addr" style="color:#7dd3fc">${esc(cfg.home)}</div></div>
-    <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a></div></div>`}
+    <div class="acts"><a class="nav" href="${nav}" target="_blank" rel="noopener">길안내</a>${n?'':'<button type="button" class="done" id="bHomeDone">🏠 집 도착 · 오늘 끝</button>'}</div></div>`}
 function laterPlans(){const tk=todayKey(),l=plans.filter(p=>!p.done&&planAt(p,'end')>Date.now()&&!inWindow(p)).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
   return l.length?`<div class="later"><h4>📅 다가오는 개인 일정</h4>${l.map(p=>`<div class="exp"><span><b>${dlabel(p.date)} ${p.start}~${p.end}</b> ${esc(p.title||'')} · ${esc(p.place?nm(p.place):'')}</span><span><button class="ghost" data-pedit="${p.id}">수정</button><button class="ghost" data-pdel="${p.id}">삭제</button></span></div>`).join('')}<div class="tm" style="margin:4px">그날이 되면 순서에 번호로 들어가요.</div></div>`:''}
 function renderList(km){if(route.some(x=>!x.eta||!x.depart))return; // 계산 중간이면 이전 화면 유지
@@ -778,7 +784,7 @@ function renderList(km){if(route.some(x=>!x.eta||!x.depart))return; // 계산 �
   const loaded=jobs.filter(j=>j.state==='loaded').length,SL=slackAll();
   $('mslack').innerHTML=route.length?slackHtml():'';$('mearn').innerHTML=earnHtml();
   $('sum').innerHTML='';
-  if(!route.length){$('list').innerHTML=pastHtml()+'<div class="empty">남은 배송이 없어요.<br>지도 오른쪽 아래 📦 버튼으로 콜을 넣어 주세요.</div>'+laterPlans();return}
+  if(!route.length){$('list').innerHTML=pastHtml()+homeCard()+'<div class="empty">남은 배송이 없어요.<br>지도 오른쪽 아래 📦 버튼으로 콜을 넣어 주세요.</div>'+laterPlans();return}
   const KN2={P:'픽업',D:'배송',S:'일정'};
   $('list').innerHTML=pastHtml()+route.map((s,k)=>{
     const nx=route[k+1],from=k?`${k}번(${KN2[route[k-1].t]})에서`:'현재 위치에서';
@@ -830,6 +836,7 @@ $('list').addEventListener('click',e=>{
   if(pd){const p=plans.find(p=>p.id==pd.dataset.pdone);if(p){p.done=true;p.doneAt=Date.now();savePlans();pd.textContent='처리 중…';working('일정 끝 — 다시 계산 중');recalc()}return}
   if(px){const id=px.dataset.pdel;delFx(px,()=>{plans=plans.filter(p=>p.id!=id);savePlans();recalc()});return}
   const d=e.target.closest('[data-job]'),x=e.target.closest('[data-del]');
+  if(e.target.closest('#bHomeDone')){LS.set('homeDone',todayKey());homeInfo=null;drawHomeLine();renderList();toast('수고하셨어요! 오늘 일 끝');if(openShift())setTimeout(()=>$('bWork').click(),300);return}
   const je=e.target.closest('[data-jedit]');if(je){openJobEdit(je.dataset.jedit);return}
   if(d){const j=jobs.find(j=>j.id==d.dataset.job);if(!j)return;const tt=d.dataset.t;if(tt==='P'){j.state='loaded';j.pickedAt=Date.now()}else if(tt==='D'&&j.round){j.state='back';j.dropAt=Date.now()}else{j.state='done';j.doneAt=Date.now()}d.textContent='처리 중…';working('완료 처리 중…');recordTrack();save();renderDone();toast(d.dataset.t==='P'?'픽업 완료 — 짐이 실렸어요':'배송 완료');recalc()}
   if(x){const id=x.dataset.del;delFx(x,()=>{jobs=jobs.filter(j=>j.id!=id);save();recalc()})}
@@ -1219,7 +1226,7 @@ $('fAdd').addEventListener('submit',async e=>{
     if(p)j.pick=p;j.drop=d;j.pickCo=$('iPickCo').value.trim();j.dropCo=$('iDropCo').value.trim();j.cargo=$('iCargo').value.trim();j.urgent=$('iUrg').checked;if($('iRound').checked)j.round=true;else{if(j.round&&j.state==='back'){j.state='done';j.doneAt=j.dropAt||Date.now()}delete j.round}j.due=$('iDue').value||'';j.pdue=$('iPdue').value||'';j.fee=feeVal();
     if(loadedOnly&&j.state==='wait'){j.state='loaded';j.pickedAt=Date.now()}else if(!loadedOnly&&j.state==='loaded'){j.state='wait';delete j.pickedAt}
     manual=null;saveManual();save();$('dAdd').close();working('고치는 중… 순서 다시 짜는 중');recalc()}return}
-  manual=null;saveManual(); // 새 짐이 들어오면 순서를 처음부터 다시 짜고, 그 뒤에 직접 조정
+  LS.set('homeDone','');manual=null;saveManual(); // 새 짐이 들어오면 순서를 처음부터 다시 짜고, 그 뒤에 직접 조정
   jobs.push({id:Date.now(),pickCo:$('iPickCo').value.trim(),dropCo:$('iDropCo').value.trim(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,round:$('iRound').checked,due:$('iDue').value||'',pdue:$('iPdue').value||'',fee:feeVal(),state:loadedOnly?'loaded':'wait'});
   save();$('dAdd').close();working('추가 중… 순서 짜는 중');setTimeout(recalc,30);
 });
@@ -1282,7 +1289,7 @@ $('bLoc').onclick=()=>{toast('현재 위치를 찾는 중…');locate(true)};
 $('bRecalc').onclick=()=>{toast('지금 위치·시각 기준으로 다시 계산해요');recalc()};
 // 위치가 움직이면 1분마다, 가만히 있어도 3분마다 도착·출발 시각을 다시 계산
 let lastCalc={t:0,p:null};
-setInterval(()=>{if(!route.length||!map)return;const moved=me&&lastCalc.p?hav(me,lastCalc.p):1e9;
+setInterval(()=>{if((!route.length&&!homeInfo)||!map)return;const moved=me&&lastCalc.p?hav(me,lastCalc.p):1e9;
   if(moved>=0.2||Date.now()-lastCalc.t>=3*60000)recalc()},60000);
 
 loadKakao();
@@ -1399,7 +1406,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v139';
+const VER='v140';
 try{document.getElementById('verTag').textContent=VER}catch(e){}
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
