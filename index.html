@@ -263,7 +263,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v114</div>
+  <div class="ver">버전 2026-11-27 v115</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -1004,7 +1004,7 @@ $('iDrop').addEventListener('change',()=>look('drop'));
 $('iLoaded').addEventListener('change',()=>{$('iPick').disabled=$('iLoaded').checked});
 $('bAdd').onclick=()=>{if(!map){toast('설정에서 카카오 키를 먼저 넣어 주세요');openSet();return}
   editId=null;$('aTitle').textContent='합짐 추가';$('bSave').textContent='위치 확인 후 추가';
-  $('fAdd').reset();$('iPick').disabled=false;$('fPick').textContent=$('fDrop').textContent='';$('fAll').className='found';$('fAll').textContent='🎤 픽업지를 말하세요. 다 말하면 ■';found={};lookedTxt={};
+  $('fAdd').reset();$('bSave').disabled=false;adding=false;$('iPick').disabled=false;$('fPick').textContent=$('fDrop').textContent='';$('fAll').className='found';$('fAll').textContent='🎤 픽업지를 말하세요. 다 말하면 ■';found={};lookedTxt={};
   if(takeDraft()){$('fAll').textContent='아까 넣던 합짐이에요. 이어서 넣으세요.';$('dAdd').showModal();return}
   $('dAdd').showModal();if(rec){try{rec.abort()}catch(e){}rec=null}
   // 아이폰은 누른 그 순간에만 키보드·마이크를 열 수 있어서 바로 픽업지 칸을 잡아 둠 (앱 마이크가 막히면 키보드 🎤로 말하기)
@@ -1114,19 +1114,21 @@ $('dRing').addEventListener('click',e=>{const b=e.target.closest('[data-km]');if
 // 이미 넣은 합짐 고치기 (전화로 시간·주소·금액이 바뀔 때)
 let editId=null;var lookedTxt={};
 function openJobEdit(id){const j=jobs.find(x=>x.id==id);if(!j)return;editId=j.id;
-  $('fAdd').reset();$('aTitle').textContent='합짐 수정';$('bSave').textContent='저장';$('fAll').className='found';$('fAll').textContent='바꿀 칸만 고치고 저장을 누르세요';
+  $('fAdd').reset();$('bSave').disabled=false;adding=false;$('aTitle').textContent='합짐 수정';$('bSave').textContent='저장';$('fAll').className='found';$('fAll').textContent='바꿀 칸만 고치고 저장을 누르세요';
   const ld=j.state==='loaded';found={pick:ld&&!j.pick.addr?null:j.pick,drop:j.drop};
   const dv=pt=>(pt.name||pt.addr)+(pt.detail?' '+pt.detail:'');$('iPick').value=j.pick.addr?dv(j.pick):'';$('iDrop').value=dv(j.drop);
   $('fPick').className=$('fDrop').className='found';$('fPick').textContent=j.pick.addr?'✔ '+full(j.pick):'';$('fDrop').textContent='✔ '+full(j.drop);
   $('iCargo').value=j.cargo||'';$('iFee').value=j.fee||'';$('iPdue').value=j.pdue||'';$('iDue').value=j.due||'';$('iUrg').checked=!!j.urgent;$('iRound').checked=!!j.round;
   lookedTxt={pick:$('iPick').value.trim(),drop:$('iDrop').value.trim()};
   $('iLoaded').checked=ld;$('iPick').disabled=ld;$('dAdd').showModal()}
+let adding=false;
 $('fAdd').addEventListener('submit',async e=>{
-  e.preventDefault();const loadedOnly=$('iLoaded').checked;
-  $('bSave').textContent='확인 중…';
+  e.preventDefault();if(adding)return;adding=true;setTimeout(()=>adding=false,8000); // 두 번 눌러도 한 번만
+  const loadedOnly=$('iLoaded').checked;if(rec){try{rec.stop()}catch(x){}}
+  $('bSave').textContent='주소 확인 중…';$('bSave').disabled=true;
   const fresh=w=>found[w]&&lookedTxt[w]===$(w==='pick'?'iPick':'iDrop').value.trim()?found[w]:null; // 주소를 고쳤으면 다시 찾기
   const p=loadedOnly?null:(fresh('pick')||await look('pick')),d=fresh('drop')||await look('drop');
-  $('bSave').textContent='위치 확인 후 추가';
+  $('bSave').textContent='위치 확인 후 추가';$('bSave').disabled=false;adding=false;
   if(!d||(!loadedOnly&&!p)){toast('주소를 확인해 주세요');return}
   if(editId!=null){const j=jobs.find(x=>x.id==editId);editId=null;if(j){
     if(p)j.pick=p;j.drop=d;j.cargo=$('iCargo').value.trim();j.urgent=$('iUrg').checked;if($('iRound').checked)j.round=true;else{if(j.round&&j.state==='back'){j.state='done';j.doneAt=j.dropAt||Date.now()}delete j.round}j.due=$('iDue').value||'';j.pdue=$('iPdue').value||'';j.fee=feeVal();
@@ -1134,7 +1136,7 @@ $('fAdd').addEventListener('submit',async e=>{
     manual=null;saveManual();save();$('dAdd').close();toast('고쳤어요. 순서를 새로 짰어요.');recalc()}return}
   manual=null;saveManual(); // 새 짐이 들어오면 순서를 처음부터 다시 짜고, 그 뒤에 직접 조정
   jobs.push({id:Date.now(),pick:p||{name:'(이미 실음)',addr:'',lat:d.lat,lng:d.lng},drop:d,cargo:$('iCargo').value.trim(),urgent:$('iUrg').checked,round:$('iRound').checked||undefined,due:$('iDue').value||'',pdue:$('iPdue').value||'',fee:feeVal(),state:loadedOnly?'loaded':'wait'});
-  save();$('dAdd').close();toast('추가했어요. 순서와 도착시간을 다시 계산했어요.');recalc();
+  save();$('dAdd').close();toast('추가했어요. 순서를 다시 짜는 중…');setTimeout(recalc,30);
 });
 
 /* ---------- 음성 입력 ---------- */
@@ -1220,7 +1222,7 @@ async function fromImage(blob){
   $('iAll').value=t;await applyAll();
 }
 $('iShot').addEventListener('change',e=>{const f=e.target.files[0];if(f)fromImage(f);e.target.value=''});
-function openAddQuiet(){editId=null;$('aTitle').textContent='합짐 추가';$('bSave').textContent='위치 확인 후 추가';$('fAdd').reset();$('iPick').disabled=false;$('fPick').textContent=$('fDrop').textContent='';found={};$('dAdd').showModal()}
+function openAddQuiet(){editId=null;$('aTitle').textContent='합짐 추가';$('bSave').textContent='위치 확인 후 추가';$('fAdd').reset();$('bSave').disabled=false;adding=false;$('iPick').disabled=false;$('fPick').textContent=$('fDrop').textContent='';found={};$('dAdd').showModal()}
 async function takeShared(){
   if(!/shared=/.test(location.search)||!('caches' in window))return;
   history.replaceState(null,'',location.pathname);
@@ -1309,7 +1311,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v114';
+const VER='v115';
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
     const m=t.match(/버전 [\d-]+ (v\d+)/);if(!m||m[1]===VER)return;
