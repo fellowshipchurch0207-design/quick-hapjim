@@ -29,7 +29,7 @@ header h1{font-size:18px;margin:0;flex:1}
 @media(min-width:760px){.main{grid-template-rows:1fr;grid-template-columns:1fr 400px}}
 #map{width:100%;height:100%;background:var(--line)}
 .mapw{position:relative;min-height:0}
-.mapbtns{position:absolute;right:10px;bottom:10px;z-index:4;display:flex;gap:8px}.ringb{position:absolute;right:10px;bottom:68px;z-index:4;width:50px;height:50px;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:0}.ringb b{font-size:10px;line-height:1;color:var(--sub)}.ringb.on{border:2px solid #0a84ff}.ringb.on b{color:#0a84ff;font-size:11px}.help h3{font-size:16px;margin:16px 0 4px;color:var(--ink)}.help p,.help li{font-size:14.5px;line-height:1.55;color:var(--sub);margin:0}.help ul{padding-left:18px;margin:0}.help li{margin:3px 0}.help b{color:var(--ink)}#dHelp .dlg{max-height:82vh;overflow:auto}@keyframes gone{0%{opacity:1;transform:none}30%{background:#7f1d1d}100%{opacity:0;transform:translateX(40px) scale(.96)}}.stop.gone{animation:gone .32s ease-in forwards;pointer-events:none}#verTag{position:fixed;left:8px;bottom:calc(4px + env(safe-area-inset-bottom));z-index:40;font-size:10px;color:#9ca3af;opacity:.7;pointer-events:none}#mslack .homeinfo{margin-top:6px;display:inline-block;background:rgba(20,22,28,.88);color:#e5e7eb;font-size:13px;padding:4px 10px;border-radius:9px;box-shadow:0 2px 8px rgba(0,0,0,.4)}#mslack .homeinfo b{color:#fff}#working{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;background:#111827e6;color:#fff;font-weight:800;font-size:16px;padding:10px 16px;border-radius:12px;box-shadow:0 4px 14px #0008;pointer-events:none}.stop.deleting{opacity:.45;pointer-events:none;outline:2px dashed #ef4444}@keyframes wpulse{50%{opacity:.6}}#working{animation:wpulse 1s infinite}a.due{text-decoration:none;cursor:pointer}.gonav{display:block;margin-top:8px;text-align:center;background:#fee500;color:#191919!important;font-weight:800;font-size:16px;padding:12px;border-radius:12px;text-decoration:none}.rgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.rgrid button{min-height:46px;font-size:16px;font-weight:700}.rgrid button.on{background:#0a84ff;color:#fff;border-color:#0a84ff}.ringl{background:#0a84ff;color:#fff;font-size:12px;font-weight:800;padding:2px 7px;border-radius:9px;box-shadow:0 1px 4px #0006}
+.mapbtns{position:absolute;right:10px;bottom:10px;z-index:4;display:flex;gap:8px}.ringb{position:absolute;right:10px;bottom:68px;z-index:4;width:50px;height:50px;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:0}.ringb b{font-size:10px;line-height:1;color:var(--sub)}.ringb.on{border:2px solid #0a84ff}.ringb.on b{color:#0a84ff;font-size:11px}.help h3{font-size:16px;margin:16px 0 4px;color:var(--ink)}.help p,.help li{font-size:14.5px;line-height:1.55;color:var(--sub);margin:0}.help ul{padding-left:18px;margin:0}.help li{margin:3px 0}.help b{color:var(--ink)}#dHelp .dlg{max-height:82vh;overflow:auto}@keyframes gone{0%{opacity:1;transform:none}30%{background:#7f1d1d}100%{opacity:0;transform:translateX(40px) scale(.96)}}.stop.gone{animation:gone .32s ease-in forwards;pointer-events:none}#verTag{position:fixed;left:8px;bottom:calc(4px + env(safe-area-inset-bottom));z-index:40;font-size:10px;color:#9ca3af;opacity:.7;pointer-events:none}#mslack .homeinfo{margin-top:6px;display:inline-block;background:rgba(20,22,28,.88);color:#e5e7eb;font-size:13px;padding:4px 10px;border-radius:9px;box-shadow:0 2px 8px rgba(0,0,0,.4)}#mslack .homeinfo b{color:#fff}.clr{flex:0 0 40px;min-height:0;padding:0;font-size:16px;color:var(--sub);background:transparent;border:1px solid var(--line);border-radius:10px}#working{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;background:#111827e6;color:#fff;font-weight:800;font-size:16px;padding:10px 16px;border-radius:12px;box-shadow:0 4px 14px #0008;pointer-events:none}.stop.deleting{opacity:.45;pointer-events:none;outline:2px dashed #ef4444}@keyframes wpulse{50%{opacity:.6}}#working{animation:wpulse 1s infinite}a.due{text-decoration:none;cursor:pointer}.gonav{display:block;margin-top:8px;text-align:center;background:#fee500;color:#191919!important;font-weight:800;font-size:16px;padding:12px;border-radius:12px;text-decoration:none}.rgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.rgrid button{min-height:46px;font-size:16px;font-weight:700}.rgrid button.on{background:#0a84ff;color:#fff;border-color:#0a84ff}.ringl{background:#0a84ff;color:#fff;font-size:12px;font-weight:800;padding:2px 7px;border-radius:9px;box-shadow:0 1px 4px #0006}
 .ibtn{width:50px;height:50px;min-height:0;padding:0;border-radius:14px;background:light-dark(#fffffff0,#1b1f25f0);border:1px solid var(--line);box-shadow:0 3px 10px #0004;display:grid;place-items:center}
 .ibtn:active{transform:scale(.94)}
 .side{overflow-y:auto;padding:10px 10px 90px}
@@ -195,10 +195,10 @@ body.bars #bHandle{display:none}
     </label>
   <label class="shot" hidden>📷 스크린샷으로 넣기<input type="file" accept="image/*" id="iShot" hidden></label>
   <label>픽업지 (인성콜에 뜨는 그대로)
-    <div class="row"><input id="iPick" autocomplete="off"><button type="button" class="mic" data-for="iPick">🎤</button></div>
+    <div class="row"><input id="iPick" autocomplete="off"><button type="button" class="clr" data-for="iPick" aria-label="지우기">✕</button><button type="button" class="mic" data-for="iPick">🎤</button></div>
     <div class="found" id="fPick"></div></label>
   <label>배송지
-    <div class="row"><input id="iDrop" autocomplete="off"><button type="button" class="mic" data-for="iDrop">🎤</button></div>
+    <div class="row"><input id="iDrop" autocomplete="off"><button type="button" class="clr" data-for="iDrop" aria-label="지우기">✕</button><button type="button" class="mic" data-for="iDrop">🎤</button></div>
     <div class="found" id="fDrop"></div></label>
   <label>짐 특징 (예: 파란 박스 2개, 파손주의)
     <div class="row"><textarea id="iCargo"></textarea><button type="button" class="mic" data-for="iCargo">🎤</button></div></label>
@@ -220,7 +220,7 @@ body.bars #bHandle{display:none}
   <ul><li><b>픽업지</b>: 누르자마자 마이크가 켜져요. 픽업지 주소를 말하고 <b>■</b>를 누르면 지도에서 찾고, 노란 <b>🧭 카카오맵으로 픽업지 길안내</b> 버튼이 떠요. 바로 출발하고 싶을 때만 누르세요.</li>
   <li><b>이어서 넣기</b>: 카카오맵에 갔다 와도 넣던 내용이 3시간 동안 남아 있어요.</li>
   <li><b>배송지</b>: 옆의 🎤를 누르고 말하거나 손으로 써요.</li>
-  <li><b>주소</b>: 칸을 누르면 비워져요. "둔산로 100 302호"처럼 동·호수·층까지 써도 돼요. "대전역"처럼 장소 이름을 말하면 이름이 딱 맞는 곳을 먼저 찾아요. 그래도 엉뚱한 곳이 잡히면 "동구 대전역"처럼 구·동 이름을 붙여 보세요.</li>
+  <li><b>주소</b>: 칸을 누르면 쓴 글자 끝에 커서가 가서 회사 이름 등을 이어 쓸 수 있어요. 처음부터 다시 쓰려면 옆의 <b>✕</b>를 누르세요. "둔산로 100 302호"처럼 동·호수·층까지 써도 돼요. "대전역"처럼 장소 이름을 말하면 이름이 딱 맞는 곳을 먼저 찾아요. 그래도 엉뚱한 곳이 잡히면 "동구 대전역"처럼 구·동 이름을 붙여 보세요.</li>
   <li><b>짐·금액·마감 시각</b>도 옆의 🎤를 누르고 말하면 돼요. 금액은 "삼만 오천 원", 시각은 "오후 세 시 반"처럼 말하세요. 마감은 "까지" 시각이에요.</li>
   <li>🎤는 말이 <b>1초</b> 끊기면 저절로 꺼져요. ■를 눌러 바로 끌 수도 있어요.</li>
   <li><b>🔁 왕복</b>에 체크하면 배송 후 픽업지로 돌아가는 복귀까지 경로에 넣어요.</li></ul>
@@ -265,7 +265,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v125</div>
+  <div class="ver">버전 2026-11-27 v126</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -1206,10 +1206,10 @@ document.querySelectorAll('.mic').forEach(b=>{
     try{r.start()}catch(e){done();kbHint(inp,'마이크를 시작하지 못했어요.')}};
 });
 $('dAdd').addEventListener('close',()=>{if(rec)rec.abort()});
-// 주소 칸을 누르면 비워서 처음부터 입력 (아무것도 안 쓰고 나가면 원래대로)
+// 주소 칸을 누르면 지운 글자 없이 끝에 커서 (회사명 등 이어 쓰기). 지우려면 ✕
 ['iPick','iDrop'].forEach(id=>{const el=$(id);
-  el.addEventListener('focus',()=>{if(el.classList.contains('live'))return;el.dataset.prev=el.value;el.value=''});
-  el.addEventListener('blur',()=>{setTimeout(()=>{if(!el.value.trim()&&el.dataset.prev&&!el.classList.contains('live'))el.value=el.dataset.prev},150)})});
+  el.addEventListener('focus',()=>{setTimeout(()=>{try{const n=el.value.length;el.setSelectionRange(n,n)}catch(e){}},0)})});
+document.querySelectorAll('.clr').forEach(b=>b.addEventListener('click',()=>{const el=$(b.dataset.for);el.value='';el.focus();const f=$(b.dataset.for==='iPick'?'fPick':'fDrop');f.textContent='';found[b.dataset.for==='iPick'?'pick':'drop']=null;saveDraft()}));
 
 /* ---------- 설정 ---------- */
 function openSet(){$('sPbuf').value=cfg.pbuf??5;$('sHome').value=cfg.home||'';$('sJs').value=cfg.js;$('sRest').value=cfg.rest;$('sDwell').value=cfg.dwell;$('sSpeed').value=cfg.speed;$('dSet').showModal()}
@@ -1346,7 +1346,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v125';
+const VER='v126';
 try{document.getElementById('verTag').textContent=VER}catch(e){}
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
