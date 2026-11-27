@@ -220,7 +220,7 @@ body.bars #bHandle{display:none}
   <ul><li><b>픽업지</b>: 누르자마자 마이크가 켜져요. 픽업지 주소를 말하고 <b>■</b>를 누르면 지도에서 찾고, 노란 <b>🧭 카카오맵으로 픽업지 길안내</b> 버튼이 떠요. 바로 출발하고 싶을 때만 누르세요.</li>
   <li><b>이어서 넣기</b>: 카카오맵에 갔다 와도 넣던 내용이 3시간 동안 남아 있어요.</li>
   <li><b>배송지</b>: 옆의 🎤를 누르고 말하거나 손으로 써요.</li>
-  <li><b>주소</b>: 칸을 누르면 쓴 글자 끝에 커서가 가서 회사 이름 등을 이어 쓸 수 있어요. 처음부터 다시 쓰려면 옆의 <b>✕</b>를 누르세요. "둔산로 100 302호"처럼 동·호수·층까지 써도 돼요. "대전역"처럼 장소 이름을 말하면 이름이 딱 맞는 곳을 먼저 찾아요. 그래도 엉뚱한 곳이 잡히면 "동구 대전역"처럼 구·동 이름을 붙여 보세요.</li>
+  <li><b>주소</b>: 칸을 누르면 쓴 글자 끝에 커서가 가서 회사 이름 등을 이어 쓸 수 있어요. 처음부터 다시 쓰려면 옆의 <b>✕</b>를 누르세요. "둔산로 100 302호 한빛상사"처럼 동·호수·층과 회사 이름까지 말해도 돼요. 주소만으로 위치를 찾고, 호수·회사 이름은 목록 카드의 주소 끝에 같이 보여줘요. "대전역"처럼 장소 이름을 말하면 이름이 딱 맞는 곳을 먼저 찾아요. 그래도 엉뚱한 곳이 잡히면 "동구 대전역"처럼 구·동 이름을 붙여 보세요.</li>
   <li><b>짐·금액·마감 시각</b>도 옆의 🎤를 누르고 말하면 돼요. 금액은 "삼만 오천 원", 시각은 "오후 세 시 반"처럼 말하세요. 마감은 "까지" 시각이에요.</li>
   <li>🎤는 말이 <b>1초</b> 끊기면 저절로 꺼져요. ■를 눌러 바로 끌 수도 있어요.</li>
   <li><b>🔁 왕복</b>에 체크하면 배송 후 픽업지로 돌아가는 복귀까지 경로에 넣어요.</li></ul>
@@ -265,7 +265,7 @@ body.bars #bHandle{display:none}
   <label>도로 정보가 안 될 때 쓸 평균 속도(km/h)<input id="sSpeed" type="number" min="5" max="90"></label>
   <div class="note">카카오디벨로퍼스 › 플랫폼 키 › JavaScript 키 › JavaScript SDK 도메인에 이 주소를 등록하세요:<br><b id="origin"></b></div>
   <div class="note">로그인하면 합짐·기록·키가 본인 계정 서버에 저장돼 두 폰이 함께 봐요. 로그인 안 하면 이 폰에만 저장돼요.</div>
-  <div class="ver">버전 2026-11-27 v126</div>
+  <div class="ver">버전 2026-11-27 v127</div>
   <div class="btns"><button type="submit" class="pri">저장</button></div>
 </form></dialog>
 
@@ -372,6 +372,7 @@ function watchMe(){me=null;if(meOv){meOv.setMap(null);meOv=null}locate(false)}
 function showHelp(){$('dHelp').showModal()}
 
 /* ---------- 주소 찾기 ---------- */
+function addrOnly(q){return new Promise(res=>{if(!geocoder)return res(null);const t=setTimeout(()=>res(null),5000);geocoder.addressSearch(q,(r,st)=>{clearTimeout(t);if(st===kakao.maps.services.Status.OK&&r[0]){const a=r[0];res({name:(a.road_address&&a.road_address.building_name)||a.address_name,addr:(a.road_address&&a.road_address.address_name)||a.address_name,jibun:(a.address&&a.address.address_name)||'',lat:+a.y,lng:+a.x})}else res(null)})})}
 function geocode(q){return Promise.race([geocode0(q),new Promise(r=>setTimeout(()=>r(null),7000))])} // 7초 넘으면 포기
 function geocode0(q){
   return new Promise(res=>{
@@ -401,7 +402,7 @@ function cityOf(addr){if(!addr)return'';const t=addr.trim().split(/\s+/);if(!t.l
   const parts=[f];
   if(t[1]&&/(시|군|구)$/.test(t[1])){parts.push(t[1]);if(/시$/.test(t[1])&&t[2]&&/구$/.test(t[2]))parts.push(t[2])}
   return parts.join(' ')}
-function full(pt){if(!pt)return'';const dt=pt.detail?' '+pt.detail:'';const a=(pt.addr||'').trim(),n=(pt.name||'').trim();if(!a)return nm(pt)+dt;if(!n||n===a||a.includes(n))return a+dt;return a+'('+n+')'+dt}
+function full(pt){if(!pt)return'';const dt=pt.detail?' '+pt.detail:'';const a=(pt.addr||'').trim(),n=(pt.name||'').trim();if(!a)return nm(pt)+dt;if(!n||n===a||a.includes(n)||n===(pt.jibun||'').trim())return a+dt;return a+'('+n+')'+dt}
 // 옛 동 주소(지번)도 같이: 도로명과 다를 때만. 예전에 넣은 곳은 좌표로 한 번 찾아서 채움
 const isJibunAddr=a=>!!a&&!/(로|길)\s*\d/.test(a);
 function jibunHtml(pt){if(!pt)return'';if(pt.jibun==null||isJibunAddr(pt.addr))fillJibun(pt);const j=(pt.jibun||'').trim();if(!j||j===(pt.addr||'').trim())return'';return '<div class="jibun">(지번) '+esc(j)+'</div>'}
@@ -1008,7 +1009,12 @@ async function look0(which){
   const inp=$(which==='pick'?'iPick':'iDrop'),f=$(which==='pick'?'fPick':'fDrop');
   if(!inp.value.trim()){f.textContent='';found[which]=null;return null}
   f.className='found';f.textContent='찾는 중…';
-  const q=inp.value,sd=splitDetail(q);let r=await geocode(sd.base);if(!r&&sd.detail)r=await geocode(q);if(inp.value!==q)return found[which];if(r)r=Object.assign({},r,{detail:sd.detail||''});found[which]=r;lookedTxt[which]=q.trim();
+  const q=inp.value,sd=splitDetail(q);let r=null,extra='';
+  // "둔산로 100 한빛상사"처럼 주소 뒤에 회사 이름을 붙이면: 주소만 찾고 뒤의 이름은 따로 기록
+  const ws=sd.base.split(/\s+/);
+  if(ws.length>1&&/\d/.test(sd.base)){for(let n=ws.length-1;n>=1&&!r;n--){const head=ws.slice(0,n).join(' ');if(!/\d/.test(ws[n-1]))continue;const a=await addrOnly(head);if(a){r=a;extra=ws.slice(n).join(' ')}}}
+  if(!r)r=await geocode(sd.base);if(!r&&sd.detail)r=await geocode(q);
+  if(r&&extra)sd.detail=(sd.detail?sd.detail+' ':'')+extra;if(inp.value!==q)return found[which];if(r)r=Object.assign({},r,{detail:sd.detail||''});found[which]=r;lookedTxt[which]=q.trim();
   if(r){f.textContent='✔ '+nm(r)+(r.addr&&r.addr!==r.name?' · '+r.addr:'')+(r.detail?' · 상세: '+r.detail:'');
     // 새 합짐의 픽업지를 찾으면 바로 카카오맵 길안내 버튼 (출발하면서 나머지 입력)
     if(which==='pick'&&editId==null){const a=document.createElement('a');a.className='nav gonav';a.target='_blank';a.rel='noopener';a.href=`https://map.kakao.com/link/to/${encodeURIComponent(r.name||r.addr)},${r.lat},${r.lng}`;a.textContent='🧭 카카오맵으로 픽업지 길안내';a.onclick=()=>{saveDraft();setTimeout(()=>{const m=document.querySelector('.mic[data-for="iDrop"]');if(m&&!rec)$('iDrop').focus()},800)};f.appendChild(a);
@@ -1346,7 +1352,7 @@ function hideHdr(){if(document.querySelector('dialog[open]'))return showHdr(1500
 $('hHandle').onclick=()=>showHdr();$('bHandle').onclick=()=>showHdr();document.querySelector('.tabs').addEventListener('click',()=>showHdr());
 $('hdr').addEventListener('click',()=>showHdr());
 /* ---------- 새 버전 자동 확인 ---------- */
-const VER='v126';
+const VER='v127';
 try{document.getElementById('verTag').textContent=VER}catch(e){}
 async function checkUpdate(){
   try{const r=await fetch('./?nocache='+Date.now(),{cache:'no-store'});const t=await r.text();
